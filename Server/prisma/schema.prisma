@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Annotation {
+  id         String   @id
+  bookId     String
+  userId     String
+  pageNumber Int
+  text       String
+  note       String?
+  color      String   @default("yellow")
+  position   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  @@index([bookId])
+  @@index([userId])
+}
+
+model Book {
+  id              String    @id
+  title           String
+  author          String?
+  fileName        String
+  originalName    String
+  fileUrl         String
+  fileId          String?
+  fileSize        Int
+  userId          String
+  coverUrl        String?
+  status          String    @default("unread")
+  progress        Int       @default(0)
+  currentPage     Int       @default(1)
+  totalPages      Int       @default(0)
+  uploadedAt      DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+  lastReadAt      DateTime?
+  description     String?
+  genre           String[]  @default([])
+  isbn            String?
+  language        String?
+  pdfMetadata     String?
+  publicationYear Int?
+  publisher       String?
+  fileType        String    @default("pdf")
+
+  @@index([status])
+  @@index([uploadedAt])
+  @@index([userId])
+}
+
+model Bookmark {
+  id         String   @id
+  bookId     String
+  userId     String
+  pageNumber Int
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  @@unique([bookId, userId, pageNumber])
+  @@index([bookId])
+  @@index([userId])
+}
+
+model Collection {
+  id          String   @id
+  userId      String
+  name        String
+  description String?
+  color       String?
+  icon        String?
+  isDefault   Boolean  @default(false)
+  bookIds     String[] @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Highlight {
+  id         String          @id
+  bookId     String
+  userId     String
+  text       String
+  cfiRange   String?
+  color      String
+  hex        String
+  note       String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @default(now())
+  pageNumber Int?
+  rects      Json?
+  source     HighlightSource @default(EPUB)
+
+  @@unique([bookId, userId, cfiRange])
+  @@index([bookId])
+  @@index([bookId, source])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model ReadingGoal {
+  id        String   @id
+  userId    String
+  type      String
+  period    String
+  target    Int
+  current   Int      @default(0)
+  year      Int?
+  month     Int?
+  week      Int?
+  startDate DateTime @default(now())
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@unique([userId, type, period, year, month, week])
+  @@index([period])
+  @@index([userId])
+}
+
+model ReadingSession {
+  id            String   @id
+  bookId        String
+  userId        String
+  duration      Int
+  pagesRead     Int      @default(0)
+  startPage     Int
+  endPage       Int
+  progressDelta Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([bookId])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model User {
+  id           String   @id
+  email        String   @unique
+  name         String?
+  picture      String?
+  nickname     String?
+  updatedAt    DateTime @default(now())
+  createdAt    DateTime @default(now())
+  welcomeShown Boolean  @default(false)
+
+  @@index([email])
+}
+
+enum HighlightSource {
+  EPUB
+  PDF
+  TXT
+}

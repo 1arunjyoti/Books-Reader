@@ -1,0 +1,153 @@
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LogOut } from 'lucide-react';
+import { getSession } from '@/lib/session';
+import { fetchUserProfile } from '@/lib/api/user-profile';
+import DeleteAccountSection from '@/components/profile/delete-account';
+import ChangeEmailSection from '@/components/profile/change-email';
+import ChangePasswordSection from '@/components/profile/change-password';
+import ChangeNameSection from '@/components/profile/change-name';
+import { redirect } from 'next/navigation';
+import { ReadingStatsDashboard } from '@/components/analytics/reading-stats-dashboard';
+import { ReadingGoals } from '@/components/analytics/reading-goals';
+
+export default async function ProfilePage() {
+  const session = await getSession();
+  
+  if (!session || !session.user) {
+    redirect('/signin');
+  }
+
+  const user = session.user;
+  const accessToken = session.tokenSet?.accessToken || '';
+
+  // Fetch user profile from database using shared utility
+  // Requests all fields since profile page needs: id, email, name, picture, nickname, updatedAt
+  // Uses 5-minute cache and 10-second timeout for performance
+  const userProfile = await fetchUserProfile(user.sub, accessToken, [
+    'id',
+    'email',
+    'name',
+    'picture',
+    'nickname',
+    'updatedAt',
+  ]);
+
+  const getUserInitials = () => {
+    // Use stored name if available, otherwise fall back to Auth0 name
+    const displayName = userProfile?.name || user.name;
+    if (displayName) {
+      return displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (user.email) {
+      return user.email[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const getDisplayName = () => {
+    return userProfile?.name || user.name || user.nickname || 'User';
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8 bg-white dark:bg-gray-900 min-h-screen">
+      <div className="flex flex-col md:flex-row gap-8">
+        
+        {/* Profile Sidebar */}
+        <div className="w-full md:w-1/3 lg:w-1/4">
+          <Card className="border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <Avatar className="h-24 w-24">
+                  <AvatarFallback className='text-4xl'>{getUserInitials()}</AvatarFallback>
+                </Avatar>
+                <div className="space-y-1 w-full">
+                  <h2 className="text-xl font-semibold">{getDisplayName()}</h2>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  {user.email_verified && (
+                    <span className="inline-block text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded">
+                      Verified
+                    </span>
+                  )}
+                </div>
+
+                {/* Change Name Section */}
+                <div className="w-full pt-4 border-t">
+                  <ChangeNameSection 
+                    initialName={getDisplayName()} 
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1">
+          <Tabs defaultValue="analytics" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="goals">Goals</TabsTrigger>
+              {/* <TabsTrigger value="library">Library</TabsTrigger> */}
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="analytics" className="mt-6">
+              <ReadingStatsDashboard accessToken={accessToken} />
+            </TabsContent>
+
+            <TabsContent value="goals" className="mt-6">
+              <ReadingGoals accessToken={accessToken} />
+            </TabsContent>
+
+            <TabsContent value="settings" className="mt-6">
+              <Card className="border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+                <CardHeader>
+                  <CardTitle>Account Settings</CardTitle>
+                  <CardDescription>Manage your account preferences</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h3 className="font-medium mb-2">Account Information</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">User ID:</span>
+                        <span className="font-mono text-xs">{user.sub}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Email:</span>
+                        <span>{user.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Email Verified:</span>
+                        <span>{user.email_verified ? 'Yes' : 'No'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <ChangeEmailSection userEmail={user.email} />
+                  <ChangePasswordSection />
+
+                  <div className=" ">
+                    <div className="flex items-end justify-end my-2">
+                      <Button asChild variant="destructive">
+                        <a href="/api/auth/logout">
+                          <LogOut className="h-4 w-4" />
+                          Sign Out
+                        </a>
+                      </Button>
+                    </div>
+
+                    <DeleteAccountSection userEmail={user.email} />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </div>
+  );
+}

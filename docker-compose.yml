@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Backend Server
+  server:
+    build:
+      context: ./Server
+      dockerfile: Dockerfile
+    container_name: booksreader-server
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - CLIENT_URL=http://localhost:3000
+    env_file:
+      - ./Server/.env.production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - booksreader-network
+
+networks:
+  booksreader-network:
+    driver: bridge
+
+# Note: Next.js Client runs separately with: npm run dev
+# It will connect to the server at http://localhost:5000 (defined in Client/.env.local)
