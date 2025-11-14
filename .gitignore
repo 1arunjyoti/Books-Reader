@@ -103,7 +103,9 @@ dist
 
 # Gatsby files
 .cache/
-public
+
+# PDF.js worker (copied from node_modules)
+/public/pdf.worker.min.mjs
 
 # Storybook build outputs
 .out
