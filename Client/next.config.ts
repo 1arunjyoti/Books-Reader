@@ -16,6 +16,7 @@ const securityHeaders = [
       default-src 'self';
       script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://unpkg.com;
       style-src 'self' 'unsafe-inline' blob:;
+      style-src-elem 'self' 'unsafe-inline' blob:;
       img-src 'self' blob: data: https:;
       font-src 'self' data:;
       connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'} https://va.vercel-scripts.com https://*.backblazeb2.com https://unpkg.com;

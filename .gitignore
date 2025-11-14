@@ -27,6 +27,7 @@ tmp_uploads/
 .env.local
 .env.development
 .env.test
+.env.prod
 .env.production
 !.env.example
 .env.development.local
