@@ -15,7 +15,7 @@ const ACCEPTED_EXTENSIONS = [".pdf", ".epub", ".txt"];
 export type FileUploadState = {
   file: File;
   progress: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
+  status: 'pending' | 'uploading' | 'success' | 'cover-generating' | 'error';
   error?: string;
   result?: UploadResult;
 };
@@ -136,9 +136,11 @@ export function UploadFiles({ onUploadComplete, onUploadError, onUploadStatesCha
         return prev.map((state, index) => {
           const result = results[index];
           if (result) {
+            // Check if cover is being generated in background
+            const status = result.coverGenerating ? 'cover-generating' : 'success';
             return {
               ...state,
-              status: 'success',
+              status,
               progress: 100,
               result,
             };
@@ -153,6 +155,7 @@ export function UploadFiles({ onUploadComplete, onUploadError, onUploadStatesCha
 
       onUploadComplete?.(results);
 
+      // Clear upload states after a delay (3s for success, 2s for cover-generating)
       setTimeout(() => {
         updateUploadStates([]);
       }, 3000);

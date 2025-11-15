@@ -208,3 +208,36 @@ exports.uploadCover = async (req, res) => {
     });
   }
 };
+
+/**
+ * Generate cover for a book
+ */
+exports.generateCover = async (req, res) => {
+  try {
+    const userId = req.auth?.payload?.sub;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const result = await booksService.generateBookCover(id, userId);
+    res.json(result);
+    
+  } catch (error) {
+    logger.error('Error generating cover:', { error: error.message, stack: error.stack });
+    
+    if (error.message === 'Book not found') {
+      return res.status(404).json({ error: error.message });
+    }
+    
+    if (error.message.includes('already has a cover')) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to generate cover',
+      message: error.message 
+    });
+  }
+};

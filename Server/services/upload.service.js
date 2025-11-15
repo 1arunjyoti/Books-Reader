@@ -8,19 +8,7 @@ const { extractTxtMetadata, isValidTxt } = require('../utils/txtUtils');
 const prisma = require('../config/database');
 const { randomFileName } = require('../utils/helpers');
 const logger = require('../utils/logger');
-const { 
-  validatePythonExecutable, 
-  validateScriptPath, 
-  sanitizeCommandArgs,
-  getSafeExecutionEnvironment 
-} = require('../utils/commandSecurity');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const util = require('util');
-const { execFile } = require('child_process');
-const execFileAsync = util.promisify(execFile);
-const sharp = require('sharp');
+const CoverGenerationService = require('./cover-generation.service');
 
 /**
  * Upload Service
@@ -28,6 +16,10 @@ const sharp = require('sharp');
  */
 
 class UploadService {
+  constructor() {
+    // Initialize cover generation service
+    this.coverService = new CoverGenerationService(this);
+  }
   /**
    * Validate file type and size
    * @param {Buffer} buffer - File buffer
@@ -172,134 +164,28 @@ class UploadService {
     
     // Upload to B2
     const uploadResult = await this.uploadFileToStorage(buffer, fileName, uploadMetadata);
-    // Try to generate a cover image from the PDF and upload it to B2.
-    // This uses the existing Python script `Server/Cover_Image_Generator/Cover_Image_extractor.py`.
-    // If cover generation fails we continue without blocking the upload.
+    
+    // Try to generate cover image synchronously for small files
+    // For large files, schedule background generation
     let coverUploadResult = null;
-    try {
-      // Only attempt cover generation for supported types
-      if (!['pdf', 'epub', 'txt'].includes(fileType)) {
-        throw new Error(`Cover generation not supported for file type: ${fileType}`);
-      }
-
-      const scriptPath = path.join(__dirname, '..', 'Cover_Image_Generator', 'Cover_Image_extractor.py');
-      const tmpDir = os.tmpdir();
-      // Use original file extension so the python script can detect type if needed
-      const tmpExt = extension || (fileType === 'pdf' ? 'pdf' : fileType);
-      const tmpFilePath = path.join(tmpDir, `${randomFileName()}.${tmpExt}`);
-      await fs.promises.writeFile(tmpFilePath, buffer);
-
-      // SECURITY: Validate Python executable and script path
-      const pythonExecRaw = process.env.COVER_PYTHON_PATH || 'python';
-      const pythonExec = await validatePythonExecutable(pythonExecRaw);
-      
-      // Validate script path (must be in Cover_Image_Generator directory)
-      const allowedScriptDir = path.join(__dirname, '..', 'Cover_Image_Generator');
-      const validatedScriptPath = await validateScriptPath(scriptPath, allowedScriptDir);
-      
-      logger.debug('Invoking cover generation python', { 
-        pythonExec, 
-        scriptPath: validatedScriptPath, 
-        tmpFilePath 
-      });
-      
-      // SECURITY: Sanitize arguments to prevent injection
-      const args = sanitizeCommandArgs([validatedScriptPath, tmpFilePath, '--type', fileType]);
-      
-      // SECURITY: Use safe execution environment
-      const safeEnv = getSafeExecutionEnvironment();
-      
-      // Pass file type as an extra argument in case the script accepts it (backwards compatible)
-      // Capture stdout so we can read the exact output path the script prints
-      let stdout = '';
+    const shouldGenerateCover = ['pdf', 'epub', 'txt'].includes(fileType);
+    
+    if (shouldGenerateCover) {
       try {
-        const result = await execFileAsync(
-          pythonExec, 
-          args, 
-          { 
-            timeout: 60000,
-            env: safeEnv,
-            maxBuffer: 10 * 1024 * 1024 // 10MB max output
-          }
+        // Try sync generation for smaller files
+        coverUploadResult = await this.coverService.tryGenerateCoverSync(
+          buffer, 
+          fileType, 
+          originalName, 
+          userId
         );
-        stdout = result.stdout || '';
-      } catch (pyErr) {
-        // If python fails, rethrow to be handled by outer catch
-        logger.error('Python cover generation failed', {
-          error: pyErr.message,
-          stderr: pyErr.stderr
+      } catch (err) {
+        logger.warn('Sync cover generation failed', {
+          error: err.message,
+          originalName,
+          userId,
         });
-        throw pyErr;
       }
-
-      // Determine generated image path from python stdout.
-      // The script may print messages like "Done, your cover photo has been saved as C:\...\cover.jpg".
-      // Extract any embedded path that ends with a common image extension.
-      let tmpPngPath = null;
-      if (stdout) {
-        // Find all substrings that look like image paths (Windows or Unix paths)
-        const regex = /([A-Za-z]:\\[^\s]*?\.(?:png|jpe?g|webp|bmp|tiff?))|((?:\/|\.\/)[^\s]*?\.(?:png|jpe?g|webp|bmp|tiff?))|([^\s]+?\.(?:png|jpe?g|webp|bmp|tiff?))/ig;
-        const matches = stdout.match(regex);
-        if (matches && matches.length > 0) {
-          // Prefer the last match (likely the most recent/explicit output)
-          tmpPngPath = matches[matches.length - 1].trim();
-          // If path is not absolute, resolve relative to temp file directory
-          if (!path.isAbsolute(tmpPngPath)) {
-            tmpPngPath = path.join(path.dirname(tmpFilePath), tmpPngPath);
-          }
-        }
-      }
-
-      // Fallback: assume PNG next to temp file
-      if (!tmpPngPath) tmpPngPath = tmpFilePath.replace(new RegExp(`\.${tmpExt}$`, 'i'), '.png');
-
-      // Read generated image (if any)
-      const producedBuffer = await fs.promises.readFile(tmpPngPath);
-
-      // Detect produced image type
-      let ft = await FileType.fromBuffer(producedBuffer).catch(() => null);
-      if (!ft) {
-        // fallback to extension of produced path
-        const ext = path.extname(tmpPngPath).replace('.', '').toLowerCase() || 'png';
-        ft = { ext, mime: `image/${ext === 'jpg' ? 'jpeg' : ext}` };
-      }
-
-      // Upload original as-is under covers/originals/
-      const originalFileName = `covers/originals/${randomFileName()}.${ft.ext}`;
-      const originalUploadResult = await this.uploadFileToStorage(producedBuffer, originalFileName, {
-        originalName: `${originalName}-cover.${ft.ext}`,
-        uploadedAt: new Date().toISOString(),
-        userId,
-      }, ft.mime);
-
-      // Generate thumbnail 300x450 WEBP for library cards
-      const thumbBuffer = await sharp(producedBuffer)
-        .resize(300, 450, { fit: 'cover' })
-        .webp({ quality: 80 })
-        .toBuffer();
-
-      const thumbFileName = `covers/thumbs/${randomFileName()}.webp`;
-      const thumbUploadResult = await this.uploadFileToStorage(thumbBuffer, thumbFileName, {
-        originalName: `${originalName}-thumb.webp`,
-        uploadedAt: new Date().toISOString(),
-        userId,
-      }, 'image/webp');
-
-      // Use thumbnail as the coverUrl stored in DB
-      coverUploadResult = thumbUploadResult;
-      // Optionally preserve original upload result for further use (not saved to DB by default)
-      coverUploadResult.original = originalUploadResult;
-
-      // Cleanup temp files
-      await fs.promises.unlink(tmpFilePath).catch(() => {});
-      await fs.promises.unlink(tmpPngPath).catch(() => {});
-    } catch (err) {
-      logger.warn('Cover generation/upload failed, continuing without cover', {
-        error: err.message,
-        originalName,
-        userId,
-      });
-      coverUploadResult = null;
     }
 
     // Determine title and author
@@ -333,13 +219,43 @@ class UploadService {
     // Save to database
     const book = await this.saveBookToDatabase(bookData);
     
+    // If cover wasn't generated (large file), schedule background generation
+    if (shouldGenerateCover && !coverUploadResult) {
+      logger.info('Scheduling background cover generation', { 
+        bookId: book.id, 
+        originalName,
+        fileSize: size
+      });
+      
+      // Don't await - let it run in background
+      // Use setImmediate to avoid blocking the event loop
+      setImmediate(() => {
+        // Wrap in try-catch to prevent uncaught errors from crashing server
+        try {
+          this.coverService.generateCoverInBackground(
+            book.id,
+            buffer,
+            fileType,
+            originalName,
+            userId
+          );
+        } catch (err) {
+          logger.error('Failed to schedule background cover generation', {
+            bookId: book.id,
+            error: err.message
+          });
+        }
+      });
+    }
+    
     return {
       success: true,
       book,
       fileName,
       fileUrl: uploadResult.fileUrl,
       fileId: uploadResult.fileId,
-      metadata: uploadMetadata
+      metadata: uploadMetadata,
+      coverGenerating: shouldGenerateCover && !coverUploadResult // Indicate if cover is being generated
     };
   }
 

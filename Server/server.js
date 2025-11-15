@@ -82,6 +82,23 @@ app.use(cors({
   maxAge: 86400 // 24 hours
 }));
 
+// Request timeout middleware for upload routes (5 minutes max)
+app.use('/api/upload', (req, res, next) => {
+  // Set timeout to 5 minutes for upload endpoints
+  req.setTimeout(5 * 60 * 1000);
+  res.setTimeout(5 * 60 * 1000);
+  
+  // Handle timeout event
+  req.on('timeout', () => {
+    logger.error('Request timeout on upload endpoint', { 
+      ip: req.ip,
+      originalUrl: req.originalUrl 
+    });
+  });
+  
+  next();
+});
+
 // Body parsing middleware with size limits
 app.use(express.json({ 
   limit: '10mb',

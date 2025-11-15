@@ -63,4 +63,12 @@ router.post('/:id/cover',
   booksController.uploadCover
 );
 
+// Generate cover for book (if missing or failed previously)
+router.post('/:id/generate-cover',
+  checkJwt,
+  coverGenerationLimiter,
+  validateParams(bookIdParamSchema),
+  booksController.generateCover
+);
+
 module.exports = router;

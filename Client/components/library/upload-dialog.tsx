@@ -25,7 +25,7 @@ const ACCEPTED_EXTENSIONS = [".pdf", ".epub", ".txt"];
 export type FileUploadState = {
   file: File;
   progress: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
+  status: 'pending' | 'uploading' | 'success' | 'error' | 'cover-generating';
   error?: string;
   result?: UploadResult;
 };
@@ -417,6 +417,12 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
                               <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
                                 <CheckCircle className="h-4 w-4" />
                                 <span className="text-xs font-medium">Uploaded</span>
+                              </div>
+                            )}
+                            {state.status === 'cover-generating' && (
+                              <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                                <span className="text-xs font-medium">Cover generating...</span>
                               </div>
                             )}
                             {state.status === 'error' && (

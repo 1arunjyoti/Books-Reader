@@ -4,6 +4,8 @@ const prisma = require('../config/database');
 const { randomFileName } = require('../utils/helpers');
 const logger = require('../utils/logger');
 const { sanitizeBookMetadata, sanitizeSearchFilters } = require('../utils/sanitize');
+const CoverGenerationService = require('./cover-generation.service');
+const uploadService = require('./upload.service');
 
 /**
  * Books Service
@@ -44,6 +46,11 @@ async function getCachedPresignedUrl(objectKey, ttlSeconds = DEFAULT_PRESIGNED_T
 }
 
 class BooksService {
+  constructor() {
+    // Initialize cover generation service
+    this.coverService = new CoverGenerationService(uploadService);
+  }
+  
   /**
    * Build query filters for books listing
    * @param {Object} filters - Filter parameters
@@ -439,6 +446,84 @@ class BooksService {
       success: true,
       book: updatedBook,
       coverUrl: result.fileUrl
+    };
+  }
+
+  /**
+   * Generate cover for a book from its original file
+   * @param {string} bookId - Book ID
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} Result with status
+   */
+  async generateBookCover(bookId, userId) {
+    // Verify book ownership and get book details
+    const book = await this.verifyBookOwnership(bookId, userId);
+
+    // Check if book already has a cover
+    if (book.coverUrl) {
+      logger.info('Book already has a cover', { bookId, coverUrl: book.coverUrl });
+      return {
+        success: true,
+        message: 'Book already has a cover. Use POST /:id/cover to replace it.',
+        coverUrl: book.coverUrl,
+        bookId
+      };
+    }
+
+    // Validate file size to prevent memory issues
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+    if (book.fileSize > MAX_FILE_SIZE) {
+      throw new Error(`File too large for cover generation (${(book.fileSize / 1024 / 1024).toFixed(2)}MB). Maximum size is 100MB.`);
+    }
+
+    // Get the original file from B2 to generate cover
+    logger.info('Fetching original file for cover generation', { 
+      bookId, 
+      fileName: book.fileName,
+      fileSize: book.fileSize
+    });
+
+    // Generate presigned URL to download the file
+    const fileUrl = await generatePresignedUrl(book.fileName, 3600);
+    
+    // Download file buffer with size limit
+    const axios = require('axios');
+    const response = await axios.get(fileUrl, { 
+      responseType: 'arraybuffer',
+      timeout: 60000,
+      maxContentLength: MAX_FILE_SIZE,
+      maxBodyLength: MAX_FILE_SIZE
+    });
+    const fileBuffer = Buffer.from(response.data);
+
+    // Schedule background cover generation
+    logger.info('Scheduling cover generation', { bookId, fileType: book.fileType });
+    
+    // Wrap in setImmediate and add error handling
+    setImmediate(() => {
+      // Add try-catch to prevent uncaught errors
+      try {
+        this.coverService.generateCoverInBackground(
+          bookId,
+          fileBuffer,
+          book.fileType,
+          book.originalName,
+          userId
+        );
+      } catch (err) {
+        logger.error('Failed to schedule cover generation', {
+          bookId,
+          error: err.message,
+          stack: err.stack
+        });
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Cover generation started in background. Check back shortly.',
+      bookId,
+      estimatedTime: '30-60 seconds'
     };
   }
 }

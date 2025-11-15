@@ -24,6 +24,13 @@ export interface UploadResult {
     size: number;
     userId: string;
   };
+  coverGenerating?: boolean; // Indicates if cover is being generated in background
+  book?: {
+    id: string;
+    title: string;
+    author?: string;
+    coverUrl?: string;
+  };
 }
 
 export interface UploadError {
