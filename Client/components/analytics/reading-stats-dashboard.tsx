@@ -113,6 +113,13 @@ export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProp
     return `${minutes}m`;
   };
 
+  const formatDateDM = (value: string | number | Date) => {
+    const date = new Date(value);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -246,10 +253,7 @@ export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProp
                 <XAxis 
                   dataKey="date" 
                   className="text-xs"
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                  }}
+                  tickFormatter={(value) => formatDateDM(value)}
                 />
                 <YAxis className="text-xs" />
                 <Tooltip 
@@ -259,7 +263,7 @@ export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProp
                       return (
                         <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
                           <p className="text-sm font-semibold">
-                            {new Date(data.date).toLocaleDateString()}
+                            {formatDateDM(data.date)}
                           </p>
                           <p className="text-sm" style={{ color: palette.minutesTooltip }}>
                             {data.minutes} minutes
@@ -298,10 +302,7 @@ export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProp
                 <XAxis 
                   dataKey="date" 
                   className="text-xs"
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                  }}
+                  tickFormatter={(value) => formatDateDM(value)}
                 />
                 <YAxis className="text-xs" />
                 <Tooltip 
@@ -311,7 +312,7 @@ export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProp
                       return (
                         <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
                           <p className="text-sm font-semibold">
-                            {new Date(data.date).toLocaleDateString()}
+                            {formatDateDM(data.date)}
                           </p>
                           <p className="text-sm" style={{ color: palette.pagesTooltip }}>
                             {data.pages} pages
@@ -346,10 +347,7 @@ export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProp
               <XAxis 
                 dataKey="date" 
                 className="text-xs"
-                tickFormatter={(value) => {
-                  const date = new Date(value);
-                  return `${date.getMonth() + 1}/${date.getDate()}`;
-                }}
+                tickFormatter={(value) => formatDateDM(value)}
               />
               <YAxis yAxisId="left" className="text-xs" />
               <YAxis yAxisId="right" orientation="right" className="text-xs" />
@@ -360,7 +358,7 @@ export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProp
                     return (
                       <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
                         <p className="text-sm font-semibold mb-2">
-                          {new Date(data.date).toLocaleDateString()}
+                          {formatDateDM(data.date)}
                         </p>
                         <p className="text-sm" style={{ color: palette.minutesTooltip }}>
                           ⏱️ {data.minutes} minutes

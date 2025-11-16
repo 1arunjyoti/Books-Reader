@@ -10,7 +10,7 @@ export const metadata = {
     title: "BooksReader — Read anywhere",
     description:
       "Take your library with you. Read offline and sync across devices.",
-    url: "https://your-domain.com",
+    url: "https://booksreader.vercel.app/",
     images: ["/og-image.png"],
   },
   robots: {
@@ -18,7 +18,7 @@ export const metadata = {
     follow: true,
   },
   alternates: {
-    canonical: "https://your-domain.com/",
+    canonical: "https://booksreader.vercel.app/",
   },
 };
 
@@ -108,10 +108,11 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
 
           <h2 className="text-3xl font-bold text-white mb-6">Ready to start your reading journey?</h2>
-          <p className="text-xl text-blue-100 mb-8">Join thousands of readers who enjoy their favorite books with BooksReader.</p>
+          <p className="text-xl text-blue-100 mb-8">Start enjoying your favorite books with BooksReader.</p>
           <Link 
             href="/signup"
             className="inline-block bg-white text-blue-600 hover:bg-gray-100 font-medium py-3 px-8 rounded-lg transition-colors"
+            aria-label="Get Started for Free"
           >
             Get Started for Free
           </Link>

@@ -63,7 +63,7 @@ export default function DeleteAccountSection({ userEmail }: Props) {
   }
 
   return (
-    <div className="pt-4 border-t">
+    <div className="mt-6 border border-gray-400 dark:border-gray-500 rounded-lg px-4 py-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-medium mb-1">Delete account</h3>

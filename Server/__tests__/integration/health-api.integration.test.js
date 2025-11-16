@@ -106,9 +106,7 @@ describe('Health and System API Integration Tests', () => {
         .set('Content-Type', 'application/json')
         .send('{ invalid json }');
 
-      // Body-parser returns 500 for malformed JSON (not 400)
-      // This is the actual behavior of the middleware
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
     });
   });

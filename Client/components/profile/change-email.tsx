@@ -55,12 +55,19 @@ export default function ChangeEmailSection({ userEmail }: Props) {
   }
   if (!editing) {
     return (
-      <div className="space-y-3">
+      <div className="">
         <h3 className="font-medium">Change email</h3>
-        <div className="text-sm text-muted-foreground">Current: {userEmail || '—'}</div>
-        <div className="flex gap-2 mt-2">
-          <Button onClick={() => setEditing(true)}>Change email</Button>
+        <div className="flex flex-row justify-between items-center">
+          <div className="text-sm text-muted-foreground">
+            Current: {userEmail || '—'}
+          </div>
+          <div className="flex gap-2 items-center">
+            <Button onClick={() => setEditing(true)}>
+              Change email
+            </Button>
+          </div>
         </div>
+        
         {success && <p className="text-sm text-green-600 mt-2">{success}</p>}
       </div>
     )

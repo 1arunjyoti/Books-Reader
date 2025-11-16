@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Menu, User, X } from 'lucide-react';
+import { BookOpen, LogOut, Menu, User, X } from 'lucide-react';
 
 interface NavbarClientProps {
   user: {
@@ -57,7 +57,7 @@ export default function NavbarClient({ user }: NavbarClientProps) {
           </Avatar>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-48 z-10 rounded-lg shadow-lg ring-1 ring-border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900" align="end">
+      <DropdownMenuContent className="w-56 z-10 rounded-lg shadow-lg ring-1 ring-border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900" align="end">
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium">{user.name || user.nickname || 'User'}</p>
           <p className="text-xs text-muted-foreground">{user.email}</p>
@@ -65,12 +65,13 @@ export default function NavbarClient({ user }: NavbarClientProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>  
           <Link href="/library" className="flex items-center gap-2">
-          <User className="h-4 w-4" />
+          <BookOpen className="h-4 w-4" />
           Library
         </Link>
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/profile" className="flex items-center gap-2">
+          <Link href="/profile" className="flex items-center gap-2 text-green-700 dark:text-green-300">
             <User className="h-4 w-4" />
             Profile Settings
           </Link>
@@ -96,6 +97,7 @@ export default function NavbarClient({ user }: NavbarClientProps) {
           <Link
             href="/"
             className="text-xl font-bold text-gray-800 hover:text-gray-600 dark:text-white dark:hover:text-gray-200 transition-colors"
+            aria-label="BooksReader Home"
           >
             BooksReader
           </Link>
@@ -109,9 +111,12 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMenuOpen((prev) => !prev)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                className=" rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                aria-label="Toggle menu"
               >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {isMenuOpen ? 
+                  <X className="h-6 w-6" /> : <Menu className="h-6 w-6" 
+                />}
                 <span className="sr-only">Toggle menu</span>
               </Button>
             )}
@@ -132,10 +137,11 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                   asChild
                   variant="outline"
                   className="text-gray-700 dark:text-gray-200"
+                  aria-label="Sign In"
                 >
                   <Link href="/signin">Sign In</Link>
                 </Button>
-                <Button asChild className="mr-2">
+                <Button asChild className="mr-2" aria-label="Sign Up">
                   <Link href="/signup">Sign Up</Link>
                 </Button>
               </div>

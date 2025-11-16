@@ -94,7 +94,9 @@ export default function TermsPage() {
 
         <section id="contact" className="mb-4">
           <h2 className="text-lg sm:text-xl font-medium text-gray-900 dark:text-white mb-2">Contact</h2>
-          <p className="text-gray-700 dark:text-gray-300">If you have questions about these Terms, please visit our <Link href="/contact" className="text-blue-600 dark:text-blue-400">contact page</Link> or email <a className="text-blue-600 dark:text-blue-400" href="mailto:legal@booksreader.example">legal@booksreader.example</a>.</p>
+          <p className="text-gray-700 dark:text-gray-300">If you have questions about these Terms, please visit our 
+            <Link href="/contact" className="text-blue-600 dark:text-blue-400"> contact page</Link> 
+          </p>
         </section>
 
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-6">Back to <Link href="/" className="text-blue-600 dark:text-blue-400">home</Link>.</p>

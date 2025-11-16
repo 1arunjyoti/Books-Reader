@@ -7,13 +7,11 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <>
-      <a className="sr-only focus:not-sr-only" href="#main-content">Skip to content</a>
       <main id="main-content" className="container mx-auto px-4 py-8 max-w-7xl" role="main">
         <header className="p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-lg shadow-sm">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">About BooksReader</h1>
           <p className="text-gray-700 dark:text-gray-300 mb-4">
-            BooksReader is a lightweight, cross-platform application built to make reading digital books simple and enjoyable. We support PDFs, EPUBs and plain text formats and provide features like collections, highlights, bookmarks, and more.
+            BooksReader is a lightweight platform, built to make reading digital books simple and enjoyable. We support PDFs, EPUBs and plain text formats and provide features like collections, highlights, bookmarks, and more.
           </p>
 
           <h2 id="mission-heading" className="text-lg sm:text-xl font-medium text-gray-900 dark:text-white mb-2">Our mission</h2>
@@ -76,20 +74,7 @@ export default function AboutPage() {
           </ul>
         </details>
 
-        <style>{`
-          /* Remove default marker */
-          summary::-webkit-details-marker { display: none; }
-          summary::marker { display: none; }
-
-          /* Rotate the arrow when open */
-          details svg { transition: transform 0.18s ease; }
-          details[open] svg { transform: rotate(180deg); }
-
-          /* Improve summary hit area */
-          summary { padding: 0.25rem 0; }
-        `}</style>
       </section>
       </main>
-    </>
   );
 }

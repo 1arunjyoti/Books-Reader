@@ -45,8 +45,8 @@ const StatusFilter = memo(function StatusFilter({ value, onChange }: Props) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
-          className="h-8 px-3 hover:bg-white dark:hover:bg-gray-700 data-[state=open]:bg-white dark:data-[state=open]:bg-gray-700 transition-all"
+          variant="outline"
+          className="h-auto w-auto justify-between border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 group text-sm sm:text-base data-[state=open]:bg-white dark:data-[state=open]:bg-gray-700 transition-all"
         >
           <Filter className="h-4 w-4 mr-1 text-gray-500" />
           <span className="text-md font-medium">

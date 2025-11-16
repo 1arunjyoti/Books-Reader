@@ -1,5 +1,23 @@
 // Jest setup file for global test configuration
 require('dotenv').config({ path: '.env.test' });
+jest.mock('epub', () => {
+  const { EventEmitter } = require('events');
+
+  return class MockEpub extends EventEmitter {
+    constructor() {
+      super();
+      this.metadata = {};
+      this.flow = [];
+      this.toc = [];
+      this.manifest = {};
+      process.nextTick(() => this.emit('end'));
+    }
+
+    parse() {
+      this.emit('end');
+    }
+  };
+}, { virtual: true });
 
 // Global test timeout
 jest.setTimeout(10000);
@@ -58,6 +76,29 @@ const mockPrisma = {
     update: jest.fn(async ({ where, data }) => ({ id: where.id, ...data })),
     delete: jest.fn().mockResolvedValue({ id: 'deleted' }),
     deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+  },
+  readingSession: {
+    findMany: jest.fn().mockResolvedValue([]),
+    create: jest.fn(async ({ data }) => ({ id: `session-${Date.now()}`, ...data })),
+  },
+  readingGoal: {
+    findMany: jest.fn().mockResolvedValue([]),
+    findFirst: jest.fn().mockResolvedValue(null),
+    findUnique: jest.fn().mockResolvedValue(null),
+    create: jest.fn(async ({ data }) => ({ id: `goal-${Date.now()}`, ...data })),
+    update: jest.fn(async ({ where, data }) => ({ id: where.id, ...data })),
+    delete: jest.fn(async ({ where }) => ({ id: where.id })),
+  },
+  user: {
+    findUnique: jest.fn().mockResolvedValue(null),
+    findFirst: jest.fn().mockResolvedValue(null),
+    create: jest.fn(async ({ data }) => ({ id: data.id || `user-${Date.now()}`, ...data })),
+    update: jest.fn(async ({ where, data }) => ({ id: where.id, ...data })),
+    delete: jest.fn(async ({ where }) => ({ id: where.id })),
+    upsert: jest.fn(async ({ create, update, where }) => ({ id: where.id, ...(create || {}), ...(update || {}) })),
+  },
+  userProfile: {
+    upsert: jest.fn(async ({ create }) => ({ ...create })),
   },
   $connect: jest.fn().mockResolvedValue(undefined),
   $disconnect: jest.fn().mockResolvedValue(undefined),

@@ -74,7 +74,7 @@ export default async function ProfilePage() {
                 </div>
 
                 {/* Change Name Section */}
-                <div className="w-full pt-4 border-t">
+                <div className="w-full pt-4 border-t border-gray-300 dark:border-gray-600">
                   <ChangeNameSection 
                     initialName={getDisplayName()} 
                   />
@@ -112,10 +112,10 @@ export default async function ProfilePage() {
                   <div>
                     <h3 className="font-medium mb-2">Account Information</h3>
                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
+                      {/* <div className="flex justify-between">
                         <span className="text-muted-foreground">User ID:</span>
                         <span className="font-mono text-xs">{user.sub}</span>
-                      </div>
+                      </div> */}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Email:</span>
                         <span>{user.email}</span>
@@ -130,8 +130,7 @@ export default async function ProfilePage() {
                   <ChangeEmailSection userEmail={user.email} />
                   <ChangePasswordSection />
 
-                  <div className=" ">
-                    <div className="flex items-end justify-end my-2">
+                    <div className="flex items-end justify-end my-2 mt-6">
                       <Button asChild variant="destructive">
                         <a href="/api/auth/logout">
                           <LogOut className="h-4 w-4" />
@@ -140,8 +139,8 @@ export default async function ProfilePage() {
                       </Button>
                     </div>
 
-                    <DeleteAccountSection userEmail={user.email} />
-                  </div>
+                    
+                  <DeleteAccountSection userEmail={user.email} />
                 </CardContent>
               </Card>
             </TabsContent>

@@ -634,7 +634,7 @@ function LibraryPageContent() {
             <div className="flex flex-wrap md:flex-nowrap lg:flex-nowrap items-center gap-2">
               
               {/* Primary Filters */}
-              <div className="flex w-full justify-between items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 h-12">
+              <div className="flex w-full justify-between items-center gap-2 p-1 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 h-12">
                 {/* Status Filter */}
                 <StatusFilter value={filters.statusFilter} onChange={filters.setStatusFilter} />
 
@@ -644,18 +644,20 @@ function LibraryPageContent() {
                   onCollectionChange={setSelectedCollectionId}
                 />
                 
-                {/* Advanced Filters */}
+                
+              </div>
+              
+            </div>
+            {/* Secondary Actions */}
+            <div className="flex justify-end items-center gap-2">
+              <ViewModeToggle viewMode={viewMode} setViewMode={(m) => setViewMode(m)} />
+              
+              {/* Advanced Filters */}
                 <AdvancedFiltersComponent
                   filters={filters.advancedFilters}
                   onFiltersChange={filters.handleFiltersChange}
                   onReset={filters.resetFilters}
                 />
-              </div>
-              
-            </div>
-            {/* Secondary Actions */}
-            <div className="flex items-center gap-2">
-              <ViewModeToggle viewMode={viewMode} setViewMode={(m) => setViewMode(m)} />
             </div>
 
           </div>

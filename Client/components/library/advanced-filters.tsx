@@ -160,12 +160,12 @@ const AdvancedFiltersComponent = memo(function AdvancedFiltersComponent({ filter
       <SheetTrigger asChild>
         <Button
           variant="outline"
-          className="h-auto w-auto justify-between border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 group text-sm sm:text-base gap-2"
+          className="h-auto w-auto p-3 rounded-lg justify-between border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 group text-sm sm:text-base gap-2"
         >
           <SidebarOpen className="h-4 w-4" />
           
           {activeFiltersCount > 0 && (
-            <span className="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500 text-white">
+            <span className="ml-2 text-xs font-semibold rounded-full  text-blue-500">
               {activeFiltersCount}
             </span>
           )}

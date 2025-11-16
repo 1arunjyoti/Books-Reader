@@ -53,11 +53,17 @@ export default function ChangePasswordSection() {
   }
   if (!editing) {
     return (
-      <div className="space-y-3">
+      <div className="">
         <h3 className="font-medium">Change password</h3>
-        <div className="flex gap-2 mt-2">
-          <Button onClick={() => setEditing(true)}>Change password</Button>
+        <div className="flex flex-row justify-between items-center">
+          
+          <p className="text-sm text-muted-foreground mb-2">Change your password regularly to keep your account secure.</p>
+          
+          <div className="flex gap-2 items-center">
+            <Button onClick={() => setEditing(true)}>Change password</Button>
+          </div>
         </div>
+        
         {success && <p className="text-sm text-green-600 mt-2">{success}</p>}
       </div>
     )

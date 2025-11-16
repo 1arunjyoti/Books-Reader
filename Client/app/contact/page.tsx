@@ -29,7 +29,6 @@ export default function ContactPage() {
               </li>
             </ul>
 
-            <p className="text-sm text-gray-600 dark:text-gray-400">For legal requests, please email <a className="text-blue-600 dark:text-blue-400" href="mailto:legal@booksreader.example">legal@booksreader.example</a>.</p>
           </div>
 
           <div>
@@ -38,7 +37,7 @@ export default function ContactPage() {
           </div>
         </div>
 
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-6 md:mt-0">Back to <Link href="/" className="text-blue-600 dark:text-blue-400">home</Link>.</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-6 md:mt-4">Back to <Link href="/" className="text-blue-600 dark:text-blue-400">home</Link>.</p>
       </div>
     </main>
   );

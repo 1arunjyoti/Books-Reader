@@ -168,3 +168,5 @@ hs_err_pid*
 # Ignore Todo.md and other files
 Todo.md
 /readme_files/
+Server/test-log.txt
+tasksync.md
