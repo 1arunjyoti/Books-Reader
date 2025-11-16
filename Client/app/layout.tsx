@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/providers";
 import QueryProvider from '@/components/QueryProvider';
 import Navbar from "../components/layout/navbar";
 import Footer from "../components/layout/footer";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +76,7 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <Navbar />
             <main className="min-h-[calc(100vh-8rem)]">
+              <SpeedInsights />
               {children}
             </main>
             <Footer />
