@@ -7,18 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  ZoomIn,
-  ZoomOut,
   BookOpen,
   X,
   Maximize,
@@ -27,16 +18,12 @@ import {
   BookmarkPlus,
   List,
   Highlighter,
-  Type,
   Search,
   Volume2,
   Settings,
-  AlignJustify,
-  Book,
-  Paintbrush,
   Eye,
   EyeOff,
-  RotateCw,
+  Type,
 } from 'lucide-react';
 
 // Component imports
@@ -48,6 +35,7 @@ import EpubSearchPanel from './EpubSearchPanel';
 import EpubColorFilterPanel from './EpubColorFilterPanel';
 import EpubTTSPanel from './EpubTTSPanel';
 import DisplayOptionsPanel from './DisplayOptionsPanel';
+import MobileOptionsPanel from './MobileOptionsPanel';
 import { logger } from '@/lib/logger';
 import { useToast, ToastContainer } from '@/components/ui/toast';
 
@@ -117,6 +105,7 @@ const getReaderStyles = (colorFilter: string, customBgColor: string) => {
       right: 10,
     },
     arrow: {
+      display: 'none',
       outline: 'none',
       border: 'none',
       background: 'none',
@@ -168,6 +157,16 @@ export default function ReactEpubViewer({
   const [bookTitle, setBookTitle] = useState('EPUB Book');
   const [toc, setToc] = useState<NavItem[]>([]);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [showMobileOptions, setShowMobileOptions] = useState(false);
+  
+  // Touch handler state refs
+  const touchStartYRef = useRef(0);
+  const touchAccumulatorRef = useRef(0);
+  const lastTouchTimeRef = useRef(0);
+  const lastTouchMoveTimeRef = useRef(0);
+  const TOUCH_SCROLL_THRESHOLD = 70; // Pixels to scroll before turning page
+  const TOUCH_COOLDOWN = 150; // Minimum ms between page turns
+  const TOUCH_MOVE_THROTTLE = 8; // ~120fps throttle for touchmove events (8ms = 1000/120)
   
   // Toast notifications
   const { toasts, closeToast, success, error } = useToast();
@@ -228,10 +227,10 @@ export default function ReactEpubViewer({
   // Text selection toggle
   const [enableTextSelection, setEnableTextSelection] = useState(false);
 
-  // Reading mode: Auto-hide toolbar on desktop only
+  // Reading mode: Auto-hide toolbar on desktop and mobile
   const { readingMode, setReadingMode, toolbarVisible } = useReadingMode({
     bookId,
-    enabled: !isMobileView, // Disable reading mode on mobile
+    enabled: true, // Enable reading mode on all devices
   });
 
   // Load bookmarks and highlights on mount
@@ -250,6 +249,73 @@ export default function ReactEpubViewer({
       bookmarks: bookmarks.bookmarks
     });
   }, [bookmarks.bookmarks, bookmarks.isLoadingBookmarks]);
+
+  // Track mobile view for responsive layout
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Memoized touch handlers using useCallback
+  const handleTouchStart = useCallback((event: globalThis.TouchEvent) => {
+    if (event.touches.length === 1) {
+      touchStartYRef.current = event.touches[0].clientY;
+      touchAccumulatorRef.current = 0; // Reset accumulator on new touch
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((event: globalThis.TouchEvent) => {
+    if (event.touches.length === 1) {
+      const now = Date.now();
+      
+      // Throttle touchmove events to improve performance (~60fps)
+      if (now - lastTouchMoveTimeRef.current < TOUCH_MOVE_THROTTLE) {
+        return;
+      }
+      
+      lastTouchMoveTimeRef.current = now;
+      const currentY = event.touches[0].clientY;
+      const deltaY = touchStartYRef.current - currentY; // Calculate vertical movement
+      touchAccumulatorRef.current += deltaY;
+      touchStartYRef.current = currentY; // Update start position for continuous tracking
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    const now = Date.now();
+
+    // Cooldown check - prevent too rapid page changes
+    if (now - lastTouchTimeRef.current < TOUCH_COOLDOWN) {
+      return;
+    }
+
+    // Check if we've scrolled enough to turn page
+    if (Math.abs(touchAccumulatorRef.current) >= TOUCH_SCROLL_THRESHOLD) {
+      if (touchAccumulatorRef.current > 0) {
+        // Scrolling down = next page
+        // Use safeNavigate wrapper
+        navigation.safeNavigate(() => {
+          renditionRef.current?.next();
+          logger.log('Touch scroll next page');
+        });
+        lastTouchTimeRef.current = now;
+      } else {
+        // Scrolling up = previous page
+        // Use safeNavigate wrapper
+        navigation.safeNavigate(() => {
+          renditionRef.current?.prev();
+          logger.log('Touch scroll previous page');
+        });
+        lastTouchTimeRef.current = now;
+      }
+    }
+  }, [navigation]);
 
   // Track mobile view for responsive layout
   useEffect(() => {
@@ -525,12 +591,24 @@ export default function ReactEpubViewer({
         logger.log('Scroll navigation attached to EPUB content');
       }
 
+      // TOUCH SCROLL NAVIGATION: Add touch event listeners for mobile devices
+      // Use memoized handlers from component scope
+      if (contents.document) {
+        contents.document.addEventListener('touchstart', handleTouchStart, { passive: true });
+        contents.document.addEventListener('touchmove', handleTouchMove, { passive: true });
+        contents.document.addEventListener('touchend', handleTouchEnd, { passive: true });
+        logger.log('Touch scroll navigation attached to EPUB content');
+      }
+
       // Clean up scroll listener when content is unloaded
       // This happens when navigating to a new chapter/page
       contents.on('unloaded', () => {
         if (contents.document) {
           contents.document.removeEventListener('wheel', handleContentWheel);
-          logger.log('Scroll navigation cleaned up from EPUB content');
+          contents.document.removeEventListener('touchstart', handleTouchStart);
+          contents.document.removeEventListener('touchmove', handleTouchMove);
+          contents.document.removeEventListener('touchend', handleTouchEnd);
+          logger.log('Scroll and touch navigation cleaned up from EPUB content');
         }
       });
 
@@ -577,7 +655,7 @@ export default function ReactEpubViewer({
         navigation.generateLocations(rendition.book);
       }, 500);
     });
-  }, [navigation, displayOptions]);
+  }, [navigation, displayOptions, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -611,6 +689,12 @@ export default function ReactEpubViewer({
   // Helper functions
   const currentPageBookmark = bookmarks.getPageBookmark(navigation.pageInfo.current);
   const isCurrentPageBookmarked = !!currentPageBookmark;
+
+  const decreaseRotation = () => {
+    for (let i = 0; i < 3; i++) {
+      displayOptions.rotatePage();
+    }
+  };
 
   // Toggle bookmark for current page
   const toggleBookmark = async () => {
@@ -648,7 +732,7 @@ export default function ReactEpubViewer({
     >
       {/* Header Toolbar */}
       {(!readingMode || toolbarVisible) && (
-      <div className={`border-b px-2 sm:px-4 py-2 sm:py-3 flex-shrink-0 ${
+      <div className={`border-b px-4 sm:px-4 py-4 sm:py-4 flex-shrink-0 ${
         displayOptions.colorFilter === 'dark' 
           ? 'bg-gray-900 border-gray-800 text-white' 
           : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
@@ -874,76 +958,16 @@ export default function ReactEpubViewer({
           <div className="flex lg:hidden items-center gap-1">
             <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
             
-            {/* More Options Dropdown - Mobile */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="More options"
-                  className="h-8 w-8 sm:h-9 sm:w-9"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={displayOptions.decreaseFontSize}>
-                  <ZoomOut className="h-4 w-4 mr-2" />
-                  <span>Decrease Font ({displayOptions.fontSize}%)</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={displayOptions.increaseFontSize}>
-                  <ZoomIn className="h-4 w-4 mr-2" />
-                  <span>Increase Font ({displayOptions.fontSize}%)</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={displayOptions.toggleFontFamily}>
-                  <Type className="h-4 w-4 mr-2" />
-                  <span>Font: {displayOptions.fontFamily === 'serif' ? 'Serif' : 'Sans-serif'}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={displayOptions.decreaseLineHeight}>
-                  <AlignJustify className="h-4 w-4 mr-2" />
-                  <span>Line Height: {displayOptions.lineHeight.toFixed(1)}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={displayOptions.togglePageLayout}>
-                  <Book className="h-4 w-4 mr-2" />
-                  <span>{displayOptions.pageLayout === 'single' ? 'Single Page' : 'Double Page'}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={displayOptions.toggleColorFilter}>
-                  <Paintbrush className="h-4 w-4 mr-2" />
-                  <span>Theme: {displayOptions.colorFilter.charAt(0).toUpperCase() + displayOptions.colorFilter.slice(1)}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={displayOptions.rotatePage}>
-                  <RotateCw className="h-4 w-4 mr-2" />
-                  <span>Rotate ({displayOptions.rotation}°)</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setReadingMode(!readingMode)}>
-                  {readingMode ? (
-                    <><EyeOff className="h-4 w-4 mr-2" /><span>Exit Reading Mode</span></>
-                  ) : (
-                    <><Eye className="h-4 w-4 mr-2" /><span>Reading Mode</span></>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setEnableTextSelection(!enableTextSelection)}>
-                  <Type className="h-4 w-4 mr-2" />
-                  <span>Text Selection</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={tts.toggleTTSControls}>
-                  <Volume2 className="h-4 w-4 mr-2" />
-                  <span>Text-to-Speech</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={displayOptions.toggleFullscreen}>
-                  {displayOptions.isFullscreen ? (
-                    <><Minimize className="h-4 w-4 mr-2" /><span>Exit Fullscreen</span></>
-                  ) : (
-                    <><Maximize className="h-4 w-4 mr-2" /><span>Enter Fullscreen</span></>
-                  )}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* More Options Button - Mobile */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowMobileOptions(!showMobileOptions)}
+              title="More options"
+              className="h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Close - Always visible */}
@@ -1148,6 +1172,19 @@ export default function ReactEpubViewer({
             />
           </>
         )}
+
+        {/* Mobile Options Panel */}
+        <MobileOptionsPanel
+          showMobileOptions={showMobileOptions}
+          onClose={() => setShowMobileOptions(false)}
+          displayOptions={displayOptions}
+          tts={tts}
+          enableTextSelection={enableTextSelection}
+          setEnableTextSelection={setEnableTextSelection}
+          readingMode={readingMode}
+          setReadingMode={setReadingMode}
+          decreaseRotation={decreaseRotation}
+        />
       </div>
 
       {/* Modals and Forms - Outside reader area */}
@@ -1186,41 +1223,43 @@ export default function ReactEpubViewer({
       )}
 
       {/* Bottom Navigation Bar (Mobile Only) */}
-      <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 flex-shrink-0 flex flex-col items-center">
-        {/* Current Chapter (Mobile) */}
-        {navigation.currentChapter && (
-          <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-full">
-            {navigation.currentChapter}
-          </span>
-        )}
+      {(!readingMode || toolbarVisible) && (
+        <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 flex-shrink-0 flex flex-col items-center">
+          {/* Current Chapter (Mobile) */}
+          {navigation.currentChapter && (
+            <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-full">
+              {navigation.currentChapter}
+            </span>
+          )}
 
-        {/* Page change buttons */}
-        <div className="flex items-center justify-between w-full mt-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={navigation.goToPrevPage}
-            disabled={navigation.pageInfo.current <= 1}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
+          {/* Page change buttons */}
+          <div className="flex items-center justify-between w-full mt-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={navigation.goToPrevPage}
+              disabled={navigation.pageInfo.current <= 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
 
-          <span className="text-sm text-gray-600 dark:text-gray-300">
-            {navigation.pageInfo.current} / {navigation.pageInfo.total}
-          </span>
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {navigation.pageInfo.current} / {navigation.pageInfo.total}
+            </span>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={navigation.goToNextPage}
-            disabled={navigation.pageInfo.current >= navigation.pageInfo.total}
-          >
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={navigation.goToNextPage}
+              disabled={navigation.pageInfo.current >= navigation.pageInfo.total}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Toast notifications */}
       <ToastContainer toasts={toasts} onClose={closeToast} />

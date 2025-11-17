@@ -242,8 +242,7 @@ describe('useEpubAnalytics', () => {
       });
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        '[❌] Failed to get access token for reading session',
-        undefined
+        '[❌] Failed to get access token for reading session'
       );
       expect(mockCreateReadingSession).not.toHaveBeenCalled();
 

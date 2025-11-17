@@ -243,6 +243,23 @@ export function useEpubDisplayOptions({ renditionRef, bookId, onFontChange }: Us
     setShowColorFilter((prev) => !prev);
   }, []);
 
+  // Cycle through color filter themes
+  const cycleColorFilter = useCallback(() => {
+    setColorFilter((prev) => {
+      switch (prev) {
+        case 'none':
+          return 'sepia';
+        case 'sepia':
+          return 'dark';
+        case 'dark':
+          return 'none';
+        
+        default:
+          return 'none';
+      }
+    });
+  }, []);
+
   // Toggle display options panel
   const toggleDisplayOptions = useCallback(() => {
     setShowDisplayOptions((prev) => !prev);
@@ -295,6 +312,7 @@ export function useEpubDisplayOptions({ renditionRef, bookId, onFontChange }: Us
     rotatePage,
     resetRotation,
     toggleColorFilter,
+    cycleColorFilter,
     toggleDisplayOptions,
   };
 }

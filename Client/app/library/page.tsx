@@ -28,6 +28,7 @@ import { preloadPdfJs } from '@/lib/pdf-preloader';
 import { preloadEpubJs } from '@/lib/epub-preloader';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import WelcomeScreen from '@/components/library/welcome-screen';
+import { logger } from '@/lib/logger';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,7 +69,7 @@ function LibraryPageContent() {
   
   // Add debug log for showWelcomeScreen state changes
   useEffect(() => {
-    console.log('[Welcome Screen] showWelcomeScreen state changed to:', showWelcomeScreen);
+    logger.log('[Welcome Screen] showWelcomeScreen state changed to:', showWelcomeScreen);
   }, [showWelcomeScreen]);
   
   // Timer refs for cleanup
@@ -109,58 +110,58 @@ function LibraryPageContent() {
   const checkWelcomeStatusFunc = useCallback(async () => {
     // Don't check if we've already checked or if welcome screen was manually dismissed
     if (welcomeChecked) {
-      console.log('[Welcome Screen] Welcome status already checked, skipping...');
+      logger.log('[Welcome Screen] Welcome status already checked, skipping...');
       return;
     }
     
     try {
-      console.log('[Welcome Screen] Starting welcome status check...');
+      logger.log('[Welcome Screen] Starting welcome status check...');
       const token = await getAccessToken();
       if (!token) {
-        console.log('[Welcome Screen] No access token available for welcome screen check');
+        logger.log('[Welcome Screen] No access token available for welcome screen check');
         setWelcomeChecked(true);
         return;
       }
-      console.log('[Welcome Screen] Access token obtained');
+      logger.log('[Welcome Screen] Access token obtained');
 
       // Fetch user profile to get the user's name
       // Note: userId is not actually used by the API - it uses the JWT token
       try {
-        console.log('[Welcome Screen] Fetching user profile...');
+        logger.log('[Welcome Screen] Fetching user profile...');
         const userProfile = await fetchUserProfile('user', token, ['name']);
-        console.log('[Welcome Screen] User profile fetched:', userProfile);
+        logger.log('[Welcome Screen] User profile fetched:', userProfile);
         if (userProfile?.name) {
           setUserName(userProfile.name);
-          console.log('[Welcome Screen] User name set:', userProfile.name);
+          logger.log('[Welcome Screen] User name set:', userProfile.name);
         }
       } catch (profileError) {
-        console.warn('[Welcome Screen] Failed to fetch user profile:', profileError);
+        logger.warn('[Welcome Screen] Failed to fetch user profile:', profileError);
         // Continue even if profile fetch fails
       }
 
       // Check welcome screen status
       try {
-        console.log('[Welcome Screen] Checking welcome status...');
+        logger.log('[Welcome Screen] Checking welcome status...');
         const welcomeShown = await getWelcomeStatus(token);
-        console.log('[Welcome Screen] Welcome status received:', welcomeShown);
+        logger.log('[Welcome Screen] Welcome status received:', welcomeShown);
         
         // Mark that we've completed the check
         setWelcomeChecked(true);
         
         // If welcome hasn't been shown, display it
         if (!welcomeShown) {
-          console.log('[Welcome Screen] Showing welcome screen (welcomeShown is false)');
+          logger.log('[Welcome Screen] Showing welcome screen (welcomeShown is false)');
           setShowWelcomeScreen(true);
         } else {
-          console.log('[Welcome Screen] Not showing welcome screen (welcomeShown is true)');
+          logger.log('[Welcome Screen] Not showing welcome screen (welcomeShown is true)');
         }
       } catch (welcomeError) {
-        console.warn('[Welcome Screen] Failed to check welcome status:', welcomeError);
+        logger.warn('[Welcome Screen] Failed to check welcome status:', welcomeError);
         setWelcomeChecked(true);
         // Don't show welcome screen if we can't verify status
       }
     } catch (error) {
-      console.error('[Welcome Screen] Error in welcome screen initialization:', error);
+      logger.error('[Welcome Screen] Error in welcome screen initialization:', error);
       setWelcomeChecked(true);
     }
   }, [getAccessToken, welcomeChecked]);
@@ -178,12 +179,12 @@ function LibraryPageContent() {
       const token = await getAccessToken();
       if (token) {
         await markWelcomeShown(token);
-        console.log('[Welcome Screen] Successfully marked welcome as shown');
+        logger.log('[Welcome Screen] Successfully marked welcome as shown');
       } else {
-        console.warn('No access token available to mark welcome as shown');
+        logger.warn('No access token available to mark welcome as shown');
       }
     } catch (error) {
-      console.error('Error marking welcome shown:', error);
+      logger.error('Error marking welcome shown:', error);
       // Don't throw - welcome screen is already closed
     }
   }, [getAccessToken]);

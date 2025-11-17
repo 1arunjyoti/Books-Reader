@@ -16,39 +16,26 @@ import {
 import { 
   ChevronLeft, 
   ChevronRight, 
-  ZoomIn, 
-  ZoomOut, 
   Maximize, 
   Minimize,
-  Download,
   BookOpen,
   X,
   Bookmark,
   BookmarkPlus,
   List,
   Search,
-  RotateCw,
   Layers,
-  BookMarked,
   Volume2,
-  Palette,
   Type,
-  ChevronDown,
   Settings,
   Highlighter,
   Eye,
   EyeOff,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { ScaledPosition } from 'react-pdf-highlighter';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import BookmarkForm from '../bookmark-form';
 import ThumbnailSidebar from '../thumbnail-sidebar';
 import PDFContentsAndBookmarksPanel from './PDFContentsAndBookmarksPanel';
@@ -71,6 +58,7 @@ import {
   createHighlight as createHighlightApi,
 } from '@/lib/highlights-api';
 import PDFHighlightsPanel from './PDFHighlightsPanel';
+import PDFMobileOptionsPanel from './PDFMobileOptionsPanel';
 import type { PdfHighlight, PdfHighlightRect } from '@/types/highlights';
 
 interface RawPdfHighlight extends Omit<PdfHighlight, 'rects' | 'boundingRect'> {
@@ -257,10 +245,10 @@ export function PDFReader({
   // Mobile detection for performance optimizations
   const isMobile = useMobileDetection();
 
-  // Reading mode: Auto-hide toolbar on desktop only
+  // Reading mode: Auto-hide toolbar on all devices
   const { readingMode, setReadingMode, toolbarVisible } = useReadingMode({
     bookId,
-    enabled: !isMobile, // Desktop only
+    enabled: true, // Enable on all devices including mobile
   });
 
   // ==================== CONSOLIDATED STATE WITH REDUCERS ====================
@@ -298,6 +286,7 @@ export function PDFReader({
       tts: false,
       displayOptions: false,
       highlights: false,
+      mobileOptions: false,
     },
   });
 
@@ -331,6 +320,7 @@ export function PDFReader({
   const showTTS = panels.tts;
   const showDisplayOptions = panels.displayOptions;
   const showHighlightsPanel = panels.highlights;
+  const showMobileOptions = panels.mobileOptions;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -990,7 +980,7 @@ export function PDFReader({
       <div className="fixed inset-0 flex flex-col bg-gray-50 dark:bg-gray-900 z-50">
         {/* Header Toolbar - Auto-hides in reading mode */}
         {(!readingMode || toolbarVisible) && (
-      <div className="bg-white dark:bg-gray-800 border-b border-white dark:border-gray-800 px-2 sm:px-4 py-2 sm:py-3 flex-shrink-0 transition-opacity duration-300">
+      <div className="bg-white dark:bg-gray-800 border-b border-white dark:border-gray-800 px-4 sm:px-4 py-4 sm:py-3 flex-shrink-0 transition-opacity duration-300">
         <div className="flex items-center justify-between gap-2">
           {/* Left Section - Title */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1081,6 +1071,17 @@ export function PDFReader({
               <List className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
 
+            {/* Highlights Panel - Always visible */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'highlights' })}
+              title="Highlights"
+              className={`h-8 w-8 sm:h-9 sm:w-9 hover:bg-blue-200 dark:hover:bg-blue-900 ${showHighlightsPanel ? "bg-blue-200 dark:bg-blue-900" : ""}`}
+            >
+              <Highlighter className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+
             {/* Desktop Advanced Features */}
             <div className="hidden lg:flex items-center gap-2">
               <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
@@ -1118,17 +1119,6 @@ export function PDFReader({
                 <Volume2 className="h-5 w-5" />
               </Button>
 
-              {/* Highlights Panel */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'highlights' })}
-                title="Highlights"
-                className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${showHighlightsPanel ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-              >
-                <Highlighter className="h-5 w-5" />
-              </Button>
-              
               {/* Text Selection Toggle */}
               <Button
                 variant="ghost"
@@ -1161,93 +1151,16 @@ export function PDFReader({
             <div className="flex lg:hidden items-center gap-1">
               <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
               
-              {/* More Options Dropdown - Mobile */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title="More options"
-                    className="h-8 w-8"
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
-                  {/* Thumbnails */}
-                  <DropdownMenuItem onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'thumbnails' })}>
-                    <Layers className="h-4 w-4 mr-2" />
-                    <span>{showThumbnails ? 'Hide Thumbnails' : 'Page Thumbnails'}</span>
-                  </DropdownMenuItem>
-                  
-                  {/* Table of Contents */}
-                  <DropdownMenuItem onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'contentsAndBookmarks' })}>
-                    <BookMarked className="h-4 w-4 mr-2" />
-                    <span>{showContentsAndBookmarksPanel ? 'Hide Contents' : 'Contents & Bookmarks'}</span>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator />
-                  
-                  {/* Zoom Controls */}
-                  <DropdownMenuItem onClick={zoomOut}>
-                    <ZoomOut className="h-4 w-4 mr-2" />
-                    <span>Zoom Out ({Math.round(scale * 100)}%)</span>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem onClick={zoomIn}>
-                    <ZoomIn className="h-4 w-4 mr-2" />
-                    <span>Zoom In ({Math.round(scale * 100)}%)</span>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator />
-                  
-                  {/* Text-to-Speech */}
-                  <DropdownMenuItem onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'tts' })}>
-                    <Volume2 className="h-4 w-4 mr-2" />
-                    <span>{showTTS ? 'Stop Reading' : 'Read Aloud'}</span>
-                  </DropdownMenuItem>
-                  
-                  {/* Highlights */}
-                  <DropdownMenuItem onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'highlights' })}>
-                    <Highlighter className="h-4 w-4 mr-2" />
-                    <span>{showHighlightsPanel ? 'Hide Highlights' : 'Highlights'}</span>
-                  </DropdownMenuItem>
-
-                  {/* Text Selection */}
-                  <DropdownMenuItem onClick={() => dispatchUI({ type: 'SET_TEXT_SELECTION', payload: !enableTextSelection })}>
-                    <Type className="h-4 w-4 mr-2" />
-                    <span>{enableTextSelection ? 'Disable Text Selection' : 'Enable Text Selection'}</span>
-                  </DropdownMenuItem>
-                  
-                  {/* Rotation */}
-                  <DropdownMenuItem onClick={() => dispatchViewer({ type: 'SET_ROTATION', payload: normalizeRotationValue(rotation + 90) })}>
-                    <RotateCw className="h-4 w-4 mr-2" />
-                    <span>Rotate Page</span>
-                  </DropdownMenuItem>
-                  
-                  {/* Color Filters */}
-                  <DropdownMenuItem onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'displayOptions' })}>
-                    <Palette className="h-4 w-4 mr-2" />
-                    <span>{showDisplayOptions ? 'Hide Display Options' : 'Display Options'}</span>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator />
-                  
-                  {/* Fullscreen */}
-                  <DropdownMenuItem onClick={toggleFullscreen}>
-                    {isFullscreen ? <Minimize className="h-4 w-4 mr-2" /> : <Maximize className="h-4 w-4 mr-2" />}
-                    <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
-                  </DropdownMenuItem>
-                  
-                  {/* Download */}
-                  <DropdownMenuItem asChild>
-                    <a href={url} download className="flex items-center cursor-pointer">
-                      <Download className="h-4 w-4 mr-2" />
-                      <span>Download PDF</span>
-                    </a>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* More Options Button - Mobile */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'mobileOptions' })}
+                title="More options"
+                className="h-8 w-8"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </Button>
             </div>
               
             {/* Fullscreen button - Tablet and up */}
@@ -1405,6 +1318,38 @@ export function PDFReader({
             onClose={() => dispatchUI({ type: 'SET_PANEL', payload: { panel: 'displayOptions', open: false } })}
           />
         )}
+
+        {/* Mobile Options Panel */}
+        {showMobileOptions && (
+          <PDFMobileOptionsPanel
+            showMobileOptions={showMobileOptions}
+            onClose={() => dispatchUI({ type: 'SET_PANEL', payload: { panel: 'mobileOptions', open: false } })}
+            scale={scale}
+            rotation={rotation}
+            enableTextSelection={enableTextSelection}
+            readingMode={readingMode}
+            isFullscreen={isFullscreen}
+            showThumbnails={showThumbnails}
+            showTTS={showTTS}
+            colorFilter={colorFilter}
+            onZoomIn={zoomIn}
+            onZoomOut={zoomOut}
+            onRotate={() => dispatchViewer({ type: 'SET_ROTATION', payload: normalizeRotationValue(rotation + 90) })}
+            onResetRotation={() => dispatchViewer({ type: 'SET_ROTATION', payload: DEFAULT_ROTATION })}
+            onDecreaseRotation={() => dispatchViewer({ type: 'SET_ROTATION', payload: normalizeRotationValue(rotation - 90) })}
+            onToggleThumbnails={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'thumbnails' })}
+            onToggleTTS={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'tts' })}
+            onCycleColorFilter={() => {
+              const themes: Array<'none' | 'sepia' | 'dark' | 'custom'> = ['none', 'sepia', 'dark', 'custom'];
+              const currentIndex = themes.indexOf(colorFilter);
+              const nextIndex = (currentIndex + 1) % themes.length;
+              dispatchUI({ type: 'SET_COLOR_FILTER', payload: themes[nextIndex] });
+            }}
+            onToggleTextSelection={(value) => dispatchUI({ type: 'SET_TEXT_SELECTION', payload: value })}
+            onToggleReadingMode={(value) => setReadingMode(value)}
+            onToggleFullscreen={toggleFullscreen}
+          />
+        )}
       </div>
 
       {/* Bookmark Form Modal */}
@@ -1422,33 +1367,35 @@ export function PDFReader({
       )}
 
       {/* Bottom Toolbar (Mobile) */}
-      <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={prevPage}
-            disabled={currentPage <= 1}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
+      {(!readingMode || toolbarVisible) && (
+        <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={prevPage}
+              disabled={currentPage <= 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
 
-          <span className="text-sm text-gray-600 dark:text-gray-300">
-            {currentPage} / {numPages}
-          </span>
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {currentPage} / {numPages}
+            </span>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={nextPage}
-            disabled={currentPage >= numPages}
-          >
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={nextPage}
+              disabled={currentPage >= numPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
     </PDFReaderErrorBoundary>
   );

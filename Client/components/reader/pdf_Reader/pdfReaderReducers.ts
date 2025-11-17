@@ -90,6 +90,7 @@ export interface UIState {
     tts: boolean;
     displayOptions: boolean;
     highlights: boolean;
+    mobileOptions: boolean;
   };
 }
 

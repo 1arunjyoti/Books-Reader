@@ -83,9 +83,15 @@ export function useReadingMode({ bookId, enabled = true }: UseReadingModeOptions
       showToolbar();
     };
 
+    const handleTouchStart = () => {
+      // Show toolbar on any touch for mobile devices
+      showToolbar();
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('scroll', handleScroll);
+    window.addEventListener('touchstart', handleTouchStart);
 
     // Show toolbar initially
     showToolbar();
@@ -94,6 +100,7 @@ export function useReadingMode({ bookId, enabled = true }: UseReadingModeOptions
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('touchstart', handleTouchStart);
 
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
