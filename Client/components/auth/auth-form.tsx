@@ -3,36 +3,13 @@
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import Link from 'next/link';
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 interface AuthFormProps {
   type: 'signin' | 'signup';
 }
 
 export function AuthForm({ type }: AuthFormProps) {
-  const handleAuth0Login = () => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const returnTo = params.get('returnTo');
-      const url = returnTo ? `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}` : '/api/auth/login';
-      window.location.href = url;
-    } catch {
-      window.location.href = '/api/auth/login';
-    }
-  };
-
-  /* Handle Google login */
-  const handleGoogleLogin = () => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const returnTo = params.get('returnTo');
-      const base = `/api/auth/login?connection=google-oauth2`;
-      const url = returnTo ? `${base}&returnTo=${encodeURIComponent(returnTo)}` : base;
-      window.location.href = url;
-    } catch {
-      window.location.href = '/api/auth/login?connection=google-oauth2';
-    }
-  };
-
   return (
     <div className="w-full max-w-[400px] mx-auto px-4 sm:px-6">
       <div className="space-y-6">
@@ -47,13 +24,19 @@ export function AuthForm({ type }: AuthFormProps) {
           </p>
         </div>
         <div className="space-y-4">
-          <Button 
-            onClick={handleAuth0Login} 
-            className="w-full h-11 text-base"
-            type="button"
-          >
-            {type === 'signin' ? 'Sign In with Auth0' : 'Sign Up with Auth0'}
-          </Button>
+          {type === 'signin' ? (
+            <SignInButton mode="modal" forceRedirectUrl="/library">
+              <Button className="w-full h-11 text-base" type="button">
+                Sign In
+              </Button>
+            </SignInButton>
+          ) : (
+            <SignUpButton mode="modal" forceRedirectUrl="/library">
+              <Button className="w-full h-11 text-base" type="button">
+                Sign Up
+              </Button>
+            </SignUpButton>
+          )}
           
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -61,27 +44,17 @@ export function AuthForm({ type }: AuthFormProps) {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
+                Powered by Clerk
               </span>
             </div>
           </div>
-          
-          <Button 
-            variant="outline" 
-            type="button" 
-            className="w-full h-11 text-base"
-            onClick={handleGoogleLogin}
-          >
-            <Icons.google className="mr-2 h-4 w-4" />
-            Google
-          </Button>
         </div>
         <p className="text-center text-sm text-muted-foreground px-2">
           {type === 'signin' ? (
             <>
               Don&apos;t have an account?{' '}
               <Link
-                href="/signup"
+                href="/sign-up"
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Sign up
@@ -91,7 +64,7 @@ export function AuthForm({ type }: AuthFormProps) {
             <>
               Already have an account?{' '}
               <Link
-                href="/signin"
+                href="/sign-in"
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Sign in

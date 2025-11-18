@@ -14,14 +14,15 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: `
       default-src 'self';
-      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://unpkg.com;
+      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://unpkg.com https://*.clerk.accounts.dev https://challenges.cloudflare.com;
       style-src 'self' 'unsafe-inline' blob:;
       style-src-elem 'self' 'unsafe-inline' blob:;
       img-src 'self' blob: data: https:;
-      font-src 'self' data:;
-      connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'} https://va.vercel-scripts.com https://*.backblazeb2.com https://unpkg.com;
+      font-src 'self' data: blob:;
+      connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'} https://va.vercel-scripts.com https://*.backblazeb2.com https://unpkg.com https://*.clerk.accounts.dev https://api.clerk.com https://clerk-telemetry.com https://challenges.cloudflare.com;
       worker-src 'self' blob: https://unpkg.com;
       child-src 'self' blob:;
+      frame-src 'self' https://*.clerk.accounts.dev https://challenges.cloudflare.com;
       object-src 'none';
       base-uri 'self';
       form-action 'self';

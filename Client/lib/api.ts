@@ -428,8 +428,14 @@ export async function createReadingSession(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to log reading session' }));
-    throw new Error(error.error || 'Failed to log reading session');
+    const errorData = await response.json().catch(() => ({ error: 'Failed to log reading session' }));
+    console.error('[API] Reading session failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData,
+      hasToken: !!accessToken
+    });
+    throw new Error(errorData.error || 'Failed to log reading session');
   }
 
   return response.json();
@@ -614,21 +620,29 @@ export async function createCollection(
   data: CreateCollectionData,
   accessToken: string
 ): Promise<Collection> {
-  const response = await fetch(`${API_BASE_URL}/api/collections`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/collections`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to create collection' }));
-    throw new Error(error.error || 'Failed to create collection');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to create collection' }));
+      throw new Error(error.error || 'Failed to create collection');
+    }
+
+    return response.json();
+  } catch (error) {
+    // If network error (server unavailable)
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Collections require a server connection. Please ensure the backend server is running.');
+    }
+    throw error;
   }
-
-  return response.json();
 }
 
 /**
@@ -778,42 +792,53 @@ export async function uploadFromUrl(url: string, accessToken: string): Promise<B
 
 /**
  * Get welcome screen status
+ * Falls back to false (not shown) if server is unavailable
  */
 export async function getWelcomeStatus(accessToken: string): Promise<boolean> {
-  logger.log('[API] Calling GET /api/user/welcome-status');
-  const response = await fetch(`${API_BASE_URL}/api/user/welcome-status`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`
+  try {
+    logger.log('[API] Calling GET /api/user/welcome-status');
+    const response = await fetch(`${API_BASE_URL}/api/user/welcome-status`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    logger.log('[API] Welcome status response status:', response.status);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to get welcome status' }));
+      logger.warn('[API] Welcome status unavailable, defaulting to not shown:', error);
+      return false; // Default to showing welcome screen if server unavailable
     }
-  });
 
-  logger.log('[API] Welcome status response status:', response.status);
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to get welcome status' }));
-    logger.error('[API] Welcome status error:', error);
-    throw new Error(error.error || 'Failed to get welcome status');
+    const data = await response.json();
+    logger.log('[API] Welcome status data:', data);
+    return data.welcomeShown;
+  } catch (error) {
+    logger.warn('[API] Welcome status check failed (server unavailable), defaulting to not shown');
+    return false; // Default to showing welcome screen if server unavailable
   }
-
-  const data = await response.json();
-  logger.log('[API] Welcome status data:', data);
-  return data.welcomeShown;
 }
 
 /**
  * Mark welcome screen as shown
+ * Silently fails if server is unavailable
  */
 export async function markWelcomeShown(accessToken: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/user/welcome-shown`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`
-    }
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/user/welcome-shown`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to mark welcome shown' }));
-    throw new Error(error.error || 'Failed to mark welcome shown');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to mark welcome as shown' }));
+      logger.warn('[API] Could not mark welcome as shown (server unavailable):', error);
+    }
+  } catch (error) {
+    logger.warn('[API] Could not mark welcome as shown (server unavailable)');
   }
 }

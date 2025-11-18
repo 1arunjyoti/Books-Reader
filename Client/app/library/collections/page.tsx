@@ -45,7 +45,7 @@ export default function CollectionsPage() {
           <p className="text-muted-foreground mb-6">
             Please sign in to manage your collections
           </p>
-          <Button onClick={() => router.push('/signin')}>
+          <Button onClick={() => router.push('/sign-in')}>
             Sign In
           </Button>
         </div>

@@ -893,7 +893,7 @@ export function PDFReader({
       // Reset session
       dispatchSession({ type: 'START_SESSION', payload: { page: currentPage } });
     } catch (error) {
-      logger.error('Error logging reading session:', error);
+      logger.warn('Unable to log reading session (analytics unavailable):', error instanceof Error ? error.message : 'Unknown error');
     }
   }, [sessionStart, isWindowActive, currentPage, sessionStartPage, bookId, getAccessToken]);
   

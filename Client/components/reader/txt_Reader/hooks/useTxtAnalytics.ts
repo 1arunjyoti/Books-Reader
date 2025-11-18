@@ -123,7 +123,7 @@ export function useTxtSessionTracking(bookId: string, currentSection: number) {
         dispatchSession({ type: 'START_SESSION', payload: { section: currentSection } });
       }
     } catch (error) {
-      logger.error('Error logging reading session:', error);
+      logger.warn('Unable to log reading session (analytics unavailable):', error instanceof Error ? error.message : 'Unknown error');
     }
   }, [sessionStart, isWindowActive, currentSection, sessionStartSection, bookId, getAccessToken]);
 

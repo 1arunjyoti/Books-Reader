@@ -2177,7 +2177,7 @@ export default function ReactEpubViewer({
       setSessionStart(new Date());
       setSessionStartPage(currentPageNum);
     } catch (error) {
-      logger.error('Error logging reading session:', error);
+      logger.warn('Unable to log reading session (analytics unavailable):', error instanceof Error ? error.message : 'Unknown error');
     }
   }, [sessionStart, isWindowActive, pageInfo, sessionStartPage, bookId, getAccessToken]);
   

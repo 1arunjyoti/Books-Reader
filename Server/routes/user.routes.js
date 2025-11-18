@@ -1,5 +1,5 @@
 const express = require('express');
-const { checkJwt } = require('../middleware/auth');
+const { checkJwt } = require('../middleware/clerk-auth');
 const { validateBody } = require('../middleware/validator');
 const { bookOperationsLimiter, welcomeScreenLimiter } = require('../middleware/rateLimiter');
 const { z } = require('zod');

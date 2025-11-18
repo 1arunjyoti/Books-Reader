@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
  */
 exports.logSession = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -38,7 +38,7 @@ exports.logSession = async (req, res) => {
  */
 exports.getStats = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -60,7 +60,7 @@ exports.getStats = async (req, res) => {
  */
 exports.getGoals = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -80,7 +80,7 @@ exports.getGoals = async (req, res) => {
  */
 exports.createGoal = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -111,7 +111,7 @@ exports.createGoal = async (req, res) => {
  */
 exports.updateGoal = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -139,7 +139,7 @@ exports.updateGoal = async (req, res) => {
  */
 exports.deleteGoal = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });

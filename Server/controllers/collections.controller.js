@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
  */
 exports.getAllCollections = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -32,7 +32,7 @@ exports.getAllCollections = async (req, res) => {
  */
 exports.createCollection = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -58,7 +58,7 @@ exports.createCollection = async (req, res) => {
  */
 exports.updateCollection = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -89,7 +89,7 @@ exports.updateCollection = async (req, res) => {
  */
 exports.deleteCollection = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -120,7 +120,7 @@ exports.deleteCollection = async (req, res) => {
  */
 exports.addBooksToCollection = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -154,7 +154,7 @@ exports.addBooksToCollection = async (req, res) => {
  */
 exports.removeBooksFromCollection = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -186,7 +186,7 @@ exports.removeBooksFromCollection = async (req, res) => {
  */
 exports.getCollectionBooks = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { checkJwt } = require('../middleware/auth');
+const { checkJwt } = require('../middleware/clerk-auth');
 const { upload } = require('../middleware/upload');
 const { bookOperationsLimiter, coverGenerationLimiter } = require('../middleware/rateLimiter');
 const { validateParams, validateQuery, validateBody } = require('../middleware/validator');

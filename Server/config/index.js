@@ -12,13 +12,10 @@ const config = {
     clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
   },
 
-  // Auth0 configuration
-  auth0: {
-    domain: process.env.AUTH0_DOMAIN,
-    audience: process.env.AUTH0_AUDIENCE,
-    issuerBaseURL: process.env.AUTH0_DOMAIN 
-      ? `https://${process.env.AUTH0_DOMAIN}` 
-      : undefined,
+  // Clerk configuration
+  clerk: {
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+    secretKey: process.env.CLERK_SECRET_KEY,
   },
 
   // Backblaze B2 storage configuration
@@ -47,8 +44,8 @@ const config = {
  */
 function validateConfig() {
   const required = {
-    'AUTH0_DOMAIN': config.auth0.domain,
-    'AUTH0_AUDIENCE': config.auth0.audience,
+    'CLERK_PUBLISHABLE_KEY': config.clerk.publishableKey,
+    'CLERK_SECRET_KEY': config.clerk.secretKey,
     'B2_ENDPOINT': config.b2.endpoint,
     'B2_KEY_ID': config.b2.keyId,
     'B2_APPLICATION_KEY': config.b2.applicationKey,

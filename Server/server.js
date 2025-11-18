@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const { config, validateConfig } = require('./config');
+const { clerkMiddleware } = require('@clerk/express');
 
 // Import logger first (uses default config if validation fails)
 const logger = require('./utils/logger');
@@ -107,6 +108,12 @@ app.use(express.json({
 app.use(express.urlencoded({ 
   extended: true, 
   limit: '10mb' 
+}));
+
+// Clerk authentication middleware
+app.use(clerkMiddleware({
+  publishableKey: config.clerk.publishableKey,
+  secretKey: config.clerk.secretKey,
 }));
 
 // Response time monitoring middleware

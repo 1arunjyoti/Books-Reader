@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut } from 'lucide-react';
-import { getSession } from '@/lib/session';
+import { currentUser, auth } from '@clerk/nextjs/server';
 import { fetchUserProfile } from '@/lib/api/user-profile';
 import DeleteAccountSection from '@/components/profile/delete-account';
 import ChangeEmailSection from '@/components/profile/change-email';
@@ -14,19 +14,17 @@ import { ReadingStatsDashboard } from '@/components/analytics/reading-stats-dash
 import { ReadingGoals } from '@/components/analytics/reading-goals';
 
 export default async function ProfilePage() {
-  const session = await getSession();
+  const user = await currentUser();
   
-  if (!session || !session.user) {
-    redirect('/signin');
+  if (!user) {
+    redirect('/sign-in');
   }
 
-  const user = session.user;
-  const accessToken = session.tokenSet?.accessToken || '';
+  const { getToken } = await auth();
+  const accessToken = await getToken() || '';
 
   // Fetch user profile from database using shared utility
-  // Requests all fields since profile page needs: id, email, name, picture, nickname, updatedAt
-  // Uses 5-minute cache and 10-second timeout for performance
-  const userProfile = await fetchUserProfile(user.sub, accessToken, [
+  const userProfile = await fetchUserProfile(user.id, accessToken, [
     'id',
     'email',
     'name',
@@ -36,20 +34,28 @@ export default async function ProfilePage() {
   ]);
 
   const getUserInitials = () => {
-    // Use stored name if available, otherwise fall back to Auth0 name
-    const displayName = userProfile?.name || user.name;
+    // Use stored name if available, otherwise fall back to Clerk name
+    const displayName = userProfile?.name || (user.firstName && user.lastName 
+      ? `${user.firstName} ${user.lastName}`.trim()
+      : user.firstName || user.lastName || user.username);
+    
     if (displayName) {
       return displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
     }
-    if (user.email) {
-      return user.email[0].toUpperCase();
+    if (user.emailAddresses[0]?.emailAddress) {
+      return user.emailAddresses[0].emailAddress[0].toUpperCase();
     }
     return 'U';
   };
 
   const getDisplayName = () => {
-    return userProfile?.name || user.name || user.nickname || 'User';
+    return userProfile?.name || (user.firstName && user.lastName 
+      ? `${user.firstName} ${user.lastName}`.trim()
+      : user.firstName || user.lastName || user.username || 'User');
   };
+
+  const userEmail = user.emailAddresses[0]?.emailAddress;
+  const emailVerified = user.emailAddresses[0]?.verification?.status === 'verified';
 
   return (
     <div className="container mx-auto px-4 py-8 bg-white dark:bg-gray-900 min-h-screen">
@@ -65,8 +71,8 @@ export default async function ProfilePage() {
                 </Avatar>
                 <div className="space-y-1 w-full">
                   <h2 className="text-xl font-semibold">{getDisplayName()}</h2>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                  {user.email_verified && (
+                  <p className="text-sm text-muted-foreground">{userEmail}</p>
+                  {emailVerified && (
                     <span className="inline-block text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded">
                       Verified
                     </span>
@@ -114,20 +120,20 @@ export default async function ProfilePage() {
                     <div className="space-y-2 text-sm">
                       {/* <div className="flex justify-between">
                         <span className="text-muted-foreground">User ID:</span>
-                        <span className="font-mono text-xs">{user.sub}</span>
+                        <span className="font-mono text-xs">{user.id}</span>
                       </div> */}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Email:</span>
-                        <span>{user.email}</span>
+                        <span>{userEmail}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Email Verified:</span>
-                        <span>{user.email_verified ? 'Yes' : 'No'}</span>
+                        <span>{emailVerified ? 'Yes' : 'No'}</span>
                       </div>
                     </div>
                   </div>
 
-                  <ChangeEmailSection userEmail={user.email} />
+                  <ChangeEmailSection userEmail={userEmail} />
                   <ChangePasswordSection />
 
                     <div className="flex items-end justify-end my-2 mt-6">
@@ -140,7 +146,7 @@ export default async function ProfilePage() {
                     </div>
 
                     
-                  <DeleteAccountSection userEmail={user.email} />
+                  <DeleteAccountSection userEmail={userEmail} />
                 </CardContent>
               </Card>
             </TabsContent>

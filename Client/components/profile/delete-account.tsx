@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useClerk } from "@clerk/nextjs"
 import {
   Dialog,
   DialogTrigger,
@@ -22,6 +23,7 @@ interface Props {
 
 export default function DeleteAccountSection({ userEmail }: Props) {
   const router = useRouter()
+  const { signOut } = useClerk()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmText, setConfirmText] = useState("")
@@ -52,9 +54,8 @@ export default function DeleteAccountSection({ userEmail }: Props) {
         return
       }
 
-      // On success, logout and redirect to home page
-      // The logout will clear the session
-      router.push('/api/auth/logout')
+      // On success, sign out with Clerk and redirect to home page
+      await signOut({ redirectUrl: '/' })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       setError(msg || 'Network error')

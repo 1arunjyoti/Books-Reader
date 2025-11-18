@@ -57,7 +57,7 @@ export default function ReadPage({ params }: ReadPageProps) {
         const accessToken = await getCachedAccessToken();
 
         if (!accessToken) {
-          router.push('/signin?returnTo=/library');
+          router.push('/sign-in?returnTo=/library');
           return;
         }
 
@@ -187,6 +187,17 @@ export default function ReadPage({ params }: ReadPageProps) {
 
   /* Epub viewer */
   if (fileType === 'epub') {
+    if (!fileUrl) {
+      return (
+        <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-300">Loading EPUB file...</p>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <ReactEpubViewer
         fileUrl={fileUrl}

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ThemeSwitcher } from '../ThemeSwitcher';
 import { Button } from '@/components/ui/button';
+import { useClerk } from '@clerk/nextjs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,9 +27,10 @@ interface NavbarClientProps {
 
 export default function NavbarClient({ user }: NavbarClientProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { signOut } = useClerk();
 
-  const handleLogout = () => {
-    window.location.href = '/api/auth/logout';
+  const handleLogout = async () => {
+    await signOut({ redirectUrl: '/' });
   };
 
   const getUserInitials = () => {
@@ -139,10 +141,10 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                   className="text-gray-700 dark:text-gray-200"
                   aria-label="Sign In"
                 >
-                  <Link href="/signin">Sign In</Link>
+                  <Link href="/sign-in">Sign In</Link>
                 </Button>
                 <Button asChild className="mr-2" aria-label="Sign Up">
-                  <Link href="/signup">Sign Up</Link>
+                  <Link href="/sign-up">Sign Up</Link>
                 </Button>
               </div>
               <ThemeSwitcher />
@@ -174,7 +176,7 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                 variant="outline"
                 className="w-full justify-start text-gray-700 dark:text-gray-200"
               >
-                <Link href="/signin" onClick={() => setIsMenuOpen(false)}>
+                <Link href="/sign-in" onClick={() => setIsMenuOpen(false)}>
                   Sign In
                 </Link>
               </Button>
@@ -183,7 +185,7 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                 variant="default"
                 className="w-full justify-start"
               >
-                <Link href="/signup" onClick={() => setIsMenuOpen(false)}>
+                <Link href="/sign-up" onClick={() => setIsMenuOpen(false)}>
                   Sign Up
                 </Link>
               </Button>

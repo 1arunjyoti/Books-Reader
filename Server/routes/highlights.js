@@ -1,5 +1,5 @@
 const express = require('express');
-const { checkJwt } = require('../middleware/auth');
+const { checkJwt } = require('../middleware/clerk-auth');
 const { bookOperationsLimiter } = require('../middleware/rateLimiter');
 const { validateBody, validateParams, validateQuery } = require('../middleware/validator');
 const {
@@ -48,7 +48,7 @@ router.post('/', validateBody(createHighlightSchema), async (req, res) => {
       rects,
       source,
     } = req.body;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -120,7 +120,7 @@ router.post('/', validateBody(createHighlightSchema), async (req, res) => {
 router.get('/:bookId', validateParams(highlightBookIdParamSchema), async (req, res) => {
   try {
     const { bookId } = req.params;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -142,7 +142,7 @@ router.get('/:bookId', validateParams(highlightBookIdParamSchema), async (req, r
 router.get('/:bookId/stats', validateParams(highlightBookIdParamSchema), async (req, res) => {
   try {
     const { bookId } = req.params;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -168,7 +168,7 @@ router.get('/:bookId/search',
   try {
     const { bookId } = req.params;
     const { q } = req.query;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -194,7 +194,7 @@ router.get('/:bookId/filter',
   try {
     const { bookId } = req.params;
     const { colors } = req.query;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -221,7 +221,7 @@ router.put('/:highlightId',
   try {
     const { highlightId } = req.params;
     const { color, hex, note, rects, pageNumber, source } = req.body;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -255,7 +255,7 @@ router.delete('/:highlightId',
   async (req, res) => {
   try {
     const { highlightId } = req.params;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -282,7 +282,7 @@ router.delete('/book/:bookId',
   async (req, res) => {
   try {
     const { bookId } = req.params;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
