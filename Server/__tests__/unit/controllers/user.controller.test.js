@@ -6,7 +6,7 @@ const userController = require('../../../controllers/user.controller');
 const prisma = require('../../../config/database');
 const logger = require('../../../utils/logger');
 const userService = require('../../../services/user.service');
-const { fetchAuth0UserInfo } = require('../../../utils/auth0-userinfo');
+const { fetchClerkUserInfo } = require('../../../utils/clerk-userinfo');
 
 jest.mock('../../../config/database', () => ({
   user: {
@@ -27,8 +27,8 @@ jest.mock('../../../services/user.service', () => ({
   deleteUserAccount: jest.fn()
 }));
 
-jest.mock('../../../utils/auth0-userinfo', () => ({
-  fetchAuth0UserInfo: jest.fn()
+jest.mock('../../../utils/clerk-userinfo', () => ({
+  fetchClerkUserInfo: jest.fn()
 }));
 
 describe('UserController', () => {
@@ -38,11 +38,8 @@ describe('UserController', () => {
   beforeEach(() => {
     req = {
       auth: {
-        payload: {
-          sub: 'user-123',
-          email: 'user@example.com',
-          name: 'Test User'
-        }
+        userId: 'user-123',
+        sessionId: 'test-session-123'
       },
       query: {},
       body: {},
@@ -71,18 +68,17 @@ describe('UserController', () => {
       expect(res.json).toHaveBeenCalledWith({ user: { id: 'user-123', email: 'user@example.com' } });
     });
 
-    test('creates user from Auth0 when missing and email absent in JWT', async () => {
+    test('creates user from Clerk when missing in database', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
-      prisma.user.create.mockResolvedValue({ id: 'user-123', email: 'auth0@example.com' });
-      req.auth.payload.email = undefined;
-      req.headers.authorization = 'Bearer test-token';
-      fetchAuth0UserInfo.mockResolvedValue({ email: 'auth0@example.com', name: 'Auth0 User' });
+      prisma.user.create.mockResolvedValue({ id: 'user-123', email: 'clerk@example.com', name: 'Clerk User' });
+      fetchClerkUserInfo.mockResolvedValue({ email: 'clerk@example.com', name: 'Clerk User' });
 
       await userController.getUserProfile(req, res);
 
+      expect(fetchClerkUserInfo).toHaveBeenCalledWith('user-123');
       expect(prisma.user.create).toHaveBeenCalled();
-      expect(fetchAuth0UserInfo).toHaveBeenCalledWith('test-token');
-      expect(res.json).toHaveBeenCalledWith({ user: { id: 'user-123', email: 'auth0@example.com' } });
+      expect(fetchClerkUserInfo).toHaveBeenCalledWith('user-123');
+      expect(res.json).toHaveBeenCalledWith({ user: { id: 'user-123', email: 'clerk@example.com', name: 'Clerk User' } });
     });
 
     test('returns 401 when unauthenticated', async () => {
@@ -98,10 +94,12 @@ describe('UserController', () => {
   describe('updateUserName', () => {
     test('updates user name and returns updated user', async () => {
       prisma.user.upsert.mockResolvedValue({ id: 'user-123', name: 'Updated' });
+      fetchClerkUserInfo.mockResolvedValue({ email: 'user@example.com', name: 'Existing' });
       req.body = { name: '  Updated  ' };
 
       await userController.updateUserName(req, res);
 
+      expect(fetchClerkUserInfo).toHaveBeenCalledWith('user-123');
       expect(prisma.user.upsert).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
         message: 'Name updated successfully',
@@ -141,22 +139,22 @@ describe('UserController', () => {
   describe('syncUserProfile', () => {
     test('syncs profile using upsert', async () => {
       prisma.user.upsert.mockResolvedValue({ id: 'user-123', email: 'user@example.com' });
+      fetchClerkUserInfo.mockResolvedValue({ email: 'user@example.com', name: 'Test User' });
 
       await userController.syncUserProfile(req, res);
 
+      expect(fetchClerkUserInfo).toHaveBeenCalledWith('user-123');
       expect(prisma.user.upsert).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({ message: 'Profile synced', user: expect.any(Object) });
     });
 
-    test('fetches email from Auth0 when missing', async () => {
+    test('fetches data from Clerk and syncs', async () => {
       prisma.user.upsert.mockResolvedValue({ id: 'user-123', email: 'fetched@example.com' });
-      req.auth.payload.email = undefined;
-      req.headers.authorization = 'Bearer token';
-      fetchAuth0UserInfo.mockResolvedValue({ email: 'fetched@example.com' });
+      fetchClerkUserInfo.mockResolvedValue({ email: 'fetched@example.com', name: 'Fetched User' });
 
       await userController.syncUserProfile(req, res);
 
-      expect(fetchAuth0UserInfo).toHaveBeenCalledWith('token');
+      expect(fetchClerkUserInfo).toHaveBeenCalledWith('user-123');
       expect(prisma.user.upsert).toHaveBeenCalled();
     });
 
@@ -175,7 +173,7 @@ describe('UserController', () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'user-123', email: 'user@example.com' });
       userService.deleteUserAccount.mockResolvedValue({
         success: true,
-        deletedFromAuth0: true,
+        deletedFromClerk: true,
         deletedFromDatabase: true,
         databaseStats: { books: 1, bookmarks: 0, annotations: 0, highlights: 0, readingSessions: 0, readingGoals: 0, collections: 0 },
         filesDeleted: { booksDeleted: 1, coversDeleted: 0 }
@@ -189,7 +187,7 @@ describe('UserController', () => {
         message: 'Account deleted successfully',
         deleted: expect.objectContaining({
           database: true,
-          auth0: true,
+          clerk: true,
           stats: expect.objectContaining({ books: 1 })
         })
       }));

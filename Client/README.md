@@ -250,8 +250,8 @@ CLERK_SECRET_KEY=sk_test_your-secret-key
 # Clerk Sign-in/Sign-up URLs
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/library
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/library
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/library
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/library
 
 # Optional: Image Domains (comma-separated)
 NEXT_PUBLIC_IMAGE_DOMAINS=
@@ -295,7 +295,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your-publishable-key
 CLERK_SECRET_KEY=sk_test_your-secret-key
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/library
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/library
 APP_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
@@ -943,17 +943,16 @@ npm run postinstall
 ## Environment Variables Reference
 
 | Variable | Description | Required | Example |
-|----------|-------------|----------|---------|
+|----------|-------------|----------|---------|  
 | `APP_BASE_URL` | Base URL of the application | Yes | `http://localhost:3000` |
 | `NEXT_PUBLIC_API_URL` | Backend API URL | Yes | `http://localhost:3001` |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (frontend) | Yes | `pk_test_...` |
 | `CLERK_SECRET_KEY` | Clerk secret key (server) | Yes | `sk_test_...` |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Sign-in path for Clerk | Yes | `/sign-in` |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Sign-up path for Clerk | Yes | `/sign-up` |
-| `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | Redirect after sign-in | Yes | `/library` |
-| `NEXT_PUBLIC_IMAGE_DOMAINS` | Allowed image domains (comma-separated) | No | `images.example.com,cdn.example.com` |
-
----
+| `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` | Fallback redirect after sign-in | Yes | `/library` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL` | Fallback redirect after sign-up | Yes | `/library` |
+| `NEXT_PUBLIC_IMAGE_DOMAINS` | Allowed image domains (comma-separated) | No | `images.example.com,cdn.example.com` |---
 
 ## Contributing
 

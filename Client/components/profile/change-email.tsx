@@ -43,6 +43,14 @@ export default function ChangeEmailSection({ userEmail }: Props) {
       }
 
       setSuccess(body?.message || 'Email change requested. Please verify your new email.')
+      
+      // Show additional note about syncing
+      if (body?.note) {
+        setTimeout(() => {
+          setSuccess(`${body.message}\n\n${body.note}`);
+        }, 100);
+      }
+      
       setNewEmail("")
       setPassword("")
       setLoading(false)

@@ -17,9 +17,7 @@ describe('UploadController', () => {
   beforeEach(() => {
     req = {
       auth: {
-        payload: {
-          sub: 'user-123'
-        }
+        userId: 'user-123'
       },
       file: {
         buffer: Buffer.from('file'),

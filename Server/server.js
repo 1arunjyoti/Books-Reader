@@ -20,7 +20,7 @@ try {
 // Import middlewares
 const { errorHandler } = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
-const { responseTimeMonitor, startStatsLogging, getStatsEndpoint } = require('./middleware/responseTimeMonitor');
+const { responseTimeMonitor, startStatsLogging, stopStatsLogging, getStatsEndpoint } = require('./middleware/responseTimeMonitor');
 
 // Import routes
 const apiRoutes = require('./routes');
@@ -34,13 +34,18 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for React
+      scriptSrcAttr: ["'none'"], // Block inline event handlers
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles (needed for some responses)
       imgSrc: ["'self'", 'data:', 'https:'], // Allow images from https and data URIs
       connectSrc: ["'self'", config.server.clientUrl], // Allow connections to client URL
-      fontSrc: ["'self'"],
+      fontSrc: ["'self'", 'data:'],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: [], // Enable upgrade-insecure-requests
     },
   },
   hsts: {
@@ -50,7 +55,17 @@ app.use(helmet({
   },
   referrerPolicy: {
     policy: 'strict-origin-when-cross-origin'
-  }
+  },
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
+  crossOriginResourcePolicy: { policy: 'same-origin' },
+  originAgentCluster: true,
+  xContentTypeOptions: true,
+  xDnsPrefetchControl: { allow: false },
+  xDownloadOptions: true,
+  xFrameOptions: { action: 'deny' },
+  xPermittedCrossDomainPolicies: { permittedPolicies: 'none' },
+  xPoweredBy: false,
+  xXssProtection: true,
 }));
 
 // Trust proxy for correct IP detection behind reverse proxies
@@ -103,7 +118,10 @@ app.use('/api/upload', (req, res, next) => {
 // Body parsing middleware with size limits
 app.use(express.json({ 
   limit: '10mb',
-  strict: true 
+  strict: true,
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
 }));
 app.use(express.urlencoded({ 
   extended: true, 
@@ -124,10 +142,30 @@ app.use(responseTimeMonitor);
 // Apply rate limiting to all API routes
 app.use('/api', apiLimiter);
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    message: 'BooksReader API Server',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      api: '/api',
+      stats: '/api/stats'
+    }
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   // Include uptime so external smoke tests can report it
   res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() });
+});
+
+// Debug endpoint to test collections
+app.get('/api/test-collections', (req, res) => {
+  logger.info('Test collections endpoint hit');
+  res.json({ message: 'Collections endpoint is working', path: req.originalUrl });
 });
 
 // Performance statistics endpoint (for monitoring/debugging)

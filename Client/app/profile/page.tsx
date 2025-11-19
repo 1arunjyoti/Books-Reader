@@ -9,6 +9,7 @@ import DeleteAccountSection from '@/components/profile/delete-account';
 import ChangeEmailSection from '@/components/profile/change-email';
 import ChangePasswordSection from '@/components/profile/change-password';
 import ChangeNameSection from '@/components/profile/change-name';
+import SyncProfileButton from '@/components/profile/sync-profile-button';
 import { redirect } from 'next/navigation';
 import { ReadingStatsDashboard } from '@/components/analytics/reading-stats-dashboard';
 import { ReadingGoals } from '@/components/analytics/reading-goals';
@@ -85,6 +86,9 @@ export default async function ProfilePage() {
                     initialName={getDisplayName()} 
                   />
                 </div>
+
+                {/* Sync Profile Button */}
+                <SyncProfileButton />
               </div>
             </CardContent>
           </Card>

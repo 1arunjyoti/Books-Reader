@@ -85,12 +85,20 @@ prisma.$connect().then(() => {
 
 // Graceful shutdown - disconnect from database when process exits
 process.on('beforeExit', async () => {
+  // Stop stats logging
+  const { stopStatsLogging } = require('../middleware/responseTimeMonitor');
+  stopStatsLogging();
+  
   await prisma.$disconnect();
   getLogger().info('Database connection closed');
 });
 
 // Handle unexpected errors
 process.on('SIGINT', async () => {
+  // Stop stats logging
+  const { stopStatsLogging } = require('../middleware/responseTimeMonitor');
+  stopStatsLogging();
+  
   await prisma.$disconnect();
   getLogger().info('Database connection closed due to SIGINT');
   process.exit(0);
@@ -98,6 +106,10 @@ process.on('SIGINT', async () => {
 
 // Handle termination signal
 process.on('SIGTERM', async () => {
+  // Stop stats logging
+  const { stopStatsLogging } = require('../middleware/responseTimeMonitor');
+  stopStatsLogging();
+  
   await prisma.$disconnect();
   getLogger().info('Database connection closed due to SIGTERM');
   process.exit(0);

@@ -10,26 +10,13 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // Security headers including Content Security Policy
 const securityHeaders = [
+  // CSP is now handled in middleware.ts to support nonces
+  /*
   {
     key: 'Content-Security-Policy',
-    value: `
-      default-src 'self';
-      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://unpkg.com https://*.clerk.accounts.dev https://challenges.cloudflare.com;
-      style-src 'self' 'unsafe-inline' blob:;
-      style-src-elem 'self' 'unsafe-inline' blob:;
-      img-src 'self' blob: data: https:;
-      font-src 'self' data: blob:;
-      connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'} https://va.vercel-scripts.com https://*.backblazeb2.com https://unpkg.com https://*.clerk.accounts.dev https://api.clerk.com https://clerk-telemetry.com https://challenges.cloudflare.com;
-      worker-src 'self' blob: https://unpkg.com;
-      child-src 'self' blob:;
-      frame-src 'self' https://*.clerk.accounts.dev https://challenges.cloudflare.com;
-      object-src 'none';
-      base-uri 'self';
-      form-action 'self';
-      frame-ancestors 'none';
-      ${isProduction ? 'upgrade-insecure-requests;' : ''}
-    `.replace(/\s{2,}/g, ' ').trim()
+    value: `...`
   },
+  */
   {
     key: 'X-DNS-Prefetch-Control',
     value: 'on'
@@ -70,7 +57,7 @@ const nextConfig: NextConfig = {
     })),
     // When no domains are provided, disable Next.js image optimization so external URLs still render.
     // This keeps development simple; for production, configure domains and remove this fallback.
-    unoptimized: allowedImageDomains.length === 0,
+    unoptimized: process.env.NODE_ENV !== 'production' && allowedImageDomains.length === 0,
     // Configure allowed image quality values for Next.js 16+ compatibility
     qualities: [70, 75, 80, 90],
   },

@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import {
   ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
 } from '@clerk/nextjs'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -15,6 +10,7 @@ import Navbar from "../components/layout/navbar";
 import Footer from "../components/layout/footer";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +44,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -57,9 +53,10 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         
-        <head>
+        <head suppressHydrationWarning>
           {/* Prevent flash of incorrect theme by setting class before hydration */}
           <script
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: `(function () {
                 try {
@@ -87,7 +84,9 @@ export default function RootLayout({
               <Navbar />
               <main className="min-h-[calc(100vh-8rem)]">
                 <SpeedInsights />
-                {children}
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
                 <Analytics />
               </main>
               <Footer />

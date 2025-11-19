@@ -1,4 +1,5 @@
 const { clerkClient, requireAuth } = require('@clerk/express');
+const logger = require('../utils/logger');
 
 /**
  * Clerk JWT validation middleware
@@ -7,7 +8,7 @@ const { clerkClient, requireAuth } = require('@clerk/express');
  */
 const checkJwt = requireAuth({
   onError: (error) => {
-    console.error('Clerk authentication error:', error);
+    logger.error('Clerk authentication error:', error);
     return { error: 'Unauthorized - No valid authentication' };
   }
 });
@@ -32,7 +33,7 @@ async function getUserFromToken(req) {
         : user.firstName || user.lastName || user.username,
     };
   } catch (error) {
-    console.error('Error getting user from Clerk token:', error);
+    logger.error('Error getting user from Clerk token:', error);
     return null;
   }
 }

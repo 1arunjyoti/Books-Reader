@@ -26,7 +26,8 @@ import { useViewPreferences } from '@/hooks/useViewPreferences';
 import { sanitizeText, sanitizeArray } from '@/lib/sanitize';
 import { preloadPdfJs } from '@/lib/pdf-preloader';
 import { preloadEpubJs } from '@/lib/epub-preloader';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import LibraryErrorBoundary from '@/components/library/LibraryErrorBoundary';
+import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import WelcomeScreen from '@/components/library/welcome-screen';
 import { logger } from '@/lib/logger';
 import {
@@ -65,7 +66,15 @@ function LibraryPageContent() {
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
   const [userName, setUserName] = useState<string | undefined>();
-  const [welcomeChecked, setWelcomeChecked] = useState(false);
+  
+  // Use ref instead of state to prevent re-checks on component remount within same session
+  // This is an optimization - the server maintains the permanent welcome status in database
+  // On page refresh, ref resets and API is checked again (server returns persistent state)
+  // Behavior:
+  // - New user: API returns welcomeShown=false → shows welcome → marks as shown in DB
+  // - Returning user: API returns welcomeShown=true → never shows welcome again
+  // - Same session navigation: ref prevents unnecessary API calls
+  const welcomeCheckedRef = useRef(false);
   
   // Add debug log for showWelcomeScreen state changes
   useEffect(() => {
@@ -107,11 +116,25 @@ function LibraryPageContent() {
   }, [searchParams, router]);
 
   // Check welcome screen status on mount
+  // Only shows welcome to NEW users on their FIRST visit to library
+  // After closing, welcome status is permanently saved in database
   const checkWelcomeStatusFunc = useCallback(async () => {
-    // Don't check if we've already checked or if welcome screen was manually dismissed
-    if (welcomeChecked) {
-      logger.log('[Welcome Screen] Welcome status already checked, skipping...');
+    // Don't check if we've already checked in this session (optimization)
+    if (welcomeCheckedRef.current) {
+      logger.log('[Welcome Screen] Welcome status already checked in this session, skipping...');
       return;
+    }
+    
+    // Check localStorage first for instant result
+    if (typeof window !== 'undefined') {
+      const localWelcomeShown = localStorage.getItem('welcomeShown');
+      logger.log('[Welcome Screen] localStorage welcomeShown:', localWelcomeShown);
+      
+      if (localWelcomeShown === 'true') {
+        logger.log('[Welcome Screen] localStorage shows welcome already seen, skipping welcome');
+        welcomeCheckedRef.current = true;
+        return; // Don't show welcome if localStorage says it's been shown
+      }
     }
     
     try {
@@ -119,7 +142,7 @@ function LibraryPageContent() {
       const token = await getAccessToken();
       if (!token) {
         logger.log('[Welcome Screen] No access token available for welcome screen check');
-        setWelcomeChecked(true);
+        welcomeCheckedRef.current = true;
         return;
       }
       logger.log('[Welcome Screen] Access token obtained');
@@ -146,7 +169,7 @@ function LibraryPageContent() {
         logger.log('[Welcome Screen] Welcome status received:', welcomeShown);
         
         // Mark that we've completed the check
-        setWelcomeChecked(true);
+        welcomeCheckedRef.current = true;
         
         // If welcome hasn't been shown, display it
         if (!welcomeShown) {
@@ -157,35 +180,39 @@ function LibraryPageContent() {
         }
       } catch (welcomeError) {
         logger.warn('[Welcome Screen] Failed to check welcome status:', welcomeError);
-        setWelcomeChecked(true);
+        welcomeCheckedRef.current = true;
         // Don't show welcome screen if we can't verify status
       }
     } catch (error) {
       logger.error('[Welcome Screen] Error in welcome screen initialization:', error);
-      setWelcomeChecked(true);
+      welcomeCheckedRef.current = true;
     }
-  }, [getAccessToken, welcomeChecked]);
+  }, [getAccessToken]);
 
   useEffect(() => {
     checkWelcomeStatusFunc();
   }, [checkWelcomeStatusFunc]);
 
   // Handle closing welcome screen
+  // Permanently marks welcome as shown in database - user will never see it again
   const handleCloseWelcome = useCallback(async () => {
+    logger.log('[Welcome Screen] Closing welcome screen...');
     setShowWelcomeScreen(false);
-    setWelcomeChecked(true); // Mark as checked so it doesn't reappear
+    welcomeCheckedRef.current = true; // Mark as checked in this session
     
     try {
       const token = await getAccessToken();
       if (token) {
+        logger.log('[Welcome Screen] Got access token, calling markWelcomeShown...');
+        // Permanently save to database that user has seen welcome
         await markWelcomeShown(token);
-        logger.log('[Welcome Screen] Successfully marked welcome as shown');
+        logger.log('[Welcome Screen] Successfully marked welcome as shown in database');
       } else {
-        logger.warn('No access token available to mark welcome as shown');
+        logger.warn('[Welcome Screen] No access token available to mark welcome as shown');
       }
     } catch (error) {
-      logger.error('Error marking welcome shown:', error);
-      // Don't throw - welcome screen is already closed
+      logger.error('[Welcome Screen] Error marking welcome shown:', error);
+      // Don't throw - welcome screen is already closed, localStorage should have saved it
     }
   }, [getAccessToken]);
 
@@ -242,7 +269,7 @@ function LibraryPageContent() {
       if (selectedCollectionId) {
         const collectionData = await getCollectionBooks(selectedCollectionId, token);
         // Backend handles filtering - no client-side filter needed
-        return collectionData.books;
+        return collectionData.books || [];
       }
 
       const filterParams: SearchFilters = {
@@ -259,7 +286,7 @@ function LibraryPageContent() {
 
       // Backend handles all filtering - no client-side filter needed
       const fetched = await fetchBooks(token, filterParams);
-      return fetched;
+      return fetched || [];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
@@ -1101,13 +1128,19 @@ function LibraryPageContent() {
   );
 }
 
-// Export the library page wrapped in ErrorBoundary
+// Export the library page wrapped with error boundaries
+// QueryErrorResetBoundary integrates with React Query to allow error recovery
+// LibraryErrorBoundary provides specialized error UI for library-specific failures
 export default function LibraryPage() {
   return (
-    <ErrorBoundary>
-  <Suspense fallback={<div className="p-6 text-center text-gray-600 dark:text-gray-300">Loading library...</div>}>
-        <LibraryPageContent />
-      </Suspense>
-    </ErrorBoundary>
+    <QueryErrorResetBoundary>
+      {({ reset }) => (
+        <LibraryErrorBoundary onReset={reset}>
+          <Suspense fallback={<div className="p-6 text-center text-gray-600 dark:text-gray-300">Loading library...</div>}>
+            <LibraryPageContent />
+          </Suspense>
+        </LibraryErrorBoundary>
+      )}
+    </QueryErrorResetBoundary>
   );
 }

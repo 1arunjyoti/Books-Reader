@@ -301,7 +301,7 @@ class BooksService {
    */
   async updateBook(bookId, userId, updateData) {
     // Verify book ownership
-    await this.verifyBookOwnership(bookId, userId);
+    const existingBook = await this.verifyBookOwnership(bookId, userId);
 
     // Sanitize all input data BEFORE processing
     const sanitizedData = sanitizeBookMetadata(updateData);
@@ -328,6 +328,10 @@ class BooksService {
       throw new Error('Book title cannot be empty');
     }
 
+    // Check if book is being marked as finished
+    const wasNotFinished = existingBook.status !== 'finished';
+    const isNowFinished = sanitizedData.status === 'finished';
+
     // Update lastReadAt if status changed to reading
     if (sanitizedData.status === 'reading') {
       data.lastReadAt = new Date();
@@ -340,11 +344,19 @@ class BooksService {
     });
 
     logger.info('Book updated', { bookId, userId, updatedFields: Object.keys(data) });
+
+    // If book was just marked as finished, update books goals
+    if (wasNotFinished && isNowFinished) {
+      // Import analytics service and update books goals
+      const analyticsService = require('./analytics.service');
+      await analyticsService.updateBooksGoal(userId, bookId);
+    }
+
     return updatedBook;
   }
 
   /**
-   * Delete a book
+   * Delete a book and all related data
    * @param {string} bookId - Book ID
    * @param {string} userId - User ID
    * @returns {Promise<void>}
@@ -371,12 +383,62 @@ class BooksService {
       // Continue with database deletion even if B2 deletion fails
     }
 
+    // Delete all related data from database
+    // This ensures complete cleanup since Prisma schema doesn't have cascade rules
+    try {
+      // Delete all highlights for this book
+      const highlightsDeleted = await prisma.highlight.deleteMany({
+        where: { bookId, userId }
+      });
+      logger.info('Highlights deleted', { bookId, count: highlightsDeleted.count });
+
+      // Delete all bookmarks for this book
+      const bookmarksDeleted = await prisma.bookmark.deleteMany({
+        where: { bookId, userId }
+      });
+      logger.info('Bookmarks deleted', { bookId, count: bookmarksDeleted.count });
+
+      // Delete all annotations for this book
+      const annotationsDeleted = await prisma.annotation.deleteMany({
+        where: { bookId, userId }
+      });
+      logger.info('Annotations deleted', { bookId, count: annotationsDeleted.count });
+
+      // Delete all reading sessions for this book
+      const sessionsDeleted = await prisma.readingSession.deleteMany({
+        where: { bookId, userId }
+      });
+      logger.info('Reading sessions deleted', { bookId, count: sessionsDeleted.count });
+
+      // Remove book from all collections
+      const collections = await prisma.collection.findMany({
+        where: {
+          userId,
+          bookIds: { has: bookId }
+        }
+      });
+
+      for (const collection of collections) {
+        await prisma.collection.update({
+          where: { id: collection.id },
+          data: {
+            bookIds: collection.bookIds.filter(id => id !== bookId)
+          }
+        });
+      }
+      logger.info('Book removed from collections', { bookId, collectionsCount: collections.length });
+
+    } catch (err) {
+      logger.error('Error deleting related data', { bookId, error: err.message });
+      throw new Error('Failed to delete book related data');
+    }
+
     // Delete book from database
     await prisma.book.delete({
       where: { id: bookId }
     });
 
-    logger.info('Book deleted successfully', { bookId, userId });
+    logger.info('Book and all related data deleted successfully', { bookId, userId });
   }
 
   /**

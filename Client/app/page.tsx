@@ -1,6 +1,6 @@
-import { ArrowRight, BookOpen, Smartphone } from "lucide-react";
-import Link from "next/link";
 import { StartReadingButton } from "@/components/landing/start-reading-button";
+import { BookOpen, Smartphone } from "lucide-react";
+import Link from "next/link";
 
 /* Metadata for SEO */
 export const metadata = {
@@ -23,7 +23,7 @@ export const metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
   return (
     <main className="min-h-screen">
 
@@ -38,6 +38,7 @@ export default function Home() {
         {/* JSON-LD structured data for SEO */}
         <script
           type="application/ld+json"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",

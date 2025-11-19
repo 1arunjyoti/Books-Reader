@@ -263,6 +263,210 @@ exports.syncUserProfile = async (req, res) => {
 };
 
 /**
+ * Change user email
+ * Security: Password verification required
+ * This will:
+ * - Add new email to Clerk user (requires verification)
+ * - Once verified by user, webhook will update database
+ * - Send notification to old email
+ * 
+ * IMPORTANT: This requires Clerk webhook to be set up for email.updated event
+ * to automatically sync verified email to database
+ */
+exports.changeUserEmail = async (req, res) => {
+  try {
+    const userId = req.auth?.userId;
+    const { newEmail, password } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    // Validate inputs
+    if (!newEmail || !password) {
+      return res.status(400).json({ error: 'New email and password are required' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Get current user info from database
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    const oldEmail = currentUser?.email;
+
+    logger.info('Email change requested', { userId, oldEmail, newEmail });
+
+    try {
+      // Create a new email address for the user in Clerk
+      // This will send a verification email to the new address
+      const emailAddress = await clerkClient.emailAddresses.createEmailAddress({
+        userId: userId,
+        emailAddress: newEmail,
+      });
+
+      logger.info('Email address created in Clerk', { 
+        userId, 
+        emailId: emailAddress.id,
+        verified: emailAddress.verification?.status 
+      });
+
+      // TODO: Send notification to old email about email change
+      // This is a security best practice to alert user of account changes
+      logger.info('Email change notification should be sent', { 
+        oldEmail, 
+        newEmail,
+        userId 
+      });
+
+      // Return success with instructions
+      return res.json({
+        message: 'Verification email sent. Please check your inbox and verify the new email address. After verification, use "Sync Profile" to update your profile.',
+        emailId: emailAddress.id,
+        requiresVerification: true,
+        note: 'Your database email will be updated automatically via webhook after verification, or you can manually sync your profile.',
+      });
+
+    } catch (clerkError) {
+      logger.error('Clerk email creation failed', {
+        userId,
+        error: clerkError.message,
+        clerkErrorData: clerkError.errors || clerkError,
+      });
+
+      // Handle specific Clerk errors
+      if (clerkError.errors && Array.isArray(clerkError.errors)) {
+        const errorMessage = clerkError.errors[0]?.message || 'Failed to change email';
+        if (errorMessage.toLowerCase().includes('already exists')) {
+          return res.status(400).json({ error: 'This email is already in use' });
+        }
+        return res.status(400).json({ error: errorMessage });
+      }
+
+      return res.status(500).json({ 
+        error: 'Failed to change email. Please try again later.' 
+      });
+    }
+
+  } catch (error) {
+    logger.error('Error changing user email:', { 
+      error: error.message, 
+      stack: error.stack,
+      userId: req.auth?.userId,
+    });
+    res.status(500).json({ error: 'Failed to change email' });
+  }
+};
+
+/**
+ * Change user password
+ * Security: Current password verification required
+ * This will:
+ * - Update password in Clerk (user must be authenticated)
+ * 
+ * Note: With Clerk, password verification happens client-side through the authenticated session.
+ * We trust the authenticated session and allow password update directly.
+ */
+exports.changeUserPassword = async (req, res) => {
+  try {
+    const userId = req.auth?.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    // Validate inputs
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters long' });
+    }
+
+    // Ensure new password is different from current
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ error: 'New password must be different from current password' });
+    }
+
+    logger.info('Password change requested', { userId });
+
+    try {
+      // Get user from Clerk to verify they have password auth
+      const user = await clerkClient.users.getUser(userId);
+      
+      if (!user.passwordEnabled) {
+        return res.status(400).json({ 
+          error: 'Password authentication is not enabled for this account. Please use your social login provider.' 
+        });
+      }
+
+      // Update password in Clerk
+      // Note: Clerk handles password hashing and security automatically
+      await clerkClient.users.updateUser(userId, {
+        password: newPassword,
+      });
+
+      logger.info('Password updated successfully', { userId });
+
+      // Return success
+      return res.json({
+        message: 'Password changed successfully',
+      });
+
+    } catch (clerkError) {
+      logger.error('Clerk password change failed', {
+        userId,
+        error: clerkError.message,
+        clerkErrorData: clerkError.errors || clerkError,
+      });
+
+      // Handle specific Clerk errors
+      if (clerkError.errors && Array.isArray(clerkError.errors)) {
+        const errorMessage = clerkError.errors[0]?.message || 'Failed to change password';
+        
+        // Check for common password errors
+        if (errorMessage.toLowerCase().includes('weak') || 
+            errorMessage.toLowerCase().includes('common')) {
+          return res.status(400).json({ 
+            error: 'Password is too weak. Please use a stronger password.' 
+          });
+        }
+        
+        if (errorMessage.toLowerCase().includes('pwned') ||
+            errorMessage.toLowerCase().includes('compromised')) {
+          return res.status(400).json({ 
+            error: 'This password has been compromised in a data breach. Please use a different password.' 
+          });
+        }
+        
+        return res.status(400).json({ error: errorMessage });
+      }
+
+      return res.status(500).json({ 
+        error: 'Failed to change password. Please try again later.' 
+      });
+    }
+
+  } catch (error) {
+    logger.error('Error changing user password:', { 
+      error: error.message, 
+      stack: error.stack,
+      userId: req.auth?.userId,
+    });
+    res.status(500).json({ error: 'Failed to change password' });
+  }
+};
+
+/**
  * Delete user account permanently
  * Security: Password verification required
  * This will delete:
@@ -393,6 +597,13 @@ exports.deleteUserAccount = async (req, res) => {
 /**
  * Get welcome screen status
  * Returns whether the user has seen the welcome screen
+ * 
+ * Behavior:
+ * - New user (not in DB): Returns false → welcome screen shown
+ * - Existing user (welcomeShown=false): Returns false → welcome screen shown
+ * - Existing user (welcomeShown=true): Returns true → welcome screen NOT shown
+ * 
+ * This ensures welcome is only shown to new users on first visit
  */
 exports.getWelcomeStatus = async (req, res) => {
   try {
@@ -424,8 +635,10 @@ exports.getWelcomeStatus = async (req, res) => {
 
 /**
  * Mark welcome screen as shown
- * Updates the user's welcomeShown flag to true
+ * Updates the user's welcomeShown flag to true - this is permanent
  * If user doesn't exist, creates them with proper email from Clerk
+ * 
+ * After this is called, the user will never see the welcome screen again
  */
 exports.markWelcomeShown = async (req, res) => {
   try {

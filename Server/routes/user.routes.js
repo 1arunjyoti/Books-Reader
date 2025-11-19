@@ -1,7 +1,7 @@
 const express = require('express');
 const { checkJwt } = require('../middleware/clerk-auth');
 const { validateBody } = require('../middleware/validator');
-const { bookOperationsLimiter, welcomeScreenLimiter } = require('../middleware/rateLimiter');
+const { bookOperationsLimiter, welcomeScreenLimiter, sensitiveOperationsLimiter } = require('../middleware/rateLimiter');
 const { z } = require('zod');
 const userController = require('../controllers/user.controller');
 
@@ -14,6 +14,21 @@ const updateUserNameSchema = z.object({
     .min(1, 'Name is required')
     .max(25, 'Name is too long (max 25 characters)')
     .trim(),
+});
+
+const changeEmailSchema = z.object({
+  newEmail: z.string()
+    .email('Invalid email address')
+    .trim(),
+  password: z.string()
+    .min(1, 'Password is required'),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string()
+    .min(1, 'Current password is required'),
+  newPassword: z.string()
+    .min(8, 'New password must be at least 8 characters long'),
 });
 
 const deleteAccountSchema = z.object({
@@ -44,6 +59,32 @@ router.post(
 );
 
 /**
+ * POST /api/user/change-email
+ * Change user email
+ * Rate limited: Uses sensitiveOperationsLimiter (5 requests/15 minutes)
+ */
+router.post(
+  '/change-email',
+  checkJwt,
+  sensitiveOperationsLimiter, // More restrictive for security
+  validateBody(changeEmailSchema),
+  userController.changeUserEmail
+);
+
+/**
+ * POST /api/user/change-password
+ * Change user password
+ * Rate limited: Uses sensitiveOperationsLimiter (5 requests/15 minutes)
+ */
+router.post(
+  '/change-password',
+  checkJwt,
+  sensitiveOperationsLimiter, // More restrictive for security
+  validateBody(changePasswordSchema),
+  userController.changeUserPassword
+);
+
+/**
  * POST /api/user/sync
  * Sync user profile from Auth0
  */
@@ -52,13 +93,13 @@ router.post('/sync', checkJwt, userController.syncUserProfile);
 /**
  * POST /api/user/delete
  * Delete user account permanently
- * Deletes all user data, files from B2, and Auth0 account
- * Rate limited: Uses bookOperationsLimiter
+ * Deletes all user data, files from B2, and Clerk account
+ * Rate limited: Uses sensitiveOperationsLimiter (5 requests/15 minutes)
  */
 router.post(
   '/delete',
   checkJwt,
-  bookOperationsLimiter,
+  sensitiveOperationsLimiter, // More restrictive for security
   validateBody(deleteAccountSchema),
   userController.deleteUserAccount
 );

@@ -15,13 +15,11 @@ describe('BookmarksController', () => {
   beforeEach(() => {
     req = {
       auth: {
-        payload: {
-          sub: 'user-123'
-        }
+        userId: 'user-123'
       },
       params: {},
-      body: {},
-      query: {}
+      query: {},
+      body: {}
     };
 
     res = {

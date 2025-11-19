@@ -56,7 +56,13 @@ export function CollectionFilter({
         const data = await getCollections(token);
         
         if (isMounted) {
-          setCollections(data);
+          // Defensive: Ensure data is an array
+          if (Array.isArray(data)) {
+            setCollections(data);
+          } else {
+            logger.warn("getCollections returned non-array data:", data);
+            setCollections([]);
+          }
         }
       } catch (error) {
         // Ignore AbortError when component unmounts
@@ -65,6 +71,7 @@ export function CollectionFilter({
         }
         if (isMounted) {
           logger.error("Error loading collections:", error);
+          setCollections([]); // Ensure collections is always an array even on error
         }
       } finally {
         if (isMounted) {
@@ -88,9 +95,17 @@ export function CollectionFilter({
       if (!token) return;
       
       const data = await getCollections(token);
-      setCollections(data);
+      
+      // Defensive: Ensure data is an array
+      if (Array.isArray(data)) {
+        setCollections(data);
+      } else {
+        logger.warn("getCollections returned non-array data:", data);
+        setCollections([]);
+      }
     } catch (error) {
       logger.error("Error loading collections:", error);
+      setCollections([]); // Ensure collections is always an array even on error
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +143,9 @@ export function CollectionFilter({
     }
   };
 
-  const selectedCollection = collections.find(c => c.id === selectedCollectionId);
+  const selectedCollection = Array.isArray(collections) 
+    ? collections.find(c => c.id === selectedCollectionId) 
+    : undefined;
   const displayText = selectedCollection ? selectedCollection.name : "All Collections";
 
   return (

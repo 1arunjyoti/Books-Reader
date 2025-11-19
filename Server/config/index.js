@@ -4,12 +4,17 @@ require('dotenv').config();
  * Centralized configuration for the application
  * All environment variables are accessed through this module
  */
+
+const isProduction = process.env.NODE_ENV === 'production';
+
 const config = {
   // Server configuration
   server: {
     port: parseInt(process.env.PORT, 10) || 3001,
     env: process.env.NODE_ENV || 'development',
-    clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+    clientUrl: process.env.CLIENT_URL || (isProduction 
+      ? undefined  // Force explicit config in production
+      : 'http://localhost:3000'),
   },
 
   // Clerk configuration
@@ -51,6 +56,7 @@ function validateConfig() {
     'B2_APPLICATION_KEY': config.b2.applicationKey,
     'B2_BUCKET_NAME': config.b2.bucketName,
     'DATABASE_URL': config.database.url,
+    'CLIENT_URL': config.server.clientUrl,
   };
 
   const missing = Object.entries(required)
@@ -68,6 +74,31 @@ function validateConfig() {
   // Validate PORT is a valid number
   if (isNaN(config.server.port) || config.server.port < 1 || config.server.port > 65535) {
     throw new Error('PORT must be a valid number between 1 and 65535');
+  }
+
+  // Production-specific validations
+  if (isProduction) {
+    // Enforce HTTPS for client URL in production
+    if (config.server.clientUrl && 
+        !config.server.clientUrl.startsWith('https://') && 
+        !config.server.clientUrl.includes('localhost')) {
+      console.warn(
+        '[Config] WARNING: CLIENT_URL should use HTTPS in production:',
+        config.server.clientUrl
+      );
+    }
+
+    // Validate B2 endpoint format
+    if (config.b2.endpoint && !config.b2.endpoint.includes('.')) {
+      throw new Error('B2_ENDPOINT appears to be invalid. Expected format: s3.region.backblazeb2.com');
+    }
+
+    // Validate database URL uses SSL
+    if (config.database.url && !config.database.url.includes('sslmode=require')) {
+      console.warn(
+        '[Config] WARNING: DATABASE_URL should use sslmode=require in production'
+      );
+    }
   }
 
   // Note: We don't use logger here as it may not be initialized yet

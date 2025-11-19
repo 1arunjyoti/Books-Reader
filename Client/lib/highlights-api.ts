@@ -43,11 +43,15 @@ export const createHighlight = async (
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ error: 'Failed to create highlight' }));
       throw new Error(error.error || 'Failed to create highlight');
     }
 
-    return response.json();
+    const data = await response.json();
+    if (!data) {
+      throw new Error('No data returned from highlight creation');
+    }
+    return data;
   }, API_RETRY_OPTIONS);
 };
 
@@ -56,7 +60,7 @@ export const createHighlight = async (
  */
 export const fetchHighlights = async (bookId: string, accessToken: string): Promise<Highlight[]> => {
   return retryWithBackoff(async () => {
-    const response = await fetch(`${API_BASE}/${bookId}`, {
+    const response = await fetch(`${API_BASE}/book/${bookId}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -67,7 +71,8 @@ export const fetchHighlights = async (bookId: string, accessToken: string): Prom
       throw new Error('Failed to fetch highlights');
     }
 
-    return response.json();
+    const data = await response.json();
+    return data || [];
   }, API_RETRY_OPTIONS);
 };
 
@@ -87,7 +92,11 @@ export const getHighlight = async (highlightId: string, accessToken: string) => 
       throw new Error('Failed to fetch highlight');
     }
 
-    return response.json();
+    const data = await response.json();
+    if (!data) {
+      throw new Error('No data returned from highlight fetch');
+    }
+    return data;
   }, API_RETRY_OPTIONS);
 };
 
@@ -110,11 +119,15 @@ export const updateHighlight = async (
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ error: 'Failed to update highlight' }));
       throw new Error(error.error || 'Failed to update highlight');
     }
 
-    return response.json();
+    const data = await response.json();
+    if (!data) {
+      throw new Error('No data returned from highlight update');
+    }
+    return data;
   }, API_RETRY_OPTIONS);
 };
 
@@ -131,11 +144,12 @@ export const deleteHighlight = async (highlightId: string, accessToken: string) 
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ error: 'Failed to delete highlight' }));
       throw new Error(error.error || 'Failed to delete highlight');
     }
 
-    return response.json();
+    const data = await response.json();
+    return data || { success: true };
   }, API_RETRY_OPTIONS);
 };
 
@@ -144,7 +158,7 @@ export const deleteHighlight = async (highlightId: string, accessToken: string) 
  */
 export const getHighlightStats = async (bookId: string, accessToken: string) => {
   return retryWithBackoff(async () => {
-    const response = await fetch(`${API_BASE}/${bookId}/stats`, {
+    const response = await fetch(`${API_BASE}/book/${bookId}/stats`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -155,7 +169,8 @@ export const getHighlightStats = async (bookId: string, accessToken: string) => 
       throw new Error('Failed to fetch highlight stats');
     }
 
-    return response.json();
+    const data = await response.json();
+    return data || { count: 0, colors: {} };
   }, API_RETRY_OPTIONS);
 };
 
@@ -168,7 +183,7 @@ export const searchHighlights = async (
   accessToken: string
 ) => {
   const response = await fetch(
-    `${API_BASE}/${bookId}/search?q=${encodeURIComponent(query)}`,
+    `${API_BASE}/book/${bookId}/search?q=${encodeURIComponent(query)}`,
     {
       method: 'GET',
       headers: {
@@ -181,7 +196,8 @@ export const searchHighlights = async (
     throw new Error('Failed to search highlights');
   }
 
-  return response.json();
+  const data = await response.json();
+  return data || [];
 };
 
 /**
@@ -194,7 +210,7 @@ export const filterHighlightsByColor = async (
 ) => {
   const colorQuery = colors.join(',');
   const response = await fetch(
-    `${API_BASE}/${bookId}/filter?colors=${encodeURIComponent(colorQuery)}`,
+    `${API_BASE}/book/${bookId}/filter?colors=${encodeURIComponent(colorQuery)}`,
     {
       method: 'GET',
       headers: {
@@ -207,7 +223,8 @@ export const filterHighlightsByColor = async (
     throw new Error('Failed to filter highlights');
   }
 
-  return response.json();
+  const data = await response.json();
+  return data || [];
 };
 
 /**
@@ -225,5 +242,6 @@ export const deleteBookHighlights = async (bookId: string, accessToken: string) 
     throw new Error('Failed to delete book highlights');
   }
 
-  return response.json();
+  const data = await response.json();
+  return data || { success: true };
 };

@@ -178,8 +178,12 @@ class CoverGenerationService {
    * @param {string} fileType - File type
    * @param {string} originalName - Original filename
    * @param {string} userId - User ID
+   * @param {number} retryCount - Current retry attempt (for internal use)
    */
-  async generateCoverInBackground(bookId, fileBuffer, fileType, originalName, userId) {
+  async generateCoverInBackground(bookId, fileBuffer, fileType, originalName, userId, retryCount = 0) {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_BASE = 5000; // 5 seconds base delay
+    
     // Check if already processing
     if (this.processingQueue.has(bookId)) {
       logger.debug('Cover generation already in progress', { bookId });
@@ -188,25 +192,43 @@ class CoverGenerationService {
 
     // Check concurrent job limit to prevent resource exhaustion
     if (this.processingQueue.size >= this.MAX_CONCURRENT_JOBS) {
-      logger.warn('Max concurrent cover generation jobs reached, deferring', { 
+      // Check if we've exceeded retry limit
+      if (retryCount >= MAX_RETRIES) {
+        logger.error('Cover generation dropped after max retries', { 
+          bookId, 
+          retryCount,
+          maxRetries: MAX_RETRIES,
+          reason: 'Max concurrent jobs limit reached'
+        });
+        return;
+      }
+      
+      // Calculate exponential backoff delay
+      const backoffDelay = RETRY_DELAY_BASE * Math.pow(2, retryCount);
+      
+      logger.warn('Max concurrent cover generation jobs reached, deferring with backoff', { 
         bookId, 
         currentJobs: this.processingQueue.size,
-        maxJobs: this.MAX_CONCURRENT_JOBS
+        maxJobs: this.MAX_CONCURRENT_JOBS,
+        retryCount,
+        retryAfter: `${backoffDelay}ms`
       });
-      // Defer this job - could implement a proper queue here
+      
+      // Defer this job with exponential backoff
       setTimeout(() => {
-        this.generateCoverInBackground(bookId, fileBuffer, fileType, originalName, userId);
-      }, 5000); // Retry in 5 seconds
+        this.generateCoverInBackground(bookId, fileBuffer, fileType, originalName, userId, retryCount + 1);
+      }, backoffDelay);
       return;
     }
 
-    this.processingQueue.set(bookId, { startTime: Date.now(), originalName });
+    this.processingQueue.set(bookId, { startTime: Date.now(), originalName, retryCount });
 
     logger.info('Starting background cover generation', { 
       bookId, 
       originalName,
       bufferSize: fileBuffer.length,
-      queueSize: this.processingQueue.size
+      queueSize: this.processingQueue.size,
+      retryCount
     });
 
     // Warn if buffer is very large (potential memory issue)

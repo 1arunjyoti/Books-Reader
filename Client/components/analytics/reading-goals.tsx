@@ -38,6 +38,8 @@ import {
   ReadingGoal,
   CreateGoalData
 } from '@/lib/api';
+import { DeleteGoalDialog } from './delete-goal-dialog';
+import { logger } from '@/lib/logger';
 
 interface ReadingGoalsProps {
   accessToken: string;
@@ -47,6 +49,8 @@ export function ReadingGoals({ accessToken }: ReadingGoalsProps) {
   const [goals, setGoals] = useState<ReadingGoal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState<ReadingGoal | null>(null);
   
   // Form state
   const [goalType, setGoalType] = useState<'books' | 'pages' | 'time'>('books');
@@ -65,7 +69,7 @@ export function ReadingGoals({ accessToken }: ReadingGoalsProps) {
       const data = await getReadingGoals(accessToken);
       setGoals(data);
     } catch (error) {
-      console.error('Error loading reading goals:', error);
+      logger.error('Error loading reading goals:', error);
     } finally {
       setIsLoading(false);
     }
@@ -91,23 +95,27 @@ export function ReadingGoals({ accessToken }: ReadingGoalsProps) {
       setGoalTarget('');
       await loadGoals();
     } catch (error) {
-      console.error('Error creating goal:', error);
+      logger.error('Error creating goal:', error);
       alert('Failed to create goal. Please try again.');
     }
   };
 
-  /* Handle deleting a goal */
-  const handleDeleteGoal = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this goal?')) {
-      return;
-    }
+  /* Open delete dialog */
+  const handleOpenDeleteDialog = (goal: ReadingGoal) => {
+    setGoalToDelete(goal);
+    setShowDeleteDialog(true);
+  };
 
+  /* Handle deleting a goal */
+  const handleConfirmDelete = async (id: string) => {
     try {
       await deleteReadingGoal(id, accessToken);
       await loadGoals();
+      setShowDeleteDialog(false);
+      setGoalToDelete(null);
     } catch (error) {
-      console.error('Error deleting goal:', error);
-      alert('Failed to delete goal. Please try again.');
+      logger.error('Error deleting goal:', error);
+      throw new Error('Failed to delete goal. Please try again.');
     }
   };
 
@@ -281,7 +289,8 @@ export function ReadingGoals({ accessToken }: ReadingGoalsProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteGoal(goal.id)}
+                      onClick={() => handleOpenDeleteDialog(goal)}
+                      title="Delete goal"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -317,6 +326,18 @@ export function ReadingGoals({ accessToken }: ReadingGoalsProps) {
             );
           })}
         </div>
+      )}
+
+      {/* Delete Goal Dialog */}
+      {goalToDelete && (
+        <DeleteGoalDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          goalId={goalToDelete.id}
+          goalType={goalToDelete.type}
+          goalPeriod={goalToDelete.period}
+          onConfirmDelete={handleConfirmDelete}
+        />
       )}
     </div>
   );

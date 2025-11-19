@@ -8,9 +8,7 @@ jest.mock('../../middleware/auth', () => {
       switch (authState.mode) {
         case 'valid':
           req.auth = {
-            payload: {
-              sub: authState.userId,
-            },
+            userId: authState.userId,
           };
           return next();
         case 'missing':

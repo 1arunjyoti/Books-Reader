@@ -37,7 +37,132 @@ class AnalyticsService {
       duration 
     });
 
+    // Auto-update reading goals based on this session
+    await this.autoUpdateGoals(userId, session);
+
     return session;
+  }
+
+  /**
+   * Automatically update reading goals based on a logged session
+   * @param {string} userId - User ID
+   * @param {Object} session - Reading session data
+   */
+  async autoUpdateGoals(userId, session) {
+    try {
+      const now = new Date();
+      
+      // Get active goals for this user
+      const activeGoals = await prisma.readingGoal.findMany({
+        where: {
+          userId,
+          endDate: { gte: now } // Only active goals
+        }
+      });
+
+      if (activeGoals.length === 0) {
+        return; // No active goals to update
+      }
+
+      // Update each goal based on its type
+      for (const goal of activeGoals) {
+        let increment = 0;
+        let shouldUpdate = true;
+
+        switch (goal.type) {
+          case 'books':
+            // For books goal, check if this is a book completion
+            // We only increment when a book changes status to 'finished'
+            // This is handled separately in the book update logic
+            // Skip auto-update here to prevent double-counting
+            shouldUpdate = false;
+            break;
+
+          case 'pages':
+            // Increment by pages read
+            increment = session.pagesRead || 0;
+            break;
+
+          case 'time':
+            // Increment by duration (in minutes)
+            increment = Math.floor(session.duration / 60);
+            break;
+
+          default:
+            shouldUpdate = false;
+        }
+
+        if (shouldUpdate && increment > 0) {
+          // Update goal current value
+          await prisma.readingGoal.update({
+            where: { id: goal.id },
+            data: { 
+              current: { 
+                increment 
+              }
+            }
+          });
+
+          logger.info('Goal auto-updated', { 
+            goalId: goal.id, 
+            userId, 
+            type: goal.type, 
+            increment 
+          });
+        }
+      }
+    } catch (error) {
+      // Log error but don't fail the session creation
+      logger.error('Error auto-updating goals:', { 
+        error: error.message, 
+        userId,
+        sessionId: session.id 
+      });
+    }
+  }
+
+  /**
+   * Update goals when a book is marked as finished
+   * @param {string} userId - User ID
+   * @param {string} bookId - Book ID
+   */
+  async updateBooksGoal(userId, bookId) {
+    try {
+      const now = new Date();
+      
+      // Get active books goals
+      const booksGoals = await prisma.readingGoal.findMany({
+        where: {
+          userId,
+          type: 'books',
+          endDate: { gte: now }
+        }
+      });
+
+      // Increment each active books goal
+      for (const goal of booksGoals) {
+        await prisma.readingGoal.update({
+          where: { id: goal.id },
+          data: { 
+            current: { 
+              increment: 1 
+            }
+          }
+        });
+
+        logger.info('Books goal incremented', { 
+          goalId: goal.id, 
+          userId, 
+          bookId 
+        });
+      }
+    } catch (error) {
+      logger.error('Error updating books goal:', { 
+        error: error.message, 
+        userId,
+        bookId 
+      });
+    }
   }
 
   /**

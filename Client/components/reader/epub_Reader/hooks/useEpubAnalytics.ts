@@ -109,10 +109,7 @@ export function useEpubAnalytics({ bookId, currentPage, pageInfo, getAccessToken
 
   // Log session on unmount or when closing
   useEffect(() => {
-    let isMounted = true;
-    
     return () => {
-      isMounted = false;
       // Call logReadingSession but don't await it
       // If component unmounts before completion, errors will be silently ignored
       logReadingSession().catch(() => {

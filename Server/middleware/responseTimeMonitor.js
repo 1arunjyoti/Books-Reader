@@ -113,7 +113,7 @@ function updateStats(req, res, durationMs) {
 function logRequest(req, res, durationMs, startDate) {
   const logData = {
     method: req.method,
-    path: req.path,
+    path: req.originalUrl || req.path, // Use originalUrl to get full path including /api prefix
     statusCode: res.statusCode,
     duration: `${durationMs.toFixed(2)}ms`,
     ip: req.ip,
@@ -212,11 +212,20 @@ function resetStats() {
   stats.byMethod.clear();
 }
 
+// Store interval ID for cleanup
+let statsIntervalId = null;
+
 /**
  * Log statistics periodically
  */
 function startStatsLogging() {
-  setInterval(() => {
+  // Clear any existing interval to prevent duplicates
+  if (statsIntervalId) {
+    clearInterval(statsIntervalId);
+    statsIntervalId = null;
+  }
+  
+  statsIntervalId = setInterval(() => {
     if (stats.totalRequests === 0) {
       return; // No requests to log
     }
@@ -228,6 +237,17 @@ function startStatsLogging() {
     // Reset stats for next interval (optional, comment out to keep cumulative)
     // resetStats();
   }, STATS_LOG_INTERVAL_MS);
+}
+
+/**
+ * Stop statistics logging (for graceful shutdown)
+ */
+function stopStatsLogging() {
+  if (statsIntervalId) {
+    clearInterval(statsIntervalId);
+    statsIntervalId = null;
+    logger.info('Performance statistics logging stopped');
+  }
 }
 
 /**
@@ -247,5 +267,6 @@ module.exports = {
   getStats,
   resetStats,
   startStatsLogging,
+  stopStatsLogging,
   getStatsEndpoint,
 };

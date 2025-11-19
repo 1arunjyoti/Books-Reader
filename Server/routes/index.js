@@ -6,6 +6,7 @@ const analyticsRoutes = require('./analytics.routes');
 const collectionsRoutes = require('./collections.routes');
 const highlightsRoutes = require('./highlights');
 const userRoutes = require('./user.routes');
+const webhookRoutes = require('./webhook.routes');
 
 const router = express.Router();
 
@@ -17,5 +18,6 @@ router.use('/analytics', analyticsRoutes);
 router.use('/collections', collectionsRoutes);
 router.use('/highlights', highlightsRoutes);
 router.use('/user', userRoutes);
+router.use('/webhooks', webhookRoutes); // Clerk webhooks
 
 module.exports = router;

@@ -9,6 +9,11 @@ import { API_ENDPOINTS } from './config';
 
 const API_BASE_URL = API_ENDPOINTS.BASE;
 
+// Defensive check: Ensure API_BASE_URL is never empty or just a slash
+if (!API_BASE_URL || API_BASE_URL === '/' || API_BASE_URL === '') {
+  throw new Error('API_BASE_URL is not properly configured. Please set NEXT_PUBLIC_API_URL environment variable.');
+}
+
 export interface Book {
   id: string;
   title: string;
@@ -418,27 +423,39 @@ export async function createReadingSession(
   data: CreateSessionData,
   accessToken: string
 ): Promise<ReadingSession> {
-  const response = await fetch(`${API_BASE_URL}/api/analytics/session`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Failed to log reading session' }));
-    console.error('[API] Reading session failed:', {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorData,
-      hasToken: !!accessToken
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/analytics/session`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
     });
-    throw new Error(errorData.error || 'Failed to log reading session');
-  }
 
-  return response.json();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Failed to log reading session' }));
+      logger.error('[API] Reading session failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+        hasToken: !!accessToken
+      });
+      throw new Error(errorData.error || 'Failed to log reading session');
+    }
+
+    return response.json();
+  } catch (error) {
+    // Network errors (server unreachable, CORS, etc.)
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      logger.warn('[API] Network error logging reading session - server may be unavailable:', {
+        apiUrl: API_BASE_URL,
+        error: error.message
+      });
+      throw new Error('Server unavailable - reading session not logged');
+    }
+    throw error;
+  }
 }
 
 /**
@@ -597,7 +614,19 @@ export interface CollectionWithBooks {
 export async function getCollections(
   accessToken: string
 ): Promise<Collection[]> {
-  const response = await fetch(`${API_BASE_URL}/api/collections`, {
+  // Debug: Log the URL being called with extra checks
+  const url = `${API_BASE_URL}/api/collections`;
+  
+  // Defensive check: Ensure URL is properly formed
+  if (!url.includes('/api/collections')) {
+    const error = `Invalid URL constructed: ${url}. API_BASE_URL is: ${API_BASE_URL}`;
+    logger.error('[API]', error);
+    throw new Error(error);
+  }
+  
+  logger.log('[API] Fetching collections from:', url);
+  
+  const response = await fetch(url, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -605,12 +634,39 @@ export async function getCollections(
     },
   });
 
+  logger.log('[API] Collections response:', {
+    status: response.status,
+    ok: response.ok,
+    url: response.url,
+    headers: Object.fromEntries(response.headers.entries())
+  });
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Failed to fetch collections' }));
+    logger.error('[API] getCollections failed:', {
+      status: response.status,
+      url: response.url,
+      requestedUrl: url,
+      error
+    });
     throw new Error(error.error || 'Failed to fetch collections');
   }
 
-  return response.json();
+  const data = await response.json();
+  
+  // Defensive: Check if we got the wrong endpoint response
+  if (data && typeof data === 'object' && 'message' in data && data.message === 'BooksReader API Server') {
+    const error = 'Received root endpoint response instead of collections. Server may not have collections routes registered or is redirecting. Check server logs.';
+    logger.error('[API] ' + error, {
+      expectedUrl: url,
+      actualResponse: data,
+      responseUrl: response.url,
+      apiBaseUrl: API_BASE_URL
+    });
+    throw new Error(error);
+  }
+
+  return data || [];
 }
 
 /**
@@ -792,7 +848,8 @@ export async function uploadFromUrl(url: string, accessToken: string): Promise<B
 
 /**
  * Get welcome screen status
- * Falls back to false (not shown) if server is unavailable
+ * Returns true if user has already seen welcome, false if they should see it
+ * Falls back to localStorage if server is unavailable
  */
 export async function getWelcomeStatus(accessToken: string): Promise<boolean> {
   try {
@@ -808,25 +865,54 @@ export async function getWelcomeStatus(accessToken: string): Promise<boolean> {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Failed to get welcome status' }));
-      logger.warn('[API] Welcome status unavailable, defaulting to not shown:', error);
-      return false; // Default to showing welcome screen if server unavailable
+      logger.warn('[API] Welcome status request failed:', error);
+      
+      // Fallback to localStorage if API fails
+      if (typeof window !== 'undefined') {
+        const localStatus = localStorage.getItem('welcomeShown');
+        logger.log('[API] Using localStorage fallback, welcomeShown:', localStatus);
+        return localStatus === 'true';
+      }
+      
+      return false; // Default to showing welcome if no fallback available
     }
 
     const data = await response.json();
     logger.log('[API] Welcome status data:', data);
+    
+    // Cache the status in localStorage for offline fallback
+    if (typeof window !== 'undefined' && data.welcomeShown !== undefined) {
+      localStorage.setItem('welcomeShown', data.welcomeShown.toString());
+    }
+    
     return data.welcomeShown;
   } catch (error) {
-    logger.warn('[API] Welcome status check failed (server unavailable), defaulting to not shown');
-    return false; // Default to showing welcome screen if server unavailable
+    logger.warn('[API] Welcome status check failed (network error):', error);
+    
+    // Fallback to localStorage if network error
+    if (typeof window !== 'undefined') {
+      const localStatus = localStorage.getItem('welcomeShown');
+      logger.log('[API] Using localStorage fallback, welcomeShown:', localStatus);
+      return localStatus === 'true';
+    }
+    
+    return false; // Default to showing welcome if no fallback available
   }
 }
 
 /**
  * Mark welcome screen as shown
- * Silently fails if server is unavailable
+ * Saves to both server and localStorage for resilience
  */
 export async function markWelcomeShown(accessToken: string): Promise<void> {
+  // Immediately save to localStorage for instant feedback and offline support
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('welcomeShown', 'true');
+    logger.log('[API] Saved welcomeShown=true to localStorage');
+  }
+  
   try {
+    logger.log('[API] Calling POST /api/user/welcome-shown');
     const response = await fetch(`${API_BASE_URL}/api/user/welcome-shown`, {
       method: 'POST',
       headers: {
@@ -836,9 +922,13 @@ export async function markWelcomeShown(accessToken: string): Promise<void> {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Failed to mark welcome as shown' }));
-      logger.warn('[API] Could not mark welcome as shown (server unavailable):', error);
+      logger.warn('[API] Could not mark welcome as shown on server:', error);
+      logger.warn('[API] Welcome status still saved locally, will sync when server is available');
+    } else {
+      logger.log('[API] Successfully marked welcome as shown on server');
     }
   } catch (error) {
-    logger.warn('[API] Could not mark welcome as shown (server unavailable)');
+    logger.warn('[API] Could not mark welcome as shown on server (network error):', error);
+    logger.warn('[API] Welcome status still saved locally, will sync when server is available');
   }
 }

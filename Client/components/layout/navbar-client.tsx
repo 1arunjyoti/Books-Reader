@@ -30,7 +30,7 @@ export default function NavbarClient({ user }: NavbarClientProps) {
   const { signOut } = useClerk();
 
   const handleLogout = async () => {
-    await signOut({ redirectUrl: '/' });
+    await signOut({ fallbackRedirectUrl: '/' });
   };
 
   const getUserInitials = () => {

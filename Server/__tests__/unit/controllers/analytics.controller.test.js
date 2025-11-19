@@ -15,9 +15,7 @@ describe('AnalyticsController', () => {
   beforeEach(() => {
     req = {
       auth: {
-        payload: {
-          sub: 'user-123'
-        }
+        userId: 'user-123'
       },
       body: {},
       params: {},

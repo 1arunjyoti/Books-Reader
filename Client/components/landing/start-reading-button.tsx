@@ -13,7 +13,8 @@ export function StartReadingButton() {
     if (isSignedIn) {
       router.push('/library');
     } else {
-      router.push('/sign-in?redirectUrl=/library');
+      // Use fallback_redirect_url query param (new Clerk convention)
+      router.push('/sign-in?fallback_redirect_url=/library');
     }
   };
 

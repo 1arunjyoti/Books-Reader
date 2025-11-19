@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Icons } from '@/components/icons';
 import Link from 'next/link';
 import { SignInButton, SignUpButton } from '@clerk/nextjs';
 

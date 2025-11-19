@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { logger } from '@/lib/logger';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { X, Trash2, Copy, Filter, StickyNote, Save, ChevronDown, MapPin } from 'lucide-react';
@@ -36,6 +36,17 @@ export default function PDFHighlightsPanel({
   const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    const timeout = copyTimeoutRef.current;
+    return () => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+    };
+  }, []);
 
   const filteredHighlights = useMemo(() => {
     if (selectedColors.size === 0) {
@@ -60,7 +71,16 @@ export default function PDFHighlightsPanel({
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(highlightId);
-      setTimeout(() => setCopiedId(null), 2000);
+      
+      // Clear previous timeout if exists
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+      
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopiedId(null);
+        copyTimeoutRef.current = null;
+      }, 2000);
     } catch (error) {
       logger.error('Failed to copy highlight text', error);
     }

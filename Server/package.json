@@ -39,6 +39,7 @@
     "pdfjs-dist": "^5.4.296",
     "prisma": "^6.17.0",
     "sharp": "^0.34.4",
+    "svix": "^1.81.0",
     "uuid": "^9.0.0",
     "winston": "^3.18.3",
     "winston-daily-rotate-file": "^5.0.0",

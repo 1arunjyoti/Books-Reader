@@ -1,6 +1,6 @@
 /**
  * Mock Authentication Middleware for Integration Tests
- * Replaces Auth0 JWT validation with a simple mock
+ * Replaces Clerk JWT validation with a simple mock
  */
 
 /**
@@ -8,12 +8,12 @@
  */
 function mockAuthMiddleware(userId = 'test-user-123', options = {}) {
   return (req, res, next) => {
-    // Set the auth object that would normally come from Auth0
+    // Set the auth object that would normally come from Clerk
+    // Clerk sets req.auth.userId directly
     req.auth = {
-      payload: {
-        sub: userId,
-        ...options
-      }
+      userId: userId,
+      sessionId: options.sessionId || 'test-session-123',
+      ...options
     };
     next();
   };
