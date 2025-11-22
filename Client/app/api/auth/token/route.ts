@@ -31,7 +31,20 @@ export async function GET() {
     }
 
     // Default expiry to 1 hour (Clerk tokens typically expire in 1 hour)
-    const expiresIn = 3600;
+    // Update: Clerk tokens actually expire in 60 seconds by default.
+    // We now rely on the client to decode the token and determine expiration.
+    // Attempt to get expiration from session claims if available
+    let expiresIn: number | undefined;
+    
+    try {
+      // sessionClaims might not be typed in all versions but seems fine here
+      const { sessionClaims } = await auth();
+      if (sessionClaims?.exp) {
+        expiresIn = sessionClaims.exp - Math.floor(Date.now() / 1000);
+      }
+    } catch {
+      // Ignore error accessing claims
+    }
 
     return NextResponse.json({ accessToken, expiresIn });
   } catch (error) {

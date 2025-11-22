@@ -14,6 +14,7 @@ BookModel _$BookModelFromJson(Map<String, dynamic> json) => BookModel(
       status: $enumDecode(_$BookStatusEnumMap, json['status']),
       progress: (json['progress'] as num).toDouble(),
       fileType: json['fileType'] as String,
+      assetPath: json['assetPath'] as String?,
     );
 
 Map<String, dynamic> _$BookModelToJson(BookModel instance) => <String, dynamic>{
@@ -24,6 +25,7 @@ Map<String, dynamic> _$BookModelToJson(BookModel instance) => <String, dynamic>{
       'status': _$BookStatusEnumMap[instance.status]!,
       'progress': instance.progress,
       'fileType': instance.fileType,
+      'assetPath': instance.assetPath,
     };
 
 const _$BookStatusEnumMap = {

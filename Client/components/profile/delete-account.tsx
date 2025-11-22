@@ -86,7 +86,7 @@ export default function DeleteAccountSection({ userEmail }: Props) {
       }
 
       // On success, sign out with Clerk and redirect to home page
-      await signOut({ fallbackRedirectUrl: '/' })
+      await signOut({ redirectUrl: '/' })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       setError(msg || 'Network error')

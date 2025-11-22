@@ -61,6 +61,26 @@ class LibraryService {
         progress: 0.0,
         fileType: 'epub',
       ),
+      const BookModel(
+        id: '7',
+        title: 'India - A Sacred Geography',
+        author: 'Diana L. Eck',
+        coverUrl: null, // No cover URL for local asset
+        status: BookStatus.unread,
+        progress: 0.0,
+        fileType: 'epub',
+        assetPath: 'assets/India - A Sacred Geography.epub',
+      ),
+      const BookModel(
+        id: '8',
+        title: 'Machine Learning Course',
+        author: 'Unknown',
+        coverUrl: null, // No cover URL for local asset
+        status: BookStatus.unread,
+        progress: 0.0,
+        fileType: 'pdf',
+        assetPath: 'assets/Machine_Learning_Course__From_Zero_to_Advanced.pdf',
+      ),
     ];
   }
 }

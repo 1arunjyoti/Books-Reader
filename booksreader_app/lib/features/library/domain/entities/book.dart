@@ -10,6 +10,7 @@ class Book extends Equatable {
   final BookStatus status;
   final double progress;
   final String fileType;
+  final String? assetPath;
 
   const Book({
     required this.id,
@@ -19,6 +20,7 @@ class Book extends Equatable {
     required this.status,
     required this.progress,
     required this.fileType,
+    this.assetPath,
   });
 
   @override
@@ -30,5 +32,6 @@ class Book extends Equatable {
     status,
     progress,
     fileType,
+    assetPath,
   ];
 }

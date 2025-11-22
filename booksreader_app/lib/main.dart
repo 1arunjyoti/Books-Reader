@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'features/auth/presentation/pages/splash_page.dart';
 import 'features/auth/presentation/pages/welcome_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
@@ -9,8 +10,16 @@ import 'features/library/presentation/pages/library_page.dart';
 import 'features/profile/presentation/pages/profile_page.dart';
 import 'features/profile/presentation/pages/analytics_page.dart';
 import 'features/profile/presentation/pages/goals_page.dart';
+import 'features/library/presentation/pages/reader_page.dart';
+import 'features/library/domain/entities/book.dart';
 
-void main() {
+import 'package:hive_flutter/hive_flutter.dart';
+import 'features/library/domain/entities/bookmark.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  Hive.registerAdapter(BookmarkAdapter());
   runApp(const ProviderScope(child: BooksReaderApp()));
 }
 
@@ -28,6 +37,13 @@ final _router = GoRouter(
       builder: (context, state) => const AnalyticsPage(),
     ),
     GoRoute(path: '/goals', builder: (context, state) => const GoalsPage()),
+    GoRoute(
+      path: '/reader',
+      builder: (context, state) {
+        final book = state.extra as Book;
+        return ReaderPage(book: book);
+      },
+    ),
   ],
 );
 
@@ -39,8 +55,20 @@ class BooksReaderApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'BooksReader',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF6750A4), // Deep Purple
+          brightness: Brightness.light,
+        ),
         useMaterial3: true,
+        textTheme: GoogleFonts.interTextTheme(),
+        appBarTheme: AppBarTheme(
+          centerTitle: true,
+          titleTextStyle: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
       ),
       debugShowCheckedModeBanner: false,
       routerConfig: _router,

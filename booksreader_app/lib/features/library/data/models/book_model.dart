@@ -13,6 +13,7 @@ class BookModel extends Book {
     required super.status,
     required super.progress,
     required super.fileType,
+    super.assetPath,
   });
 
   factory BookModel.fromJson(Map<String, dynamic> json) =>
