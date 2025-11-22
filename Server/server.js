@@ -128,6 +128,25 @@ app.use(express.urlencoded({
   limit: '10mb' 
 }));
 
+// Debug middleware to check Authorization header
+const fs = require('fs');
+const path = require('path');
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    const logLine = `[${new Date().toISOString()}] ${req.method} ${req.path} - Auth: ${req.headers.authorization ? 'Present' : 'Missing'}\n`;
+    try {
+      fs.appendFileSync(path.join(__dirname, 'debug_auth.log'), logLine);
+      if (req.headers.authorization) {
+        fs.appendFileSync(path.join(__dirname, 'debug_auth.log'), `Token: ${req.headers.authorization.substring(0, 20)}...\n`);
+      }
+    } catch (e) {
+      console.error('Error writing to debug log:', e);
+    }
+  }
+  next();
+});
+
 // Clerk authentication middleware
 app.use(clerkMiddleware({
   publishableKey: config.clerk.publishableKey,

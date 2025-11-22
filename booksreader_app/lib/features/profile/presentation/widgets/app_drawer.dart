@@ -1,26 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import 'package:clerk_flutter/clerk_flutter.dart';
+import '../../../../core/providers/clerk_auth_state_provider.dart';
+import '../../../../core/providers/clerk_token_provider.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
+    final userName = ref.watch(userNameProvider);
+    final userEmail = ref.watch(userEmailProvider);
 
     return Drawer(
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            accountName: Text(user?.name ?? 'User'),
-            accountEmail: Text(user?.email ?? ''),
+            accountName: Text(userName),
+            accountEmail: Text(userEmail),
             currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.white,
               child: Text(
-                (user?.name ?? 'U').substring(0, 1).toUpperCase(),
+                userName.isNotEmpty
+                    ? userName.substring(0, 1).toUpperCase()
+                    : 'U',
                 style: const TextStyle(fontSize: 24, color: Colors.blue),
               ),
             ),
@@ -62,9 +66,21 @@ class AppDrawer extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Logout', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              // Implement logout logic here
-              context.go('/login');
+            onTap: () async {
+              // Close drawer
+              context.pop();
+
+              try {
+                // Call Clerk's signOut method
+                await ClerkAuth.of(context).signOut();
+                // ClerkAuthBuilder will automatically detect the sign-out and show login UI
+              } catch (e) {
+                // Fallback: clear providers manually if Clerk signOut fails
+                Future.microtask(() {
+                  ref.read(clerkTokenProvider.notifier).state = null;
+                  ref.read(clerkAuthStateProvider.notifier).state = null;
+                });
+              }
             },
           ),
           const SizedBox(height: 16),

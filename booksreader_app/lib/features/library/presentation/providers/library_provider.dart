@@ -1,23 +1,28 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../../../core/providers/api_client_provider.dart';
 import '../../domain/entities/book.dart';
 import '../../domain/usecases/get_books.dart';
 import '../../data/datasources/library_service.dart';
+import '../../data/datasources/upload_service.dart';
 import '../../data/repositories/library_repository_impl.dart';
 
 // Data Source
 final libraryServiceProvider = Provider<LibraryService>(
-  (ref) => LibraryService(),
+  (ref) => LibraryService(ref.watch(apiClientProvider)),
 );
 
 // Repository
 final libraryRepositoryProvider = Provider<LibraryRepositoryImpl>((ref) {
-  return LibraryRepositoryImpl(ref.read(libraryServiceProvider));
+  return LibraryRepositoryImpl(ref.watch(libraryServiceProvider));
 });
 
 // Use Cases
 final getBooksProvider = Provider<GetBooks>((ref) {
-  return GetBooks(ref.read(libraryRepositoryProvider));
+  return GetBooks(ref.watch(libraryRepositoryProvider));
 });
 
 // State
@@ -65,11 +70,13 @@ class LibraryState {
 }
 
 class LibraryNotifier extends Notifier<LibraryState> {
-  late final GetBooks _getBooks;
+  late GetBooks _getBooks;
 
   @override
   LibraryState build() {
-    _getBooks = ref.read(getBooksProvider);
+    // Watch the use case so we rebuild when auth state changes
+    _getBooks = ref.watch(getBooksProvider);
+
     // Schedule loading to start after build to avoid modifying state during build
     Future.microtask(() => loadBooks());
     return const LibraryState(isLoading: true);
@@ -126,6 +133,79 @@ class LibraryNotifier extends Notifier<LibraryState> {
       final matchesStatus = status == null || book.status == status;
       return matchesQuery && matchesStatus;
     }).toList();
+  }
+
+  /// Pick and upload a file
+  Future<void> pickAndUploadFile(BuildContext context) async {
+    try {
+      // Pick file
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'epub', 'txt'],
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return; // User cancelled
+      }
+
+      final file = result.files.first;
+      if (file.path == null) {
+        throw Exception('Unable to access the selected file');
+      }
+
+      // Show upload dialog
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Uploading...'),
+            ],
+          ),
+        ),
+      );
+
+      // Create upload service with authenticated API client
+      final apiClient = ref.read(apiClientProvider);
+      final uploadService = UploadService(apiClient);
+
+      // Upload file
+      await uploadService.uploadFile(File(file.path!));
+
+      // Close dialog
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
+
+      // Reload books
+      await loadBooks();
+
+      // Show success message
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('File uploaded successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Close dialog if open
+      if (context.mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      // Show error message
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Upload failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 

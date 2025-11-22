@@ -13,6 +13,7 @@ import SyncProfileButton from '@/components/profile/sync-profile-button';
 import { redirect } from 'next/navigation';
 import { ReadingStatsDashboard } from '@/components/analytics/reading-stats-dashboard';
 import { ReadingGoals } from '@/components/analytics/reading-goals';
+import { SignOutButton } from '@clerk/nextjs';
 
 export default async function ProfilePage() {
   const user = await currentUser();
@@ -141,12 +142,12 @@ export default async function ProfilePage() {
                   <ChangePasswordSection />
 
                     <div className="flex items-end justify-end my-2 mt-6">
-                      <Button asChild variant="destructive">
-                        <a href="/api/auth/logout">
+                      <SignOutButton>
+                        <Button variant="destructive" className="flex items-center gap-2">
                           <LogOut className="h-4 w-4" />
                           Sign Out
-                        </a>
-                      </Button>
+                        </Button>
+                      </SignOutButton>
                     </div>
 
                     

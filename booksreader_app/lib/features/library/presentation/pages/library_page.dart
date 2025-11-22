@@ -120,12 +120,10 @@ class LibraryPage extends ConsumerWidget {
                           ],
                         ),
                         child: IconButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Upload feature coming soon'),
-                              ),
-                            );
+                          onPressed: () async {
+                            // Import file_picker at top of file
+                            final notifier = ref.read(libraryProvider.notifier);
+                            await notifier.pickAndUploadFile(context);
                           },
                           icon: const Icon(Icons.add, color: Colors.white),
                           padding: const EdgeInsets.all(16),
@@ -189,6 +187,56 @@ class LibraryPage extends ConsumerWidget {
             Expanded(
               child: libraryState.isLoading
                   ? LibraryShimmer(isGridView: libraryState.isGridView)
+                  : libraryState.error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            size: 64,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading books',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(
+                              libraryState.error!,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: () => notifier.loadBooks(),
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Retry'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
                   : libraryState.filteredBooks.isEmpty
                   ? Center(
                       child: Column(

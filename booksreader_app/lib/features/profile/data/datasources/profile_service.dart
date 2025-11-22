@@ -1,95 +1,91 @@
-import '../../domain/entities/reading_goal.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../domain/repositories/profile_repository.dart';
+import '../models/analytics_stats_model.dart';
 import '../models/reading_goal_model.dart';
 import '../models/reading_session_model.dart';
 
 class ProfileService {
+  final ApiClient _apiClient;
+
+  ProfileService({required ApiClient apiClient}) : _apiClient = apiClient;
+
+  /// Get reading sessions from server analytics API
   Future<List<ReadingSessionModel>> getReadingSessions(
     TimeRange timeRange,
   ) async {
-    await Future.delayed(const Duration(seconds: 1));
-    final now = DateTime.now();
+    try {
+      // Map TimeRange enum to server's period parameter
+      final period = _mapTimeRangeToPeriod(timeRange);
 
+      // Call server API
+      final response = await _apiClient.get(
+        ApiEndpoints.analyticsStats,
+        queryParameters: {'period': period},
+      );
+
+      // Parse response
+      final statsModel = AnalyticsStatsModel.fromJson(response.data);
+
+      // Convert chart data to ReadingSession models
+      final sessions = statsModel.toReadingSessions();
+
+      // Convert to ReadingSessionModel
+      return sessions
+          .map(
+            (session) => ReadingSessionModel(
+              date: session.date,
+              pagesRead: session.pagesRead,
+              durationSeconds: session.durationSeconds,
+            ),
+          )
+          .toList();
+    } catch (e) {
+      // Log error and rethrow
+      throw Exception('Failed to fetch reading sessions: ${e.toString()}');
+    }
+  }
+
+  /// Map Flutter TimeRange to server period parameter
+  String _mapTimeRangeToPeriod(TimeRange timeRange) {
     switch (timeRange) {
       case TimeRange.day:
-        // Last 24 hours (hourly data)
-        return List.generate(24, (index) {
-          return ReadingSessionModel(
-            date: now.subtract(Duration(hours: 23 - index)),
-            pagesRead: (index % 3 == 0
-                ? 5
-                : index % 2 == 0
-                ? 3
-                : 2),
-            durationSeconds: (index % 3 == 0
-                ? 600
-                : index % 2 == 0
-                ? 300
-                : 180),
-          );
-        });
-
+        return 'week'; // Map day to week since server doesn't have 'day'
       case TimeRange.week:
-        // Last 7 days
-        return List.generate(7, (index) {
-          return ReadingSessionModel(
-            date: now.subtract(Duration(days: 6 - index)),
-            pagesRead: (index + 1) * 10 + (index % 2 == 0 ? 5 : 0),
-            durationSeconds: (index + 1) * 300,
-          );
-        });
-
+        return 'week';
       case TimeRange.month:
-        // Last 30 days
-        return List.generate(30, (index) {
-          return ReadingSessionModel(
-            date: now.subtract(Duration(days: 29 - index)),
-            pagesRead: 15 + (index % 10) * 2,
-            durationSeconds: 900 + (index % 10) * 120,
-          );
-        });
-
+        return 'month';
       case TimeRange.year:
-        // Last 12 months
-        return List.generate(12, (index) {
-          return ReadingSessionModel(
-            date: DateTime(now.year, now.month - (11 - index), 1),
-            pagesRead: 200 + (index * 50),
-            durationSeconds: 18000 + (index * 3600),
-          );
-        });
+        return 'year';
     }
   }
 
   Future<List<ReadingGoalModel>> getReadingGoals() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return const [
-      ReadingGoalModel(
-        id: '1',
-        type: GoalType.daily,
-        targetAmount: 30,
-        currentAmount: 15,
-        unit: GoalUnit.pages,
-      ),
-      ReadingGoalModel(
-        id: '2',
-        type: GoalType.weekly,
-        targetAmount: 200,
-        currentAmount: 120,
-        unit: GoalUnit.pages,
-      ),
-      ReadingGoalModel(
-        id: '3',
-        type: GoalType.monthly,
-        targetAmount: 5,
-        currentAmount: 2,
-        unit: GoalUnit.books,
-      ),
-    ];
+    try {
+      final response = await _apiClient.get(ApiEndpoints.analyticsGoals);
+
+      // Parse response (array of goals)
+      final goalsData = response.data as List<dynamic>;
+
+      return goalsData
+          .map((goalJson) => ReadingGoalModel.fromJson(goalJson))
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to fetch reading goals: ${e.toString()}');
+    }
   }
 
   Future<void> updateProfile({String? name, String? password}) async {
-    await Future.delayed(const Duration(seconds: 2));
-    // Simulate success
+    try {
+      await _apiClient.patch(
+        ApiEndpoints.userProfile,
+        data: {
+          if (name != null) 'name': name,
+          if (password != null) 'password': password,
+        },
+      );
+    } catch (e) {
+      throw Exception('Failed to update profile: ${e.toString()}');
+    }
   }
 }

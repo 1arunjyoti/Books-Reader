@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/providers/clerk_auth_state_provider.dart';
 import '../widgets/app_drawer.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -18,9 +18,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    final user = ref.read(authProvider).user;
-    _nameController = TextEditingController(text: user?.name);
-    _emailController = TextEditingController(text: user?.email);
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Update controllers when providers change
+    final name = ref.read(userNameProvider);
+    final email = ref.read(userEmailProvider);
+    _nameController.text = name;
+    _emailController.text = email;
   }
 
   @override

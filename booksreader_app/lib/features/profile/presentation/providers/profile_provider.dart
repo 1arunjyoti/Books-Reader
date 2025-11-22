@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/api_client_provider.dart';
 import '../../domain/entities/reading_goal.dart';
 import '../../domain/entities/reading_session.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -7,12 +8,12 @@ import '../../data/repositories/profile_repository_impl.dart';
 
 // Data Source
 final profileServiceProvider = Provider<ProfileService>(
-  (ref) => ProfileService(),
+  (ref) => ProfileService(apiClient: ref.watch(apiClientProvider)),
 );
 
 // Repository
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  return ProfileRepositoryImpl(ref.read(profileServiceProvider));
+  return ProfileRepositoryImpl(ref.watch(profileServiceProvider));
 });
 
 // State Classes
@@ -42,6 +43,8 @@ class GoalsState {
 class AnalyticsNotifier extends Notifier<AnalyticsState> {
   @override
   AnalyticsState build() {
+    // Watch repository to rebuild on auth change
+    ref.watch(profileRepositoryProvider);
     Future.microtask(() => loadSessions());
     return const AnalyticsState(isLoading: true);
   }
@@ -72,6 +75,8 @@ class AnalyticsNotifier extends Notifier<AnalyticsState> {
 class GoalsNotifier extends Notifier<GoalsState> {
   @override
   GoalsState build() {
+    // Watch repository to rebuild on auth change
+    ref.watch(profileRepositoryProvider);
     Future.microtask(() => loadGoals());
     return const GoalsState(isLoading: true);
   }

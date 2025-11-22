@@ -1,16 +1,46 @@
-# booksreader_app
+# BooksReader App
 
-A new Flutter project.
+BooksReader is a cross‑platform Flutter application that lets users read, organize, and track their e‑books (PDF, EPUB, TXT). It includes:
+
+- **Library management** – browse, search, and sort your collection.
+- **Reading experience** – smooth page turning, dark mode, text selection, and highlighting.
+- **Analytics** – view reading statistics over day/week/month/year periods.
+- **User authentication** – powered by Clerk SDK for secure sign‑in/up.
+- **Bookmarks & highlights** – persist positions and highlights across sessions.
+- **Responsive design** – works on only Android currently
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+1. **Prerequisites**
 
-A few resources to get you started if this is your first Flutter project:
+   - Flutter SDK (>=3.19)
+   - Dart >=3.2
+   - Android emulator or device
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+2. **Clone the repository**
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+git clone https://github.com/your-org/BooksReader.git
+cd BooksReader/booksreader_app
+```
+
+3. **Install dependencies**
+
+```bash
+flutter pub get
+```
+
+4. **Run the app**
+
+```bash
+flutter run
+```
+
+## Configuration
+
+- **Clerk authentication** – add your Clerk publishable key to `.env`:
+
+```
+CLERK_PUBLISHABLE_KEY=your_key_here
+CLERK_SECRET_KEY=your_key_here
+```

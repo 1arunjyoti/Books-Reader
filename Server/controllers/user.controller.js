@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 const { sanitizeText } = require('../utils/sanitize');
 const userService = require('../services/user.service');
 const { fetchClerkUserInfo } = require('../utils/clerk-userinfo');
+const { clerkClient } = require('@clerk/express');
 
 /**
  * Get user profile with optional selective field fetching
@@ -181,6 +182,28 @@ exports.updateUserName = async (req, res) => {
         updatedAt: true,
       },
     });
+
+    // Sync change to Clerk
+    try {
+      // Split name into first and last name for Clerk
+      // Simple split by first space
+      const nameParts = sanitizedName.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
+
+      await clerkClient.users.updateUser(userId, {
+        firstName,
+        lastName,
+      });
+      
+      logger.info('User name synced to Clerk', { userId });
+    } catch (clerkError) {
+      // Log error but don't fail the request since DB update succeeded
+      logger.error('Failed to sync name to Clerk', { 
+        userId, 
+        error: clerkError.message 
+      });
+    }
 
     logger.info('User name updated', { userId, nameLength: sanitizedName.length });
     
