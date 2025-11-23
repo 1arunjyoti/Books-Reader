@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:flutter_epub_viewer/flutter_epub_viewer.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:dio/dio.dart';
 import '../../domain/entities/book.dart';
 import '../../domain/entities/bookmark.dart';
 import '../providers/bookmark_provider.dart';
+import '../../../../core/providers/api_client_provider.dart';
 
 class ReaderPage extends ConsumerStatefulWidget {
   final Book book;
@@ -47,8 +49,35 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
         final file = File('${dir.path}/$fileName');
 
         if (!await file.exists()) {
-          final byteData = await rootBundle.load(widget.book.assetPath!);
-          await file.writeAsBytes(byteData.buffer.asUint8List());
+          if (widget.book.assetPath!.startsWith('assets/')) {
+            // Local asset
+            final byteData = await rootBundle.load(widget.book.assetPath!);
+            await file.writeAsBytes(byteData.buffer.asUint8List());
+          } else {
+            // Remote file - download from server
+            setState(() {
+              _errorMessage = 'Downloading book...';
+            });
+            final apiClient = ref.read(apiClientProvider);
+            final response = await apiClient.get(
+              '/books/${widget.book.id}/presigned-url',
+              queryParameters: {'expiresIn': '3600'},
+            );
+            final presignedUrl = response.data['presignedUrl'] as String;
+            final dio = Dio();
+            await dio.download(
+              presignedUrl,
+              file.path,
+              onReceiveProgress: (received, total) {
+                if (total != -1) {
+                  final progress = (received / total * 100).toStringAsFixed(0);
+                  setState(() {
+                    _errorMessage = 'Downloading: $progress%';
+                  });
+                }
+              },
+            );
+          }
         }
 
         setState(() {
@@ -57,6 +86,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
             _epubController = EpubController();
           }
           _isLoading = false;
+          _errorMessage = null;
         });
       } else {
         setState(() {

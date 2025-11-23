@@ -108,13 +108,13 @@ export function useEpubBookmarks({ bookId, onSuccess, onError }: UseEpubBookmark
         setBookmarks((prev) => [...prev, newBookmark]);
         setShowBookmarkForm(false);
         setEditingBookmark(null);
-        onSuccess?.('Bookmark saved');
+        //onSuccess?.('Bookmark saved');
       } catch (err) {
         logger.error('Failed to create bookmark:', err);
         onError?.('Failed to save bookmark');
       }
     },
-    [bookId, getAccessToken, onSuccess, onError]
+    [bookId, getAccessToken, onError]
   );
 
   // Update existing bookmark
@@ -131,13 +131,13 @@ export function useEpubBookmarks({ bookId, onSuccess, onError }: UseEpubBookmark
         );
         setShowBookmarkForm(false);
         setEditingBookmark(null);
-        onSuccess?.('Bookmark updated');
+        //onSuccess?.('Bookmark updated');
       } catch (err) {
         logger.error('Failed to update bookmark:', err);
         onError?.('Failed to update bookmark');
       }
     },
-    [getAccessToken, onSuccess, onError]
+    [getAccessToken, onError]
   );
 
   // Handle bookmark form submit

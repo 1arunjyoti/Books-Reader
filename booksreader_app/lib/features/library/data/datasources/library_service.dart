@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/book_model.dart';
@@ -17,16 +19,24 @@ class LibraryService {
       // Parse response - server returns { "books": [...] }
       final data = response.data;
       if (data is Map<String, dynamic>) {
-        print('📚 LibraryService: Response is Map. Keys: ${data.keys}');
+        if (kDebugMode) {
+          print('📚 LibraryService: Response is Map. Keys: ${data.keys}');
+        }
         if (data.containsKey('books')) {
-          print(
-            '📚 LibraryService: Found "books" key. Length: ${(data['books'] as List).length}',
-          );
+          if (kDebugMode) {
+            print(
+              '📚 LibraryService: Found "books" key. Length: ${(data['books'] as List).length}',
+            );
+          }
         } else {
-          print('⚠️ LibraryService: "books" key MISSING');
+          if (kDebugMode) {
+            print('⚠️ LibraryService: "books" key MISSING');
+          }
         }
       } else {
-        print('📚 LibraryService: Response is ${data.runtimeType}');
+        if (kDebugMode) {
+          print('📚 LibraryService: Response is ${data.runtimeType}');
+        }
       }
 
       final booksJson = data is Map<String, dynamic>
@@ -34,7 +44,9 @@ class LibraryService {
           : (data as List<dynamic>?);
 
       if (booksJson == null) {
-        print('⚠️ LibraryService: booksJson is NULL');
+        if (kDebugMode) {
+          print('⚠️ LibraryService: booksJson is NULL');
+        }
         return [];
       }
 
@@ -42,7 +54,9 @@ class LibraryService {
       for (final item in booksJson) {
         try {
           if (item is! Map<String, dynamic>) {
-            print('⚠️ LibraryService: Skipping non-map item: $item');
+            if (kDebugMode) {
+              print('⚠️ LibraryService: Skipping non-map item: $item');
+            }
             continue;
           }
 
@@ -54,40 +68,64 @@ class LibraryService {
               final fileName = json['fileName'] as String;
               final ext = fileName.split('.').last;
               json['fileType'] = ext;
-              print(
-                '🔧 LibraryService: Patched fileType for "${json['title']}" -> $ext',
-              );
+              if (kDebugMode) {
+                print(
+                  '🔧 LibraryService: Patched fileType for "${json['title']}" -> $ext',
+                );
+              }
             } else {
               // Fallback if both fileType and fileName are missing
               json['fileType'] = 'unknown';
-              print(
-                '⚠️ LibraryService: No fileType/fileName for "${json['title']}". Defaulting to "unknown"',
-              );
+              if (kDebugMode) {
+                print(
+                  '⚠️ LibraryService: No fileType/fileName for "${json['title']}". Defaulting to "unknown"',
+                );
+              }
             }
           }
 
           // Patch missing author if needed
           if (json['author'] == null) {
             json['author'] = 'Unknown Author';
-            print(
-              '🔧 LibraryService: Patched author for "${json['title']}" -> Unknown Author',
-            );
+            if (kDebugMode) {
+              print(
+                '🔧 LibraryService: Patched author for "${json['title']}" -> Unknown Author',
+              );
+            }
+          }
+
+          // Map fileUrl to assetPath if assetPath is missing
+          if (json['assetPath'] == null && json['fileUrl'] != null) {
+            json['assetPath'] = json['fileUrl'];
+            if (kDebugMode) {
+              print(
+                '🔧 LibraryService: Mapped fileUrl to assetPath for "${json['title']}"',
+              );
+            }
           }
 
           books.add(BookModel.fromJson(json));
         } catch (e) {
-          print('❌ LibraryService: Failed to parse book: $item');
-          print('   Error: $e');
+          if (kDebugMode) {
+            print('❌ LibraryService: Failed to parse book: $item');
+          }
+          if (kDebugMode) {
+            print('   Error: $e');
+          }
           // Continue to next book instead of failing everything
         }
       }
 
-      print(
-        '✅ LibraryService: Parsed ${books.length} books (skipped ${booksJson.length - books.length})',
-      );
+      if (kDebugMode) {
+        print(
+          '✅ LibraryService: Parsed ${books.length} books (skipped ${booksJson.length - books.length})',
+        );
+      }
       return books;
     } catch (e) {
-      print('❌ LibraryService Error: $e');
+      if (kDebugMode) {
+        print('❌ LibraryService Error: $e');
+      }
       // Log error and return empty list or rethrow
       // For now, rethrow to let error handling happen upstream
       rethrow;

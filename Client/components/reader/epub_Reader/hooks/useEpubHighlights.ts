@@ -219,7 +219,7 @@ export function useEpubHighlights({
   const loadHighlights = useCallback(async () => {
     try {
       setIsLoadingHighlights(true);
-      // SECURITY: Use centralized token management
+      // Use centralized token management
       const accessToken = await getAccessToken();
       if (!accessToken) {
         logger.error('Failed to get access token for highlights');
@@ -231,7 +231,7 @@ export function useEpubHighlights({
       // Filter to only include EPUB highlights since this is an EPUB reader
       const epubHighlights = data.filter((h): h is EpubHighlight => h.source === 'EPUB');
       
-      // SECURITY: Sanitize all fetched highlights to prevent XSS from stored data
+      // Sanitize all fetched highlights to prevent XSS from stored data
       // This provides defense-in-depth alongside React's built-in JSX escaping
       const sanitizedHighlights = epubHighlights.map(h => ({
         ...h,
@@ -337,7 +337,7 @@ export function useEpubHighlights({
       const selectedText = selection.toString().trim();
       if (!selectedText) return;
 
-      // SECURITY: Sanitize text immediately upon selection to prevent XSS
+      // Sanitize text immediately upon selection to prevent XSS
       const sanitizedText = sanitizeText(selectedText, {
         maxLength: 5000,
         allowNewlines: true,
@@ -375,7 +375,7 @@ export function useEpubHighlights({
       if (!pendingSelection) return;
 
       try {
-        // Note: text is already sanitized in handleTextSelected
+        // text is already sanitized in handleTextSelected
         const accessToken = await getAccessToken();
         if (!accessToken) {
           throw new Error('No access token available');
@@ -417,13 +417,13 @@ export function useEpubHighlights({
         }
 
         setPendingSelection(null);
-        onSuccess?.('Highlight created');
+        //onSuccess?.('Highlight created');
       } catch (err) {
         logger.error('Failed to create highlight:', err);
         onError?.('Failed to create highlight');
       }
     },
-    [pendingSelection, bookId, getAccessToken, renditionRef, onSuccess, onError]
+    [pendingSelection, bookId, getAccessToken, renditionRef, onError]
   );
 
   // Update highlight color
@@ -474,7 +474,7 @@ export function useEpubHighlights({
         );
 
         setEditingHighlight(null);
-        onSuccess?.('Highlight color updated');
+        //onSuccess?.('Highlight color updated');
       } catch (err) {
         logger.error('Failed to update highlight color:', err);
         
@@ -498,21 +498,21 @@ export function useEpubHighlights({
         setEditingHighlight(null);
       }
     },
-    [renditionRef, getAccessToken, onSuccess, onError]
+    [renditionRef, getAccessToken, onError]
   );
 
   // Save note to highlight
   const saveHighlightNote = useCallback(
     async (highlightId: string, note: string) => {
       try {
-        // SECURITY: Sanitize note before saving to prevent XSS attacks
+        // Sanitize note before saving to prevent XSS attacks
         const sanitizedNote = sanitizeText(note, {
           maxLength: 1000,
           allowNewlines: true,
           trimWhitespace: true,
         });
         
-        // SECURITY: Use centralized token management
+        // Use centralized token management
         const accessToken = await getAccessToken();
         if (!accessToken) {
           logger.error('Failed to get access token for highlight note update');
@@ -532,13 +532,13 @@ export function useEpubHighlights({
             h.id === highlightId ? { ...h, note: sanitizedNote } : h
           )
         );
-        onSuccess?.('Note saved');
+        //onSuccess?.('Note saved');
       } catch (err) {
         logger.error('Error saving note:', err);
         onError?.('Failed to save note');
       }
     },
-    [getAccessToken, onSuccess, onError]
+    [getAccessToken, onError]
   );
 
   // Remove highlight
@@ -555,7 +555,7 @@ export function useEpubHighlights({
         // Remove from state
         setHighlights((prev) => prev.filter((h) => h.id !== highlightId));
         
-        // SECURITY: Use centralized token management
+        // Use centralized token management
         const accessToken = await getAccessToken();
         if (!accessToken) {
           logger.error('Failed to get access token for highlight deletion');

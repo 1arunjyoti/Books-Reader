@@ -1,4 +1,6 @@
-import 'package:clerk_flutter/clerk_flutter.dart';
+//import 'package:clerk_flutter/clerk_flutter.dart';
+// ignore_for_file: non_constant_identifier_names, strict_top_level_inference
+
 import '../models/user_model.dart';
 import '../../../../core/storage/secure_storage.dart';
 
