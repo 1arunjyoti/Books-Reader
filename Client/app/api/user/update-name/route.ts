@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
-import { getSession } from '@/lib/session';
+import { auth } from '@clerk/nextjs/server';
 import { API_ENDPOINTS } from '@/lib/config';
 
 const API_BASE_URL = API_ENDPOINTS.BASE;
@@ -39,16 +39,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = await getSession();
+    const { userId, getToken } = await auth();
     
-    if (!session || !session.user) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    const accessToken = session.tokenSet?.accessToken || session.accessToken;
+    const accessToken = await getToken();
     
     if (!accessToken) {
       return NextResponse.json(

@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import {
+  ClerkProvider,
+} from '@clerk/nextjs'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers";
@@ -7,6 +10,7 @@ import Navbar from "../components/layout/navbar";
 import Footer from "../components/layout/footer";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const dynamic = 'force-dynamic';
 
@@ -40,52 +44,57 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      
-      <head>
-        {/* Prevent flash of incorrect theme by setting class before hydration */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function () {
-              try {
-                var key = 'theme';
-                var theme = localStorage.getItem(key);
-                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (theme === 'dark' || (!theme && prefersDark)) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        
+        <head suppressHydrationWarning>
+          {/* Prevent flash of incorrect theme by setting class before hydration */}
+          <script
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{
+              __html: `(function () {
+                try {
+                  var key = 'theme';
+                  var theme = localStorage.getItem(key);
+                  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  if (theme === 'dark' || (!theme && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {
+                  // silent
                 }
-              } catch (e) {
-                // silent
-              }
-            })();`,
-          }}
-        />
-        {/* Preconnect to Google Fonts to speed up font fetch */}
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
+              })();`,
+            }}
+          />
+          {/* Preconnect to Google Fonts to speed up font fetch */}
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        </head>
 
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-900`}>
-        <QueryProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <Navbar />
-            <main className="min-h-[calc(100vh-8rem)]">
-              <SpeedInsights />
-              {children}
-              <Analytics />
-            </main>
-            <Footer />
-          </ThemeProvider>
-        </QueryProvider>
-      </body>
-      
-    </html>
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-900`}>
+          <QueryProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <Navbar />
+              <main className="min-h-[calc(100vh-8rem)]">
+                <SpeedInsights />
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
+                <Analytics />
+              </main>
+              <Footer />
+            </ThemeProvider>
+          </QueryProvider>
+        </body>
+        
+      </html>
+    </ClerkProvider>
   );
 }

@@ -1,5 +1,5 @@
 const express = require('express');
-const { checkJwt } = require('../middleware/auth');
+const { checkJwt } = require('../middleware/clerk-auth');
 const { bookOperationsLimiter } = require('../middleware/rateLimiter');
 const { validateBody, validateParams, validateQuery } = require('../middleware/validator');
 const {
@@ -48,7 +48,7 @@ router.post('/', validateBody(createHighlightSchema), async (req, res) => {
       rects,
       source,
     } = req.body;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -114,13 +114,13 @@ router.post('/', validateBody(createHighlightSchema), async (req, res) => {
 });
 
 /**
- * GET /api/highlights/:bookId
+ * GET /api/highlights/book/:bookId
  * Get all highlights for a book
  */
-router.get('/:bookId', validateParams(highlightBookIdParamSchema), async (req, res) => {
+router.get('/book/:bookId', validateParams(highlightBookIdParamSchema), async (req, res) => {
   try {
     const { bookId } = req.params;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -136,13 +136,13 @@ router.get('/:bookId', validateParams(highlightBookIdParamSchema), async (req, r
 });
 
 /**
- * GET /api/highlights/:bookId/stats
+ * GET /api/highlights/book/:bookId/stats
  * Get highlight statistics for a book
  */
-router.get('/:bookId/stats', validateParams(highlightBookIdParamSchema), async (req, res) => {
+router.get('/book/:bookId/stats', validateParams(highlightBookIdParamSchema), async (req, res) => {
   try {
     const { bookId } = req.params;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -158,17 +158,17 @@ router.get('/:bookId/stats', validateParams(highlightBookIdParamSchema), async (
 });
 
 /**
- * GET /api/highlights/:bookId/search?q=query
+ * GET /api/highlights/book/:bookId/search?q=query
  * Search highlights by text
  */
-router.get('/:bookId/search', 
+router.get('/book/:bookId/search', 
   validateParams(highlightBookIdParamSchema),
   validateQuery(highlightSearchQuerySchema),
   async (req, res) => {
   try {
     const { bookId } = req.params;
     const { q } = req.query;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -184,17 +184,17 @@ router.get('/:bookId/search',
 });
 
 /**
- * GET /api/highlights/:bookId/filter?colors=yellow,green
+ * GET /api/highlights/book/:bookId/filter?colors=yellow,green
  * Filter highlights by color
  */
-router.get('/:bookId/filter', 
+router.get('/book/:bookId/filter', 
   validateParams(highlightBookIdParamSchema),
   validateQuery(highlightFilterQuerySchema),
   async (req, res) => {
   try {
     const { bookId } = req.params;
     const { colors } = req.query;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -211,6 +211,37 @@ router.get('/:bookId/filter',
 });
 
 /**
+ * GET /api/highlights/:highlightId
+ * Get a single highlight by ID
+ */
+router.get('/:highlightId', 
+  validateParams(highlightIdParamSchema),
+  async (req, res) => {
+  try {
+    const { highlightId } = req.params;
+    const userId = req.auth?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const highlight = await getHighlightById(highlightId, userId);
+
+    if (!highlight) {
+      return res.status(404).json({ error: 'Highlight not found' });
+    }
+
+    res.json(highlight);
+  } catch (error) {
+    logger.error('Error fetching highlight:', { error: error.message, highlightId: req.params.highlightId, userId: req.auth.sub });
+    if (error.message === 'Highlight not found or unauthorized') {
+      return res.status(404).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Failed to fetch highlight' });
+  }
+});
+
+/**
  * PUT /api/highlights/:highlightId
  * Update a highlight (color, hex, note)
  */
@@ -221,7 +252,7 @@ router.put('/:highlightId',
   try {
     const { highlightId } = req.params;
     const { color, hex, note, rects, pageNumber, source } = req.body;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -255,7 +286,7 @@ router.delete('/:highlightId',
   async (req, res) => {
   try {
     const { highlightId } = req.params;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -282,7 +313,7 @@ router.delete('/book/:bookId',
   async (req, res) => {
   try {
     const { bookId } = req.params;
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });

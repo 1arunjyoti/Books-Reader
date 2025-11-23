@@ -32,6 +32,32 @@ export function AuthTokenProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
 
   /**
+   * Helper to decode JWT and get expiration
+   * Avoids adding external dependencies like jwt-decode
+   */
+  const getTokenExpiration = (token: string): number | null => {
+    try {
+      const [, payload] = token.split('.');
+      if (!payload) return null;
+      
+      // Add padding if needed and replace URL-safe chars
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+
+      const { exp } = JSON.parse(jsonPayload);
+      return exp ? exp * 1000 : null;
+    } catch (e) {
+      logger.error('Failed to decode token expiration:', e);
+      return null;
+    }
+  };
+
+  /**
    * Get access token with automatic caching and deduplication
    * If multiple components request token simultaneously, only one fetch occurs
    */
@@ -61,14 +87,19 @@ export function AuthTokenProvider({ children }: { children: React.ReactNode }) {
         }
         
         const data = await response.json();
-        const { accessToken, expiresIn = 3600 } = data;
-
-        // Cache token with 5-minute (300 seconds) safety margin
-        const tokenLifetime = (expiresIn - 300) * 1000;
+        const { accessToken } = data;
+        
+        // Calculate expiration from token itself
+        const expiresAt = getTokenExpiration(accessToken);
+        
+        // Default to 55 seconds if decoding fails (Clerk tokens are usually 60s)
+        // Using a 10s safety margin
+        const safetyMargin = 10000; // 10 seconds
+        const finalExpiresAt = expiresAt ? (expiresAt - safetyMargin) : (now + 50000);
 
         cacheRef.current = {
           token: accessToken,
-          expiresAt: now + tokenLifetime,
+          expiresAt: finalExpiresAt,
         };
 
         return accessToken;

@@ -1,29 +1,35 @@
-import { getSession } from '@/lib/session';
+import { currentUser } from '@clerk/nextjs/server';
 import NavbarClient from './navbar-client';
 import { fetchUserProfile } from '@/lib/api/user-profile';
+import { auth } from '@clerk/nextjs/server';
 
 export default async function Navbar() {
-  const session = await getSession();
-  const user = session?.user;
-  const accessToken = session?.tokenSet?.accessToken || '';
-
-  // Fetch user profile from database to get saved name
-  // Uses shared utility with:
-  // - 5-minute cache
-  // - 10-second timeout
-  // - Selective fields (only 'name' and 'email' needed for navbar)
-  // This reduces payload by ~70% compared to fetching all fields
-  let userProfile = null;
-  if (user && accessToken) {
-    // Request only name and email (navbar doesn't need picture, nickname, or updatedAt)
-    userProfile = await fetchUserProfile(user.sub, accessToken, ['name', 'email']);
+  const user = await currentUser();
+  
+  if (!user) {
+    return <NavbarClient user={null} />;
   }
 
-  // Merge Auth0 user data with database profile data
-  const mergedUser = user ? {
-    ...user,
-    name: userProfile?.name || user.name, // Use saved name if available
-  } : null;
+  // Get Clerk token for API calls
+  const { getToken } = await auth();
+  const accessToken = await getToken();
 
-  return <NavbarClient user={mergedUser || null} />;
+  // Fetch user profile from database to get saved name
+  let userProfile = null;
+  if (user && accessToken) {
+    userProfile = await fetchUserProfile(user.id, accessToken, ['name', 'email']);
+  }
+
+  // Merge Clerk user data with database profile data
+  const mergedUser = {
+    sub: user.id,
+    name: userProfile?.name || (user.firstName && user.lastName 
+      ? `${user.firstName} ${user.lastName}`.trim()
+      : user.firstName || user.lastName || user.username || 'User'),
+    email: user.emailAddresses[0]?.emailAddress,
+    picture: user.imageUrl,
+    nickname: user.username ?? undefined,
+  };
+
+  return <NavbarClient user={mergedUser} />;
 }

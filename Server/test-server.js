@@ -75,8 +75,8 @@ require('dotenv').config();
 const requiredEnvVars = [
   'PORT',
   'CLIENT_URL',
-  'AUTH0_DOMAIN',
-  'AUTH0_AUDIENCE',
+  'CLERK_PUBLISHABLE_KEY',
+  'CLERK_SECRET_KEY',
   'B2_ENDPOINT',
   'B2_KEY_ID',
   'B2_APPLICATION_KEY',

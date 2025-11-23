@@ -4,13 +4,11 @@
 const request = require('supertest');
 const { createTestApp } = require('../setup/testServer');
 
-// Mock Auth0 middleware
+// Mock Clerk middleware
 jest.mock('../../middleware/auth', () => ({
   checkJwt: (req, res, next) => {
     req.auth = {
-      payload: {
-        sub: 'test-user-system'
-      }
+      userId: 'test-user-system'
     };
     next();
   }

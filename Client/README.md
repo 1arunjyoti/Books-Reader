@@ -20,7 +20,7 @@ A modern, feature-rich web application for reading and managing digital books (P
 ## Features
 
 ### 🔐 Authentication & Security
-- **Auth0 Integration**: Secure authentication with support for multiple OAuth providers (Google, GitHub, etc.)
+- **Clerk Integration**: Secure authentication with support for multiple OAuth providers (Google, GitHub, etc.)
 - **JWT Token Management**: Centralized token caching with automatic refresh and race condition prevention
 - **Protected Routes**: Middleware-based route protection for authenticated pages
 - **Session Management**: Persistent sessions with secure cookie handling
@@ -142,7 +142,7 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **clsx & tailwind-merge**: Conditional class merging
 
 ### Authentication & State
-- **Auth0 (@auth0/nextjs-auth0)**: Secure authentication with OAuth 2.0 and OpenID Connect
+- **Clerk (@clerk/nextjs)**: Secure authentication with OAuth 2.0/OpenID Connect, session management and client-side SDK
 - **React Query (@tanstack/react-query)**: Server state management with caching
 - **Immer**: Immutable state updates with mutable syntax
 - **cookies-next**: Cookie management for client and server
@@ -186,13 +186,13 @@ Before setting up the BooksReader client, ensure you have:
 - **Backend Server**: The BooksReader backend must be running (see `Server/` directory)
 
 ### Required External Services
-- **Auth0 Account**: For authentication
-  - Free tier available at [auth0.com](https://auth0.com)
-  - Requires configured application and API
+- **Clerk Account**: For authentication
+   - Free tier available at [clerk.com](https://clerk.com)
+   - Requires configured application and API keys
 - **Backend API**: Running Express.js server with:
   - PostgreSQL database (Neon recommended)
   - Backblaze B2 storage configured
-  - Auth0 JWT validation
+   - Clerk JWT validation
 
 ### Recommended
 - **Git**: Version control
@@ -242,12 +242,16 @@ Edit `.env.local` with your values:
 APP_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:3001
 
-# Auth0 Configuration
-AUTH0_SECRET=your-generated-secret-here  # Generate with: openssl rand -hex 32
-AUTH0_DOMAIN=your-domain.auth0.com
-AUTH0_CLIENT_ID=your-auth0-client-id
-AUTH0_CLIENT_SECRET=your-auth0-client-secret
-AUTH0_AUDIENCE=https://your-api-identifier
+# Clerk Configuration
+# Get these from your Clerk Dashboard: https://dashboard.clerk.com
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your-publishable-key
+CLERK_SECRET_KEY=sk_test_your-secret-key
+
+# Clerk Sign-in/Sign-up URLs
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/library
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/library
 
 # Optional: Image Domains (comma-separated)
 NEXT_PUBLIC_IMAGE_DOMAINS=
@@ -268,61 +272,32 @@ If successful, you'll see:
 ---
 
 ## Quick Setup
+Authentication is handled by Clerk.
 
-### 1. Auth0 Setup
+### 1. Clerk Setup
 
-#### Create Auth0 Application
-1. Go to [Auth0 Dashboard](https://manage.auth0.com)
-2. Navigate to **Applications** → **Create Application**
-3. Application Settings:
-   - **Name**: BooksReader Client
-   - **Type**: Regular Web Application
-   - **Technology**: Next.js
-4. Click **Create**
+Here are the quick steps to get started with Clerk (development):
 
-#### Configure Application
-In the application settings:
+#### Create a Clerk Application
+1. Go to [Clerk Dashboard](https://dashboard.clerk.com) and create a new application (name it BooksReader).
+2. Configure the sign-in/sign-up paths and the after sign-in redirect to `/library`.
+3. Add `http://localhost:3000` to allowed origins (CORS) and local paths.
 
-**Application URIs**
-```
-Allowed Callback URLs:
-http://localhost:3000/api/auth/callback
+#### Obtain API Keys
+1. In Clerk dashboard, go to **API Keys** and copy the publishable key (`pk_test_*`) and secret key (`sk_test_*`).
+2. Use the publishable key in the client and the secret key on the server.
 
-Allowed Logout URLs:
-http://localhost:3000
-
-Allowed Web Origins:
-http://localhost:3000
-```
-
-**Advanced Settings** → **Grant Types**
-- ✅ Authorization Code
-- ✅ Refresh Token
-
-**Save Changes**
-
-#### Create Auth0 API
-1. Navigate to **Applications** → **APIs** → **Create API**
-2. API Settings:
-   - **Name**: BooksReader API
-   - **Identifier**: `https://booksreader-api` (or your custom identifier)
-   - **Signing Algorithm**: RS256
-3. Click **Create**
-
-#### Update Client Environment
-Copy credentials from Auth0 dashboard to `.env.local`:
+#### Configure Client `.env.local`
+Copy the following to `.env.local` and replace with your Clerk keys and desired URLs:
 
 ```env
-AUTH0_DOMAIN=your-tenant.auth0.com
-AUTH0_CLIENT_ID=abc123xyz789
-AUTH0_CLIENT_SECRET=your-client-secret-here
-AUTH0_AUDIENCE=https://booksreader-api
-AUTH0_SECRET=generate-with-openssl-rand-hex-32
-```
-
-Generate the `AUTH0_SECRET`:
-```bash
-openssl rand -hex 32
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your-publishable-key
+CLERK_SECRET_KEY=sk_test_your-secret-key
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/library
+APP_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
 ### 2. Backend Server Setup
@@ -350,7 +325,7 @@ Visit `http://localhost:3000` and you should see the landing page.
 ### 4. Test Authentication Flow
 
 1. Click **Sign In** in the navbar
-2. You'll be redirected to Auth0 login page
+2. You'll be shown the Clerk sign-in modal/page
 3. Sign in with your configured provider (Google, email, etc.)
 4. After successful authentication, you'll be redirected to `/library`
 5. Upload a book to test the full workflow
@@ -371,7 +346,7 @@ Client/
 │   │   └── signup/               # Sign-up page
 │   │
 │   ├── api/                      # API routes
-│   │   └── auth/                 # Auth0 API handlers (handled by SDK)
+│   │   └── auth/                 # Clerk API handlers (handled by SDK)
 │   │
 │   ├── library/                  # Library management
 │   │   ├── page.tsx              # Main library page
@@ -502,7 +477,7 @@ Client/
 ├── lib/                          # Utility libraries
 │   ├── api.ts                    # API client functions
 │   ├── highlights-api.ts         # Highlights API wrapper
-│   ├── auth0.ts                  # Auth0 client configuration
+│   ├── clerk-client.ts           # Clerk client configuration
 │   ├── auth-client.ts            # Auth utilities
 │   ├── session.ts                # Session helpers
 │   ├── upload.ts                 # File upload logic
@@ -590,7 +565,7 @@ BooksReader Client follows a modern **Next.js App Router** architecture with a c
 ┌─────────────────────────────────────────────────────────────┐
 │  Middleware Layer (middleware.ts)                            │
 │  • Route Protection                                          │
-│  • Auth0 Session Management                                  │
+│  • Clerk Session Management                                  │
 │  • Redirects                                                 │
 └─────────────────────────────────────────────────────────────┘
                            │
@@ -598,7 +573,7 @@ BooksReader Client follows a modern **Next.js App Router** architecture with a c
 ┌─────────────────────────────────────────────────────────────┐
 │  External Services                                           │
 │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐    │
-│  │  Auth0      │  │  Backend    │  │  Backblaze B2    │    │
+│  │  Clerk      │  │  Backend    │  │  Backblaze B2    │    │
 │  │  (OAuth)    │  │  API        │  │  (File Storage)  │    │
 │  └─────────────┘  └─────────────┘  └──────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
@@ -607,7 +582,7 @@ BooksReader Client follows a modern **Next.js App Router** architecture with a c
 ### Key Design Patterns
 
 #### 1. **Authentication Flow**
-- **Auth0 SDK**: Handles OAuth 2.0 flow, session cookies, token refresh
+- **Clerk SDK**: Handles OAuth 2.0 flow, session cookies, token refresh
 - **Middleware**: Intercepts requests, validates sessions, protects routes
 - **Token Context**: Centralizes token management, prevents race conditions
 - **Caching**: Tokens cached in memory with expiry tracking (reduces API calls by 95%)
@@ -654,7 +629,7 @@ BooksReader Client follows a modern **Next.js App Router** architecture with a c
 3. Custom theme support with CSS injection
 4. Rendition hooks for chapter navigation and progress
 
-#### Auth0 Integration
+#### Clerk Integration
 1. SDK handles all OAuth flows automatically
 2. Middleware validates sessions on every protected route
 3. Token Context provides centralized token access
@@ -677,13 +652,13 @@ BooksReader Client follows a modern **Next.js App Router** architecture with a c
    │
    ├─→ Click "Sign In"
    │
-2. Auth0 Login (/api/auth/login)
+2. Clerk Login (/api/auth/login)
    │
-   ├─→ Redirect to Auth0 Hosted Login Page
+   ├─→ Redirect to Clerk Hosted Login Page
    │
    ├─→ User authenticates (email/password or OAuth)
    │
-   ├─→ Auth0 redirects to /api/auth/callback
+   ├─→ Clerk redirects to /api/auth/callback
    │
 3. Callback Handler
    │
@@ -742,7 +717,7 @@ BooksReader Client follows a modern **Next.js App Router** architecture with a c
    │
 6. Profile Page (/profile)
    │
-   ├─→ Display user info from Auth0 session
+   ├─→ Display user info from Clerk session
    │
    ├─→ Show reading statistics (API fetch)
    │
@@ -873,7 +848,7 @@ Context checks if fetch is already in progress:
    ↓
 Context calls `/api/auth/me` endpoint
    ↓
-Auth0 SDK validates session cookie
+Clerk SDK validates session cookie
    ↓
 SDK returns access token with expiry
    ↓
@@ -968,17 +943,16 @@ npm run postinstall
 ## Environment Variables Reference
 
 | Variable | Description | Required | Example |
-|----------|-------------|----------|---------|
+|----------|-------------|----------|---------|  
 | `APP_BASE_URL` | Base URL of the application | Yes | `http://localhost:3000` |
 | `NEXT_PUBLIC_API_URL` | Backend API URL | Yes | `http://localhost:3001` |
-| `AUTH0_SECRET` | Secret for session encryption | Yes | Generate with `openssl rand -hex 32` |
-| `AUTH0_DOMAIN` | Auth0 tenant domain | Yes | `your-tenant.auth0.com` |
-| `AUTH0_CLIENT_ID` | Auth0 application client ID | Yes | `abc123xyz789` |
-| `AUTH0_CLIENT_SECRET` | Auth0 application client secret | Yes | From Auth0 dashboard |
-| `AUTH0_AUDIENCE` | Auth0 API identifier | Yes | `https://booksreader-api` |
-| `NEXT_PUBLIC_IMAGE_DOMAINS` | Allowed image domains (comma-separated) | No | `images.example.com,cdn.example.com` |
-
----
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (frontend) | Yes | `pk_test_...` |
+| `CLERK_SECRET_KEY` | Clerk secret key (server) | Yes | `sk_test_...` |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Sign-in path for Clerk | Yes | `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Sign-up path for Clerk | Yes | `/sign-up` |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` | Fallback redirect after sign-in | Yes | `/library` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL` | Fallback redirect after sign-up | Yes | `/library` |
+| `NEXT_PUBLIC_IMAGE_DOMAINS` | Allowed image domains (comma-separated) | No | `images.example.com,cdn.example.com` |---
 
 ## Contributing
 

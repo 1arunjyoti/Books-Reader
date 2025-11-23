@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
  */
 exports.createBookmark = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -48,7 +48,7 @@ exports.createBookmark = async (req, res) => {
  */
 exports.getBookmarksByBook = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     const { bookId } = req.params;
 
     if (!userId) {
@@ -77,7 +77,7 @@ exports.getBookmarksByBook = async (req, res) => {
  */
 exports.updateBookmark = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     const { id } = req.params;
 
     if (!userId) {
@@ -106,7 +106,7 @@ exports.updateBookmark = async (req, res) => {
  */
 exports.deleteBookmark = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     const { id } = req.params;
 
     if (!userId) {

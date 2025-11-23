@@ -36,6 +36,8 @@ function PDFTTSPanel({
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const isIntentionallyStoppingRef = useRef(false);
+  const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const stopDelayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Text cache: Map<pageNumber, extractedText>
   // Cache up to 20 pages of extracted text to avoid re-extraction
@@ -104,10 +106,21 @@ function PDFTTSPanel({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [handleClose]);
 
-  // Cleanup text cache on unmount
+  // Cleanup text cache and timeouts on unmount
   useEffect(() => {
     const cache = textCacheRef.current;
+    const autoAdvanceTimeout = autoAdvanceTimeoutRef.current;
+    const stopDelayTimeout = stopDelayTimeoutRef.current;
+    
     return () => {
+      // Clear any pending timeouts
+      if (autoAdvanceTimeout) {
+        clearTimeout(autoAdvanceTimeout);
+      }
+      if (stopDelayTimeout) {
+        clearTimeout(stopDelayTimeout);
+      }
+      // Clear text cache
       cache.clear();
     };
   }, []);
@@ -194,7 +207,7 @@ function PDFTTSPanel({
       if (currentPage < numPages && onPageChange) {
         onPageChange(currentPage + 1);
         // Auto-play next page after a short delay
-        setTimeout(() => {
+        autoAdvanceTimeoutRef.current = setTimeout(() => {
           const nextUtterance = new SpeechSynthesisUtterance('');
           nextUtterance.voice = selectedVoice;
           nextUtterance.rate = speechRate;
@@ -232,12 +245,18 @@ function PDFTTSPanel({
   };
 
   const stopTextToSpeech = () => {
+    // Clear auto-advance timeout if it exists
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+    
     isIntentionallyStoppingRef.current = true;
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
     setIsPaused(false);
     // Reset the flag after a brief delay to allow the cancel to complete
-    setTimeout(() => {
+    stopDelayTimeoutRef.current = setTimeout(() => {
       isIntentionallyStoppingRef.current = false;
     }, 100);
   };

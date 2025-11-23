@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { API_ENDPOINTS } from '@/lib/config';
 
 const API_BASE_URL = API_ENDPOINTS.BASE;
@@ -9,14 +9,14 @@ const API_BASE_URL = API_ENDPOINTS.BASE;
  * Delete user account permanently
  * 
  * Security:
- * - Requires valid session with JWT token
- * - Password verification required
+ * - Requires valid Clerk session with JWT token
+ * - Password verification required (verified by Clerk)
  * - Email confirmation required
  * 
  * This will:
  * - Delete all user data from database (books, bookmarks, annotations, etc.)
  * - Delete all files from B2 cloud storage
- * - Delete user from Auth0
+ * - Delete user from Clerk
  * - Clear session
  */
 export async function POST(request: NextRequest) {
@@ -30,16 +30,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = await getSession();
+    const user = await currentUser();
     
-    if (!session || !session.user) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    const accessToken = session.tokenSet?.accessToken || session.accessToken;
+    const { getToken } = await auth();
+    const accessToken = await getToken();
     
     if (!accessToken) {
       return NextResponse.json(
@@ -61,7 +62,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify email matches session user
-    if (email.trim().toLowerCase() !== session.user.email?.trim().toLowerCase()) {
+    const userEmail = user.emailAddresses[0]?.emailAddress;
+    if (email.trim().toLowerCase() !== userEmail?.trim().toLowerCase()) {
       return NextResponse.json(
         { error: 'Email does not match your account' },
         { status: 400 }

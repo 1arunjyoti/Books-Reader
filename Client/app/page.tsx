@@ -1,4 +1,5 @@
-import { ArrowRight, BookOpen, Smartphone } from "lucide-react";
+import { StartReadingButton } from "@/components/landing/start-reading-button";
+import { BookOpen, Smartphone } from "lucide-react";
 import Link from "next/link";
 
 /* Metadata for SEO */
@@ -22,7 +23,7 @@ export const metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
   return (
     <main className="min-h-screen">
 
@@ -37,6 +38,7 @@ export default function Home() {
         {/* JSON-LD structured data for SEO */}
         <script
           type="application/ld+json"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
@@ -61,13 +63,7 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/library"
-              aria-label="Start reading — open your library"
-              className="bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-xl text-white font-medium py-3 px-8 rounded-lg transition-colors flex items-center gap-2 justify-center"
-            >
-              Start Reading <ArrowRight size={20} aria-hidden="true" />
-            </Link>
+            <StartReadingButton />
           </div>
 
         </div>
@@ -110,7 +106,7 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-white mb-6">Ready to start your reading journey?</h2>
           <p className="text-xl text-blue-100 mb-8">Start enjoying your favorite books with BooksReader.</p>
           <Link 
-            href="/signup"
+            href="/sign-up"
             className="inline-block bg-white text-blue-600 hover:bg-gray-100 font-medium py-3 px-8 rounded-lg transition-colors"
             aria-label="Get Started for Free"
           >

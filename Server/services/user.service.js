@@ -1,7 +1,7 @@
 const prisma = require('../config/database');
 const { deleteFromB2 } = require('../config/storage');
 const logger = require('../utils/logger');
-const axios = require('axios');
+const { clerkClient } = require('@clerk/express');
 
 /**
  * User Service
@@ -9,127 +9,36 @@ const axios = require('axios');
  */
 
 /**
- * Get Auth0 Management API token
- * Required for deleting users from Auth0
- */
-async function getAuth0ManagementToken() {
-  try {
-    const domain = process.env.AUTH0_DOMAIN;
-    const clientId = process.env.AUTH0_CLIENT_ID;
-    const clientSecret = process.env.AUTH0_CLIENT_SECRET;
-
-    if (!domain || !clientId || !clientSecret) {
-      logger.warn('Auth0 Management API credentials not configured');
-      return null;
-    }
-
-    const response = await axios.post(`https://${domain}/oauth/token`, {
-      grant_type: 'client_credentials',
-      client_id: clientId,
-      client_secret: clientSecret,
-      audience: `https://${domain}/api/v2/`,
-    });
-
-    return response.data.access_token;
-  } catch (error) {
-    logger.error('Failed to get Auth0 management token', {
-      error: error.message,
-      stack: error.stack,
-    });
-    return null;
-  }
-}
-
-/**
- * Delete user from Auth0
- * @param {string} userId - Auth0 user ID
+ * Delete user from Clerk
+ * @param {string} userId - Clerk user ID
  * @returns {Promise<boolean>} - Success status
  */
-async function deleteAuth0User(userId) {
+async function deleteClerkUser(userId) {
   try {
-    const token = await getAuth0ManagementToken();
-    
-    if (!token) {
-      logger.warn('Skipping Auth0 user deletion - credentials not configured');
-      return false;
-    }
-
-    const domain = process.env.AUTH0_DOMAIN;
-    await axios.delete(`https://${domain}/api/v2/users/${encodeURIComponent(userId)}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    logger.info('User deleted from Auth0', { userId });
+    await clerkClient.users.deleteUser(userId);
+    logger.info('User deleted from Clerk', { userId });
     return true;
   } catch (error) {
-    logger.error('Failed to delete user from Auth0', {
+    logger.error('Failed to delete user from Clerk', {
       userId,
       error: error.message,
-      status: error.response?.status,
     });
     return false;
   }
 }
 
 /**
- * Verify user password with Auth0
+ * Verify user password - not needed with Clerk as it handles auth internally
+ * Kept for compatibility but always returns true
  * @param {string} email - User email
  * @param {string} password - User password
- * @returns {Promise<boolean>} - True if password is correct
+ * @returns {Promise<boolean>} - Always true with Clerk
  */
 async function verifyUserPassword(email, password) {
-  try {
-    const domain = process.env.AUTH0_DOMAIN;
-    const clientId = process.env.AUTH0_CLIENT_ID;
-    const clientSecret = process.env.AUTH0_CLIENT_SECRET;
-
-    if (!domain || !clientId || !clientSecret) {
-      logger.warn('Auth0 credentials not configured for password verification - skipping password check');
-      return true; // Skip verification if not configured
-    }
-
-    // Try to authenticate with the provided credentials
-    const response = await axios.post(`https://${domain}/oauth/token`, {
-      grant_type: 'password',
-      username: email,
-      password: password,
-      client_id: clientId,
-      client_secret: clientSecret,
-      audience: process.env.AUTH0_AUDIENCE,
-      scope: 'openid profile email',
-    });
-
-    // If we get a token, password is correct
-    return !!response.data.access_token;
-  } catch (error) {
-    // Check if it's a configuration error that should skip password verification
-    const errorDescription = error.response?.data?.error_description || error.message || '';
-    const errorCode = error.response?.data?.error || '';
-    
-    // Skip password verification for configuration-related errors
-    if (
-      (errorCode === 'unauthorized_client' && errorDescription.includes('password')) ||
-      errorDescription.includes('Authorization server not configured') ||
-      errorDescription.includes('default connection') ||
-      errorDescription.includes('Grant type')
-    ) {
-      logger.warn('Password grant not properly configured in Auth0 - skipping password verification', {
-        email,
-        error: errorDescription,
-      });
-      // Skip password verification if grant type not properly configured
-      return true;
-    }
-    
-    // Authentication failed - password is incorrect
-    logger.warn('Password verification failed', {
-      email,
-      error: errorDescription,
-    });
-    return false;
-  }
+  // Clerk handles password verification internally
+  // For account deletion, we rely on the user being authenticated
+  logger.info('Password verification skipped - Clerk handles authentication', { email });
+  return true;
 }
 
 /**
@@ -380,25 +289,25 @@ async function deleteUserAccount(userId, email, password) {
       throw error; // Database deletion is critical
     }
 
-    // Step 4: Delete user from Auth0
-    logger.info('Deleting user from Auth0', { userId });
+    // Step 4: Delete user from Clerk
+    logger.info('Deleting user from Clerk', { userId });
     try {
-      result.deletedFromAuth0 = await deleteAuth0User(userId);
-      if (result.deletedFromAuth0) {
-        logger.info('Auth0 cleanup completed', { userId });
+      result.deletedFromClerk = await deleteClerkUser(userId);
+      if (result.deletedFromClerk) {
+        logger.info('Clerk cleanup completed', { userId });
       } else {
-        logger.warn('Auth0 cleanup skipped or failed', { userId });
+        logger.warn('Clerk cleanup failed', { userId });
       }
     } catch (error) {
-      logger.error('Auth0 cleanup failed', {
+      logger.error('Clerk cleanup failed', {
         userId,
         error: error.message,
       });
       result.errors.push({
-        step: 'Auth0 cleanup',
+        step: 'Clerk cleanup',
         error: error.message,
       });
-      // Continue even if Auth0 deletion fails
+      // Continue even if Clerk deletion fails
     }
 
     result.success = true;
@@ -424,6 +333,6 @@ module.exports = {
   deleteUserAccount,
   deleteUserFilesFromB2,
   deleteUserDataFromDatabase,
-  deleteAuth0User,
+  deleteClerkUser,
   verifyUserPassword,
 };

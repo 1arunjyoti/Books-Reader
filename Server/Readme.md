@@ -1,6 +1,6 @@
 # BooksReader - Server
 
-A secure, production-ready Express backend for the BooksReader application. Handles file uploads (PDF, EPUB, TXT), stores files in Backblaze B2 cloud storage, manages book metadata in PostgreSQL, generates cover images, and provides comprehensive book management APIs with Auth0 authentication.
+A secure, production-ready Express backend for the BooksReader application. Handles file uploads (PDF, EPUB, TXT), stores files in Backblaze B2 cloud storage, manages book metadata in PostgreSQL, generates cover images, and provides comprehensive book management APIs with Clerk authentication.
 
 ---
 
@@ -38,8 +38,8 @@ A secure, production-ready Express backend for the BooksReader application. Hand
 - **Supported Formats**: PNG, JPG extraction and conversion
 
 #### Security & Authentication
-- **Auth0 JWT Validation**: RS256 token validation on all protected endpoints
-- **User Data Isolation**: Complete data segregation using Auth0 user ID
+- **Clerk JWT Validation**: RS256 token validation on all protected endpoints using Clerk-issued tokens
+- **User Data Isolation**: Complete data segregation using Clerk user ID
 - **CORS Protection**: Configurable Cross-Origin Resource Sharing
 - **Rate Limiting**: Multi-tier rate limiting for API endpoints
 - **Security Headers**: Helmet.js for HTTP security headers, CSP policies
@@ -69,9 +69,9 @@ A secure, production-ready Express backend for the BooksReader application. Hand
 - **npm** or yarn package manager
 
 ### Required External Services
-- **Auth0 Account** (https://auth0.com)
-  - API configured with RS256 signing algorithm
-  - Auth0 Domain and API Audience ID
+- **Clerk Account** (https://clerk.com)
+     - Get your Publishable and Secret API keys in Clerk Dashboard
+     - Configure a JWT Template for API validation and ensure your allowed origins/paths are set
   
 - **PostgreSQL Database** (https://neon.tech - recommended free tier)
   - Neon PostgreSQL URL with connection string
@@ -110,8 +110,18 @@ npm install
 # Copy example configuration
 Copy-Item .env.example .env
 
-# Edit .env with your credentials
+# Edit `.env` with your credentials. The server expects Clerk keys in the `.env` file for token verification, e.g.:
 code .env  # or use your preferred editor
+
+```powershell
+# Clerk Authentication
+CLERK_PUBLISHABLE_KEY=pk_test_your-publishable-key
+CLERK_SECRET_KEY=sk_test_your-secret-key
+
+# Application
+PORT=3001
+CLIENT_URL=http://localhost:3000
+```
 ```
 
 ### Step 3: Set Up Database
@@ -384,7 +394,7 @@ Server/
 │   └── storage.js                    # B2/S3 storage configuration
 │
 ├── middleware/
-│   ├── auth.js                       # Auth0 JWT validation (checkJwt)
+│   ├── auth.js                       # Clerk JWT validation (checkJwt)
 │   ├── upload.js                     # Multer file upload middleware
 │   ├── errorHandler.js               # Centralized error handling
 │   ├── rateLimiter.js                # Rate limiting (API, auth, uploads, cover generation)
@@ -460,7 +470,7 @@ Server/
 - `title`, `author`, `description`, `genre[]`
 - `fileName`, `originalName`, `fileUrl`, `fileSize`
 - `fileType` - "pdf" | "epub" | "txt"
-- `userId` - Auth0 user ID
+- `userId` - Clerk user ID
 - `status` - "unread" | "reading" | "read" | "want-to-read"
 - `progress` (0-100), `currentPage`, `totalPages`
 - `coverUrl` - URL to book cover image

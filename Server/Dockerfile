@@ -1,25 +1,25 @@
 FROM node:22-alpine
 
 LABEL maintainer="BooksReader Development Team"
-LABEL version="1.0"
+LABEL version="2.0"
 LABEL description="BooksReader Backend Server with Python/Poppler support for cover generation"
 
 # Install build dependencies for native modules (canvas, sharp, etc.)
 RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    make \
-    g++ \
-    gcc \
-    cairo-dev \
-    jpeg-dev \
-    pango-dev \
-    giflib-dev \
-    pixman-dev \
-    pkgconfig \
-    poppler-utils \
-    py3-pillow \
-    py3-setuptools
+  python3 \
+  py3-pip \
+  make \
+  g++ \
+  gcc \
+  cairo-dev \
+  jpeg-dev \
+  pango-dev \
+  giflib-dev \
+  pixman-dev \
+  pkgconfig \
+  poppler-utils \
+  py3-pillow \
+  py3-setuptools
 
 # Set Python executable path for cover generation
 ENV COVER_PYTHON_PATH=python3
@@ -46,8 +46,8 @@ RUN npx prisma generate
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+  adduser -S nodejs -u 1001 && \
+  chown -R nodejs:nodejs /app
 
 USER nodejs
 

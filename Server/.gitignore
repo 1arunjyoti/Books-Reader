@@ -59,11 +59,13 @@ tmp_uploads/
 
 # dotenv - ignore real env files but keep the example
 .env
+.env.deploy
 .env.local
 .env.development
 .env.test
 .env.prod
 .env.production
+.env.production.local
 !.env.example
 
 # Editor directories

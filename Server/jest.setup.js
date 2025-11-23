@@ -1,5 +1,16 @@
 // Jest setup file for global test configuration
 require('dotenv').config({ path: '.env.test' });
+
+// Mock Clerk user info utility for all tests
+jest.mock('./utils/clerk-userinfo', () => ({
+  fetchClerkUserInfo: jest.fn().mockResolvedValue({
+    email: 'test@example.com',
+    name: 'Test User',
+    picture: null,
+    nickname: null
+  })
+}));
+
 jest.mock('epub', () => {
   const { EventEmitter } = require('events');
 

@@ -22,7 +22,7 @@ jest.mock('../../../middleware/auth', () => {
     checkJwt: (req, res, next) => {
       switch (authState.mode) {
         case 'valid':
-          req.auth = { payload: { sub: authState.userId } };
+          req.auth = { userId: authState.userId };
           return next();
         case 'missing':
           return res.status(401).json({ error: 'Authorization header missing or invalid' });

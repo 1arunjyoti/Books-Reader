@@ -1,5 +1,5 @@
 const express = require('express');
-const { checkJwt } = require('../middleware/auth');
+const { checkJwt } = require('../middleware/clerk-auth');
 const { upload } = require('../middleware/upload');
 const { uploadLimiter } = require('../middleware/rateLimiter');
 const uploadController = require('../controllers/upload.controller');

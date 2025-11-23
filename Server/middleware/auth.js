@@ -1,14 +1,11 @@
-const { auth } = require('express-oauth2-jwt-bearer');
-const { config } = require('../config');
-
 /**
- * Auth0 JWT validation middleware
- * Validates JWT tokens from Auth0 for protected routes
+ * Auth middleware compatibility layer
+ * Re-exports Clerk authentication for backwards compatibility with tests
  */
-const checkJwt = auth({
-  audience: config.auth0.audience,
-  issuerBaseURL: config.auth0.issuerBaseURL,
-  tokenSigningAlg: 'RS256'
-});
 
-module.exports = { checkJwt };
+const { checkJwt, getUserFromToken } = require('./clerk-auth');
+
+module.exports = {
+  checkJwt,
+  getUserFromToken
+};

@@ -20,7 +20,7 @@ exports.uploadFile = async (req, res) => {
     }
 
     // Get user ID
-    const userId = req.auth?.payload?.sub || 'anonymous';
+    const userId = req.auth?.userId || 'anonymous';
     
     logger.info('Starting file upload', {
       fileName: req.file.originalname,
@@ -52,7 +52,7 @@ exports.uploadFile = async (req, res) => {
       error: error.message,
       stack: error.stack,
       duration: `${duration}ms`,
-      userId: req.auth?.payload?.sub
+      userId: req.auth?.userId
     });
     
     // Ensure we haven't sent headers yet
@@ -97,7 +97,7 @@ exports.uploadFromUrl = async (req, res) => {
     }
 
     // Get user ID
-    const userId = req.auth?.payload?.sub || 'anonymous';
+    const userId = req.auth?.userId || 'anonymous';
 
     // Process URL upload using service
     const result = await uploadService.processUrlUpload(url, userId);
@@ -110,7 +110,7 @@ exports.uploadFromUrl = async (req, res) => {
       error: error.message,
       stack: error.stack,
       url: req.body.url,
-      userId: req.auth?.payload?.sub
+      userId: req.auth?.userId
     });
     
     // Handle specific errors

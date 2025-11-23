@@ -36,7 +36,7 @@ function Toast({ toast, onClose }: ToastProps) {
 
   return (
     <div
-      className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center justify-between gap-3 min-w-[300px] max-w-md animate-slide-in pointer-events-auto`}
+      className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center justify-between gap-3  max-w-md animate-slide-in pointer-events-auto`}
       role="alert"
     >
       <p className="text-sm font-medium flex-1">{toast.message}</p>

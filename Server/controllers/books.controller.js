@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
  */
 exports.getAllBooks = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -36,7 +36,7 @@ exports.getAllBooks = async (req, res) => {
  */
 exports.getBookById = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     const { id } = req.params;
 
     if (!userId) {
@@ -66,7 +66,7 @@ exports.getBookById = async (req, res) => {
  */
 exports.getPresignedUrl = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     const { id } = req.params;
     // Support up to 7 days (604800 seconds) - S3 maximum
     const expiresIn = Math.min(parseInt(req.query.expiresIn) || 3600, 604800);
@@ -107,7 +107,7 @@ exports.getPresignedUrl = async (req, res) => {
  */
 exports.updateBook = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     const { id } = req.params;
 
     if (!userId) {
@@ -136,7 +136,7 @@ exports.updateBook = async (req, res) => {
  */
 exports.deleteBook = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     const { id } = req.params;
 
     if (!userId) {
@@ -169,7 +169,7 @@ exports.deleteBook = async (req, res) => {
  */
 exports.uploadCover = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     const { id } = req.params;
 
     if (!userId) {
@@ -214,7 +214,7 @@ exports.uploadCover = async (req, res) => {
  */
 exports.generateCover = async (req, res) => {
   try {
-    const userId = req.auth?.payload?.sub;
+    const userId = req.auth?.userId;
     const { id } = req.params;
 
     if (!userId) {

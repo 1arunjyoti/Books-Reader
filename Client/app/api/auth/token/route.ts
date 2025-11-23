@@ -1,53 +1,56 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET() {
   try {
-    const session = await getSession();
+    const { userId, getToken } = await auth();
     
-    console.log('Session exists:', !!session);
-    console.log('Session keys:', session ? Object.keys(session) : 'No session');
-    console.log('Has accessToken:', !!session?.accessToken);
-    console.log('Has tokenSet:', !!session?.tokenSet);
-    console.log('TokenSet keys:', session?.tokenSet ? Object.keys(session.tokenSet) : 'No tokenSet');
+    console.log('[Token Route] userId:', userId);
     
-    if (!session) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Not authenticated. Please sign in.' },
         { status: 401 }
       );
     }
     
-    // Check if access token is in the tokenSet
-    const accessToken = session.accessToken || session.tokenSet?.accessToken;
+    // Get access token from Clerk without template (uses default)
+    // This generates a JWT that can be verified by the backend
+    const accessToken = await getToken();
+    
+    console.log('[Token Route] accessToken retrieved:', !!accessToken);
     
     if (!accessToken) {
       return NextResponse.json(
         { 
           error: 'No access token available. Please sign out and sign in again.',
-          hint: 'Your session was created before API authentication was configured.'
+          hint: 'Unable to retrieve authentication token.'
         },
         { status: 401 }
       );
     }
 
-    // Calculate expiresIn from expires_at timestamp
-    // expires_at is a Unix timestamp in seconds
-    let expiresIn = 3600; // Default to 1 hour
+    // Default expiry to 1 hour (Clerk tokens typically expire in 1 hour)
+    // Update: Clerk tokens actually expire in 60 seconds by default.
+    // We now rely on the client to decode the token and determine expiration.
+    // Attempt to get expiration from session claims if available
+    let expiresIn: number | undefined;
     
-    if (session.tokenSet && typeof session.tokenSet === 'object') {
-      const tokenSetObj = session.tokenSet as unknown as Record<string, unknown>;
-      if (tokenSetObj.expires_at && typeof tokenSetObj.expires_at === 'number') {
-        const now = Math.floor(Date.now() / 1000);
-        expiresIn = Math.max(0, tokenSetObj.expires_at - now);
+    try {
+      // sessionClaims might not be typed in all versions but seems fine here
+      const { sessionClaims } = await auth();
+      if (sessionClaims?.exp) {
+        expiresIn = sessionClaims.exp - Math.floor(Date.now() / 1000);
       }
+    } catch {
+      // Ignore error accessing claims
     }
 
     return NextResponse.json({ accessToken, expiresIn });
   } catch (error) {
     console.error('Error getting access token:', error);
     return NextResponse.json(
-      { error: 'Failed to get access token' },
+      { error: 'Failed to get access token', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
