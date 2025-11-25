@@ -15,16 +15,19 @@ class AnalyticsPage extends ConsumerWidget {
     final notifier = ref.read(analyticsProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Analytics',
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => notifier.loadSessions(),
+          ),
+        ],
         centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
       ),
       drawer: const AppDrawer(),
       body: state.isLoading
@@ -43,14 +46,14 @@ class AnalyticsPage extends ConsumerWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Theme.of(context).textTheme.titleMedium?.color,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       state.error!,
                       style: GoogleFonts.inter(
-                        color: Colors.grey[600],
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                         fontSize: 14,
                       ),
                       textAlign: TextAlign.center,
@@ -81,16 +84,24 @@ class AnalyticsPage extends ConsumerWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   // Time Range Selector
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
                     padding: const EdgeInsets.all(4),
                     child: SegmentedButton<TimeRange>(
@@ -98,7 +109,7 @@ class AnalyticsPage extends ConsumerWidget {
                         backgroundColor: WidgetStateProperty.resolveWith<Color>(
                           (Set<WidgetState> states) {
                             if (states.contains(WidgetState.selected)) {
-                              return Colors.white;
+                              return Theme.of(context).colorScheme.primary;
                             }
                             return Colors.transparent;
                           },
@@ -113,7 +124,7 @@ class AnalyticsPage extends ConsumerWidget {
                         }),
                         shape: WidgetStateProperty.all(
                           RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         padding: WidgetStateProperty.all(EdgeInsets.zero),
@@ -121,11 +132,6 @@ class AnalyticsPage extends ConsumerWidget {
                         side: WidgetStateProperty.all(BorderSide.none),
                       ),
                       segments: const [
-                        ButtonSegment(
-                          value: TimeRange.day,
-                          label: Text('1D'),
-                          icon: Icon(Icons.today, size: 16),
-                        ),
                         ButtonSegment(
                           value: TimeRange.week,
                           label: Text('7D'),
@@ -141,6 +147,11 @@ class AnalyticsPage extends ConsumerWidget {
                           label: Text('1Y'),
                           icon: Icon(Icons.calendar_today, size: 16),
                         ),
+                        ButtonSegment(
+                          value: TimeRange.all,
+                          label: Text('All'),
+                          icon: Icon(Icons.calendar_today, size: 16),
+                        ),
                       ],
                       selected: {state.timeRange},
                       onSelectionChanged: (Set<TimeRange> newSelection) {
@@ -149,11 +160,13 @@ class AnalyticsPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
+
+                  /* Reading Activity Chart */
                   Container(
-                    height: 240,
-                    padding: const EdgeInsets.all(16),
+                    height: 260,
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
@@ -188,13 +201,16 @@ class AnalyticsPage extends ConsumerWidget {
                             sideTitles: SideTitles(
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
-                                return _getBottomTitle(value, state.timeRange);
+                                return _getBottomTitle(value, state);
                               },
                               reservedSize: 30,
                             ),
                           ),
                           leftTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 30,
+                            ),
                           ),
                           topTitles: const AxisTitles(
                             sideTitles: SideTitles(showTitles: false),
@@ -206,11 +222,13 @@ class AnalyticsPage extends ConsumerWidget {
                         gridData: FlGridData(
                           show: true,
                           drawVerticalLine: false,
+                          drawHorizontalLine: true,
                           horizontalInterval: _getMaxY(state) / 4,
                           getDrawingHorizontalLine: (value) {
                             return FlLine(
-                              color: Colors.grey[100],
+                              color: Theme.of(context).dividerColor,
                               strokeWidth: 1,
+                              dashArray: const [6, 6],
                             );
                           },
                         ),
@@ -224,7 +242,7 @@ class AnalyticsPage extends ConsumerWidget {
                                 color: Theme.of(context).colorScheme.primary,
                                 width: 12,
                                 borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(6),
+                                  top: Radius.circular(4),
                                 ),
                               ),
                             ],
@@ -234,24 +252,26 @@ class AnalyticsPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
+
+                  /* Statistics */
                   Text(
                     'Statistics',
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 16),
+
+                  // First Row - Pages and Time
                   Row(
                     children: [
                       Expanded(
                         child: _buildStatCard(
                           context,
                           'Pages Read',
-                          state.sessions
-                              .fold<int>(0, (sum, s) => sum + s.pagesRead)
-                              .toString(),
+                          state.totalPagesRead.toString(),
                           Icons.menu_book_rounded,
                           Colors.blue,
                         ),
@@ -261,9 +281,60 @@ class AnalyticsPage extends ConsumerWidget {
                         child: _buildStatCard(
                           context,
                           'Time Reading',
-                          '${(state.sessions.fold<int>(0, (sum, s) => sum + s.durationSeconds) / 3600).toStringAsFixed(1)}h',
+                          '${(state.totalReadingTime / 3600).toStringAsFixed(1)}h',
                           Icons.timer_rounded,
                           Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Second Row - Books and Streak
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          'Books Finished',
+                          state.booksFinished.toString(),
+                          Icons.check_circle_rounded,
+                          Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          'Current Streak',
+                          '${state.currentStreak} days',
+                          Icons.local_fire_department_rounded,
+                          Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Third Row - Reading Speed and Sessions
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          'Reading Speed',
+                          '${state.readingSpeed.toStringAsFixed(1)} p/h',
+                          Icons.speed_rounded,
+                          Colors.purple,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          'Sessions',
+                          state.sessionsCount.toString(),
+                          Icons.library_books_rounded,
+                          Colors.teal,
                         ),
                       ),
                     ],
@@ -282,7 +353,8 @@ class AnalyticsPage extends ConsumerWidget {
     return (maxPages * 1.2).ceilToDouble();
   }
 
-  Widget _getBottomTitle(double value, TimeRange timeRange) {
+  Widget _getBottomTitle(double value, AnalyticsState state) {
+    // Note: BuildContext is not available here, so we'll keep the style static
     final style = GoogleFonts.inter(
       color: Colors.grey[600],
       fontWeight: FontWeight.w500,
@@ -292,34 +364,50 @@ class AnalyticsPage extends ConsumerWidget {
     String text = '';
     final index = value.toInt();
 
-    switch (timeRange) {
-      case TimeRange.day:
-        if (index % 4 == 0) text = '${index}h';
-        break;
-      case TimeRange.week:
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        if (index < days.length) text = days[index];
-        break;
-      case TimeRange.month:
-        if (index % 5 == 0) text = '${index + 1}';
-        break;
-      case TimeRange.year:
-        const months = [
-          'Jan',
-          'Feb',
-          'Mar',
-          'Apr',
-          'May',
-          'Jun',
-          'Jul',
-          'Aug',
-          'Sep',
-          'Oct',
-          'Nov',
-          'Dec',
-        ];
-        if (index < months.length) text = months[index];
-        break;
+    if (index >= 0 && index < state.sessions.length) {
+      final session = state.sessions[index];
+
+      switch (state.timeRange) {
+        case TimeRange.week:
+          // Format: Mon
+          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+          if (session.date.weekday >= 1 && session.date.weekday <= 7) {
+            text = days[session.date.weekday - 1];
+          }
+          break;
+        case TimeRange.month:
+          // Format: 1, 5, 10...
+          if (index % 5 == 0) {
+            text = '${session.date.day}';
+          }
+          break;
+        case TimeRange.year:
+          // Format: Jan
+          const months = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+          ];
+          if (session.date.month >= 1 && session.date.month <= 12) {
+            text = months[session.date.month - 1];
+          }
+          break;
+        case TimeRange.all:
+          // Format: 1, 5, 10...
+          if (index % 5 == 0) {
+            text = '${session.date.day}';
+          }
+          break;
+      }
     }
 
     return SideTitleWidget(
@@ -337,15 +425,15 @@ class AnalyticsPage extends ConsumerWidget {
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -366,14 +454,14 @@ class AnalyticsPage extends ConsumerWidget {
             style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.headlineSmall?.color,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
             style: GoogleFonts.inter(
-              color: Colors.grey[500],
+              color: Theme.of(context).textTheme.bodySmall?.color,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),

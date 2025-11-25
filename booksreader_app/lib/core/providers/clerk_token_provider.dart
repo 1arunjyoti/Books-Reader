@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart'; // For StateProvider in Riverpod 3.0+
 import 'package:clerk_flutter/clerk_flutter.dart';
@@ -19,21 +20,31 @@ String? extractTokenFromAuthState(ClerkAuthState authState) {
 Future<void> updateClerkToken(WidgetRef ref, ClerkAuthState authState) async {
   String? token = extractTokenFromAuthState(authState);
 
-  print('🔐 Clerk Token Update (Sync): ${token != null ? "Found" : "Missing"}');
+  if (kDebugMode) {
+    print(
+      '🔐 Clerk Token Update (Sync): ${token != null ? "Found" : "Missing"}',
+    );
+  }
 
   // If token is missing but we have a session, try to fetch it asynchronously
   if (token == null && authState.session != null) {
     try {
-      print('🔄 Fetching fresh token from session...');
+      if (kDebugMode) {
+        print('🔄 Fetching fresh token from session...');
+      }
       // Use dynamic to bypass static analysis if method is not detected
       final dynamic session = authState.session;
       final tokenObj = await session.getToken();
       token = tokenObj?.jwt;
-      print(
-        '🔐 Clerk Token Update (Async): ${token != null ? "Found" : "Still Missing"}',
-      );
+      if (kDebugMode) {
+        print(
+          '🔐 Clerk Token Update (Async): ${token != null ? "Found" : "Still Missing"}',
+        );
+      }
     } catch (e) {
-      print('❌ Failed to fetch token: $e');
+      if (kDebugMode) {
+        print('❌ Failed to fetch token: $e');
+      }
     }
   }
 

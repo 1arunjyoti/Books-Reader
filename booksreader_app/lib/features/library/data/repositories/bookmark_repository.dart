@@ -1,27 +1,25 @@
-import 'package:hive/hive.dart';
 import '../../domain/entities/bookmark.dart';
+import '../datasources/remote_bookmark_datasource.dart';
 
 class BookmarkRepository {
-  static const String boxName = 'bookmarks';
+  final RemoteBookmarkDataSource remoteDataSource;
 
-  Future<Box<Bookmark>> _getBox() async {
-    if (!Hive.isBoxOpen(boxName)) {
-      return await Hive.openBox<Bookmark>(boxName);
-    }
-    return Hive.box<Bookmark>(boxName);
+  BookmarkRepository(this.remoteDataSource);
+
+  Future<List<Bookmark>> getBookmarksForBook(String bookId) async {
+    return await remoteDataSource.getBookmarksByBook(bookId);
   }
 
   Future<void> addBookmark(Bookmark bookmark) async {
-    final box = await _getBox();
-    await box.add(bookmark);
+    // We only need bookId, pageNumber, and note for creation
+    await remoteDataSource.createBookmark(
+      bookmark.bookId,
+      bookmark.pageNumber,
+      bookmark.note,
+    );
   }
 
   Future<void> deleteBookmark(Bookmark bookmark) async {
-    await bookmark.delete();
-  }
-
-  Future<List<Bookmark>> getBookmarksForBook(String bookId) async {
-    final box = await _getBox();
-    return box.values.where((b) => b.bookId == bookId).toList();
+    await remoteDataSource.deleteBookmark(bookmark.id);
   }
 }

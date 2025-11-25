@@ -17,37 +17,31 @@ class BookmarkAdapter extends TypeAdapter<Bookmark> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Bookmark(
-      bookId: fields[0] as String,
-      pageNumber: fields[1] as int,
-      text: fields[2] as String?,
-      note: fields[3] as String?,
-      type: fields[4] as String,
-      color: fields[5] as String?,
-      createdAt: fields[6] as DateTime,
-      cfi: fields[7] as String?,
+      id: fields[0] as String,
+      bookId: fields[1] as String,
+      userId: fields[2] as String,
+      pageNumber: fields[3] as int,
+      note: fields[4] as String?,
+      createdAt: fields[5] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, Bookmark obj) {
     writer
-      ..writeByte(8)
-      ..writeByte(0)
-      ..write(obj.bookId)
-      ..writeByte(1)
-      ..write(obj.pageNumber)
-      ..writeByte(2)
-      ..write(obj.text)
-      ..writeByte(3)
-      ..write(obj.note)
-      ..writeByte(4)
-      ..write(obj.type)
-      ..writeByte(5)
-      ..write(obj.color)
       ..writeByte(6)
-      ..write(obj.createdAt)
-      ..writeByte(7)
-      ..write(obj.cfi);
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.bookId)
+      ..writeByte(2)
+      ..write(obj.userId)
+      ..writeByte(3)
+      ..write(obj.pageNumber)
+      ..writeByte(4)
+      ..write(obj.note)
+      ..writeByte(5)
+      ..write(obj.createdAt);
   }
 
   @override

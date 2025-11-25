@@ -76,9 +76,9 @@ router.post('/', validateBody(createHighlightSchema), async (req, res) => {
         });
       }
 
-      if (!Array.isArray(rects) || rects.length === 0) {
+      if (rects && !Array.isArray(rects)) {
         return res.status(400).json({
-          error: 'rects array is required for PDF highlights',
+          error: 'rects must be an array if provided',
         });
       }
     } else if (normalizedSource === 'TXT') {

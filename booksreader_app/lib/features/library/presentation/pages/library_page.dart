@@ -7,17 +7,50 @@ import '../widgets/book_card.dart';
 import '../widgets/book_list_item.dart';
 import '../widgets/library_shimmer.dart';
 import '../../../profile/presentation/widgets/app_drawer.dart';
+import '../../../../core/providers/clerk_auth_state_provider.dart';
+import '../widgets/advanced_filters_bottom_sheet.dart';
 
-class LibraryPage extends ConsumerWidget {
+class LibraryPage extends ConsumerStatefulWidget {
   const LibraryPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LibraryPage> createState() => _LibraryPageState();
+}
+
+class _LibraryPageState extends ConsumerState<LibraryPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Setup scroll listener for infinite scroll
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // Trigger load more when user scrolls to 80% of the list
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
+      ref.read(libraryProvider.notifier).loadMoreBooks();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final libraryState = ref.watch(libraryProvider);
     final notifier = ref.read(libraryProvider.notifier);
+    final userName = ref.watch(userNameProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: const AppDrawer(),
       body: SafeArea(
         child: Column(
@@ -28,12 +61,21 @@ class LibraryPage extends ConsumerWidget {
               child: Row(
                 children: [
                   Builder(
-                    builder: (context) => IconButton(
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                      icon: const Icon(Icons.menu),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        padding: const EdgeInsets.all(12),
+                    builder: (context) => GestureDetector(
+                      onTap: () => Scaffold.of(context).openDrawer(),
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        child: Text(
+                          userName.isNotEmpty
+                              ? userName.substring(0, 1).toUpperCase()
+                              : 'U',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -43,21 +85,23 @@ class LibraryPage extends ConsumerWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
                     ),
                   ),
                   const Spacer(),
+
+                  /* View Mode Toggle */
                   IconButton(
                     onPressed: notifier.toggleViewMode,
                     icon: Icon(
                       libraryState.isGridView
                           ? Icons.view_list_rounded
                           : Icons.grid_view_rounded,
-                      color: Colors.black87,
+                      color: Theme.of(context).iconTheme.color,
                     ),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.all(12),
+                      backgroundColor: Theme.of(context).cardColor,
+                      padding: const EdgeInsets.all(10),
                     ),
                   ),
                 ],
@@ -74,7 +118,7 @@ class LibraryPage extends ConsumerWidget {
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
@@ -89,11 +133,11 @@ class LibraryPage extends ConsumerWidget {
                             decoration: InputDecoration(
                               hintText: 'Search books...',
                               hintStyle: GoogleFonts.inter(
-                                color: Colors.grey[400],
+                                color: Theme.of(context).hintColor,
                               ),
                               prefixIcon: Icon(
                                 Icons.search,
-                                color: Colors.grey[400],
+                                color: Theme.of(context).hintColor,
                               ),
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(
@@ -132,11 +176,72 @@ class LibraryPage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
+
+                  /* Filters */
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     clipBehavior: Clip.none,
                     child: Row(
                       children: [
+                        /* Advanced Filters icon */
+                        Badge(
+                          isLabelVisible:
+                              libraryState.advancedFilters.hasActiveFilters,
+                          label: Text(
+                            '${libraryState.advancedFilters.activeFiltersCount}',
+                          ),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          child: IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor:
+                                  libraryState.advancedFilters.hasActiveFilters
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.primaryContainer
+                                  : Theme.of(context).cardColor,
+                              padding: const EdgeInsets.all(12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            icon: Icon(
+                              Icons.filter_alt_outlined,
+                              color:
+                                  libraryState.advancedFilters.hasActiveFilters
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                            ),
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => AdvancedFiltersBottomSheet(
+                                  initialFilters: libraryState.advancedFilters,
+                                  onApply: (filters) {
+                                    // Apply advanced filters to library
+                                    notifier.applyAdvancedFilters(filters);
+
+                                    // Show confirmation
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          filters.hasActiveFilters
+                                              ? 'Filters applied: ${filters.activeFiltersCount} active'
+                                              : 'Filters cleared',
+                                        ),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         _FilterChip(
                           label: 'All',
                           isSelected: libraryState.statusFilter == null,
@@ -203,7 +308,9 @@ class LibraryPage extends ConsumerWidget {
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.titleMedium?.color,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -261,6 +368,7 @@ class LibraryPage extends ConsumerWidget {
                     )
                   : libraryState.isGridView
                   ? GridView.builder(
+                      controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
@@ -269,17 +377,46 @@ class LibraryPage extends ConsumerWidget {
                             crossAxisSpacing: 20,
                             mainAxisSpacing: 24,
                           ),
-                      itemCount: libraryState.filteredBooks.length,
-                      itemBuilder: (context, index) =>
-                          BookCard(book: libraryState.filteredBooks[index]),
+                      itemCount:
+                          libraryState.filteredBooks.length +
+                          (libraryState.isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        // Show loading indicator at the end
+                        if (index == libraryState.filteredBooks.length) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
+
+                        final book = libraryState.filteredBooks[index];
+                        return BookCard(key: ValueKey(book.id), book: book);
+                      },
                     )
                   : ListView.separated(
+                      controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                      itemCount: libraryState.filteredBooks.length,
+                      itemCount:
+                          libraryState.filteredBooks.length +
+                          (libraryState.isLoadingMore ? 1 : 0),
                       separatorBuilder: (context, index) =>
                           const SizedBox(height: 16),
-                      itemBuilder: (context, index) =>
-                          BookListItem(book: libraryState.filteredBooks[index]),
+                      itemBuilder: (context, index) {
+                        // Show loading indicator at the end
+                        if (index == libraryState.filteredBooks.length) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
+
+                        final book = libraryState.filteredBooks[index];
+                        return BookListItem(key: ValueKey(book.id), book: book);
+                      },
                     ),
             ),
           ],
@@ -310,7 +447,7 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? Theme.of(context).colorScheme.primary
-              : Colors.white,
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(24),
           boxShadow: isSelected
               ? [
@@ -333,7 +470,9 @@ class _FilterChip extends StatelessWidget {
         child: Text(
           label,
           style: GoogleFonts.inter(
-            color: isSelected ? Colors.white : Colors.grey[700],
+            color: isSelected
+                ? Colors.white
+                : Theme.of(context).textTheme.bodyMedium?.color,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 14,
           ),
