@@ -1,5 +1,5 @@
 from pdf2image import convert_from_bytes
-from PyPDF2 import PdfWriter, PdfReader
+from pypdf import PdfWriter, PdfReader
 import io
 import argparse
 import zipfile

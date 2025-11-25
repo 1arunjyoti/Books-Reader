@@ -3,17 +3,24 @@ import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 
 /// API Client
-/// Base Dio client with auth interceptors and error handling
+/// Base Dio client with auth interceptors, error handling, caching, and request cancellation
 class ApiClient {
   late final Dio _dio;
   String? _token;
+  final Future<String?> Function()? _tokenProvider;
+
+  // Request cancellation tokens
+  final Map<String, CancelToken> _cancelTokens = {};
 
   /// Create an ApiClient instance
-  /// [token] - Optional authentication token (from Clerk or other auth provider)
-  ApiClient({String? token}) : _token = token {
+  /// [token] - Optional initial authentication token
+  /// [tokenProvider] - Optional callback to get a fresh token on demand
+  ApiClient({String? token, Future<String?> Function()? tokenProvider})
+    : _token = token,
+      _tokenProvider = tokenProvider {
     if (kDebugMode) {
       print(
-        '🏗️ ApiClient created with token: ${_token != null ? "Present (${_token!.substring(0, 10)}...)" : "NULL"}',
+        '🏗️ ApiClient created with token: ${_token != null ? "Present" : "NULL"}',
       );
     }
     _dio = Dio(
@@ -25,6 +32,8 @@ class ApiClient {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          // HTTP caching headers for better performance
+          'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
         },
       ),
     );
@@ -42,6 +51,20 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          // Get fresh token if provider is available
+          if (_tokenProvider != null) {
+            try {
+              final freshToken = await _tokenProvider();
+              if (freshToken != null) {
+                _token = freshToken;
+              }
+            } catch (e) {
+              if (kDebugMode) {
+                print('⚠️ Failed to refresh token: $e');
+              }
+            }
+          }
+
           // Add token if available
           if (_token != null && _token!.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $_token';
@@ -87,18 +110,36 @@ class ApiClient {
     );
   }
 
-  /// GET request
+  /// GET request with optional request tag for cancellation
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
+    String? cancelTag,
   }) async {
     try {
-      return await _dio.get(
+      // Setup cancellation if tag provided
+      CancelToken? cancelToken;
+      if (cancelTag != null) {
+        // Cancel any previous request with same tag
+        _cancelTokens[cancelTag]?.cancel();
+        cancelToken = CancelToken();
+        _cancelTokens[cancelTag] = cancelToken;
+      }
+
+      final response = await _dio.get(
         path,
         queryParameters: queryParameters,
         options: options,
+        cancelToken: cancelToken,
       );
+
+      // Clean up cancel token after successful request
+      if (cancelTag != null) {
+        _cancelTokens.remove(cancelTag);
+      }
+
+      return response;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -178,6 +219,20 @@ class ApiClient {
     } on DioException catch (e) {
       throw _handleError(e);
     }
+  }
+
+  /// Cancel a specific request by tag
+  void cancelRequest(String tag) {
+    _cancelTokens[tag]?.cancel('Request cancelled by user');
+    _cancelTokens.remove(tag);
+  }
+
+  /// Cancel all pending requests
+  void cancelAllRequests() {
+    for (var token in _cancelTokens.values) {
+      token.cancel('All requests cancelled');
+    }
+    _cancelTokens.clear();
   }
 
   /// Handle Dio errors and convert to app-friendly error messages

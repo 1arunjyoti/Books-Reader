@@ -1,4 +1,4 @@
-const { z } = require('zod');
+const { z } = require("zod");
 
 /**
  * Validation Schemas using Zod
@@ -8,10 +8,12 @@ const { z } = require('zod');
 // ========== Common Schemas ============
 
 // UUID v4 format validator (used for PostgreSQL database IDs)
-const uuidSchema = z.string().uuid('Invalid UUID format');
+const uuidSchema = z.string().uuid("Invalid UUID format");
 
 // Kept for backward compatibility if needed
-const mongoIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid MongoDB ObjectId');
+const mongoIdSchema = z
+  .string()
+  .regex(/^[0-9a-fA-F]{24}$/, "Invalid MongoDB ObjectId");
 
 const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -19,17 +21,19 @@ const paginationSchema = z.object({
 });
 
 const sortSchema = z.object({
-  sortBy: z.enum(['createdAt', 'updatedAt', 'title', 'author', 'uploadedAt']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+  sortBy: z
+    .enum(["createdAt", "updatedAt", "title", "author", "uploadedAt"])
+    .optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });
 
 // ============== Book Schemas ==================
 
 const bookQuerySchema = paginationSchema.merge(sortSchema).extend({
-  fileType: z.enum(['pdf', 'epub', 'txt', 'all']).optional(),
+  fileType: z.enum(["pdf", "epub", "txt", "all"]).optional(),
   search: z.string().max(500).optional(),
   author: z.string().max(200).optional(),
-  readStatus: z.enum(['unread', 'reading', 'completed']).optional(),
+  readStatus: z.enum(["unread", "reading", "completed"]).optional(),
   collectionId: uuidSchema.optional(),
 });
 
@@ -41,7 +45,10 @@ const updateBookSchema = z.object({
   title: z.string().min(1).max(500).optional().nullable(),
   author: z.string().max(200).optional().nullable(),
   description: z.string().max(5000).optional().nullable(),
-  status: z.enum(['unread', 'reading', 'read', 'want-to-read']).optional().nullable(),
+  status: z
+    .enum(["unread", "reading", "read", "want-to-read"])
+    .optional()
+    .nullable(),
   progress: z.number().int().min(0).max(100).optional().nullable(),
   currentPage: z.number().int().min(0).optional().nullable(),
   totalPages: z.number().int().min(0).optional().nullable(),
@@ -84,28 +91,43 @@ const bookmarkIdParamSchema = z.object({
 const createHighlightSchema = z.object({
   bookId: uuidSchema,
   text: z.string().min(1).max(10000),
-  cfiRange: z.string().max(1000).optional(),
-  pageNumber: z.number().int().min(0).optional(),
-  rects: z.array(z.object({
-    x: z.number(),
-    y: z.number(),
-    width: z.number(),
-    height: z.number(),
-  })).optional(),
-  color: z.enum(['yellow', 'green', 'blue', 'pink', 'purple', 'orange']).default('yellow'),
-  hex: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color').optional(),
-  note: z.string().max(5000).optional(),
-  source: z.enum(['EPUB', 'PDF', 'TXT']).default('EPUB'),
+  cfiRange: z.string().max(1000).optional().nullable(),
+  pageNumber: z.number().int().min(0).optional().nullable(),
+  rects: z
+    .array(
+      z.object({
+        x: z.number(),
+        y: z.number(),
+        width: z.number(),
+        height: z.number(),
+      })
+    )
+    .optional()
+    .nullable(),
+  color: z
+    .enum(["yellow", "green", "blue", "pink", "purple", "orange"])
+    .default("yellow"),
+  hex: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
+    .optional(),
+  note: z.string().max(5000).optional().nullable(),
+  source: z.enum(["EPUB", "PDF", "TXT"]).default("EPUB"),
 });
 
 const updateHighlightSchema = z.object({
   text: z.string().min(1).max(10000).optional(),
-  color: z.enum(['yellow', 'green', 'blue', 'pink', 'purple', 'orange']).optional(),
-  hex: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color').optional(),
+  color: z
+    .enum(["yellow", "green", "blue", "pink", "purple", "orange"])
+    .optional(),
+  hex: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color")
+    .optional(),
   note: z.string().max(5000).optional(),
   cfiRange: z.string().max(1000).optional(),
   pageNumber: z.number().int().min(0).optional(),
-  source: z.enum(['EPUB', 'PDF', 'TXT']).optional(),
+  source: z.enum(["EPUB", "PDF", "TXT"]).optional(),
 });
 
 const highlightIdParamSchema = z.object({
@@ -121,8 +143,12 @@ const highlightSearchQuerySchema = z.object({
 });
 
 const highlightFilterQuerySchema = z.object({
-  colors: z.string().regex(/^(yellow|green|blue|pink|purple|orange)(,(yellow|green|blue|pink|purple|orange))*$/, 
-    'Invalid color filter format'),
+  colors: z
+    .string()
+    .regex(
+      /^(yellow|green|blue|pink|purple|orange)(,(yellow|green|blue|pink|purple|orange))*$/,
+      "Invalid color filter format"
+    ),
 });
 
 // ================ Collection Schemas =================
@@ -152,7 +178,7 @@ const addBookToCollectionSchema = z.object({
 const analyticsQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  period: z.enum(['day', 'week', 'month', 'year']).optional().default('month'),
+  period: z.enum(["day", "week", "month", "year"]).optional().default("month"),
 });
 
 const readingSessionSchema = z.object({
@@ -167,7 +193,7 @@ const readingSessionSchema = z.object({
 // ============== Upload Schemas =================
 
 const uploadQuerySchema = z.object({
-  skipCoverGeneration: z.enum(['true', 'false']).optional(),
+  skipCoverGeneration: z.enum(["true", "false"]).optional(),
 });
 
 // =============== Export all schemas ==============
@@ -178,18 +204,18 @@ module.exports = {
   uuidSchema,
   paginationSchema,
   sortSchema,
-  
+
   // Books
   bookQuerySchema,
   bookIdParamSchema,
   updateBookSchema,
   presignedUrlQuerySchema,
-  
+
   // Bookmarks
   createBookmarkSchema,
   updateBookmarkSchema,
   bookmarkIdParamSchema,
-  
+
   // Highlights
   createHighlightSchema,
   updateHighlightSchema,
@@ -197,17 +223,17 @@ module.exports = {
   highlightBookIdParamSchema,
   highlightSearchQuerySchema,
   highlightFilterQuerySchema,
-  
+
   // Collections
   createCollectionSchema,
   updateCollectionSchema,
   collectionIdParamSchema,
   addBookToCollectionSchema,
-  
+
   // Analytics
   analyticsQuerySchema,
   readingSessionSchema,
-  
+
   // Upload
   uploadQuerySchema,
 };

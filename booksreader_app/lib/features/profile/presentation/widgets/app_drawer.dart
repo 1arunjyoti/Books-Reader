@@ -12,79 +12,214 @@ class AppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userName = ref.watch(userNameProvider);
     final userEmail = ref.watch(userEmailProvider);
+    final currentPath = GoRouterState.of(context).uri.path;
 
     return Drawer(
-      child: Column(
-        children: [
-          UserAccountsDrawerHeader(
-            accountName: Text(userName),
-            accountEmail: Text(userEmail),
-            currentAccountPicture: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Text(
-                userName.isNotEmpty
-                    ? userName.substring(0, 1).toUpperCase()
-                    : 'U',
-                style: const TextStyle(fontSize: 24, color: Colors.blue),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Custom Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Text(
+                      userName.isNotEmpty
+                          ? userName.substring(0, 1).toUpperCase()
+                          : 'U',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userName,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          userEmail,
+                          style: Theme.of(context).textTheme.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.library_books),
-            title: const Text('My Library'),
-            onTap: () {
-              context.pop(); // Close drawer
-              context.go('/library');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Profile'),
-            onTap: () {
-              context.pop();
-              context.go('/profile');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.bar_chart),
-            title: const Text('Analytics'),
-            onTap: () {
-              context.pop();
-              context.go('/analytics');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.flag),
-            title: const Text('Goals'),
-            onTap: () {
-              context.pop();
-              context.go('/goals');
-            },
-          ),
-          const Spacer(),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Logout', style: TextStyle(color: Colors.red)),
-            onTap: () async {
-              // Close drawer
-              context.pop();
+            const Divider(height: 1),
+            const SizedBox(height: 16),
 
-              try {
-                // Call Clerk's signOut method
-                await ClerkAuth.of(context).signOut();
-                // ClerkAuthBuilder will automatically detect the sign-out and show login UI
-              } catch (e) {
-                // Fallback: clear providers manually if Clerk signOut fails
-                Future.microtask(() {
+            // Navigation Items
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  _DrawerItem(
+                    icon: Icons.library_books,
+                    label: 'My Library',
+                    isSelected: currentPath == '/library',
+                    onTap: () {
+                      context.pop();
+                      context.go('/library');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.bookmark,
+                    label: 'Collections',
+                    isSelected: currentPath == '/collections',
+                    onTap: () {
+                      context.pop();
+                      context.push('/collections');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.bar_chart,
+                    label: 'Analytics',
+                    isSelected: currentPath == '/analytics',
+                    onTap: () {
+                      context.pop();
+                      context.go('/analytics');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.flag,
+                    label: 'Goals',
+                    isSelected: currentPath == '/goals',
+                    onTap: () {
+                      context.pop();
+                      context.go('/goals');
+                    },
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(),
+                  ),
+                  _DrawerItem(
+                    icon: Icons.person,
+                    label: 'Profile',
+                    isSelected: currentPath == '/profile',
+                    onTap: () {
+                      context.pop();
+                      context.go('/profile');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.settings,
+                    label: 'Settings',
+                    isSelected: currentPath == '/settings',
+                    onTap: () {
+                      context.pop();
+                      context.push('/settings');
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // Footer
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: _DrawerItem(
+                icon: Icons.logout,
+                label: 'Logout',
+                isDestructive: true,
+                onTap: () async {
+                  context.pop();
+                  await ClerkAuth.of(context).signOut();
                   ref.read(clerkTokenProvider.notifier).state = null;
                   ref.read(clerkAuthStateProvider.notifier).state = null;
-                });
-              }
-            },
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isSelected;
+  final bool isDestructive;
+
+  const _DrawerItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isSelected = false,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    final foregroundColor = isDestructive
+        ? colorScheme.error
+        : isSelected
+        ? colorScheme.primary
+        : textTheme.bodyMedium?.color;
+
+    final backgroundColor = isSelected
+        ? colorScheme.primary.withValues(alpha: 0.1)
+        : Colors.transparent;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: foregroundColor, size: 24),
+                const SizedBox(width: 16),
+                Text(
+                  label,
+                  style: textTheme.titleSmall?.copyWith(
+                    fontSize: 14,
+                    color: foregroundColor,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-        ],
+        ),
       ),
     );
   }

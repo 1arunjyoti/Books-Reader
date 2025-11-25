@@ -3,30 +3,33 @@ import '../../domain/entities/reading_goal.dart';
 class ReadingGoalModel extends ReadingGoal {
   const ReadingGoalModel({
     required super.id,
-    required super.type,
+    required super.period,
     required super.targetAmount,
     required super.currentAmount,
     required super.unit,
   });
 
   factory ReadingGoalModel.fromJson(Map<String, dynamic> json) {
-    // Parse type from server (books, pages, time)
-    GoalType goalType;
-    switch (json['type']) {
-      case 'books':
-        goalType = GoalType.yearly;
+    // Parse period from server (daily, weekly, monthly, yearly)
+    GoalPeriod period;
+    switch (json['period']) {
+      case 'daily':
+        period = GoalPeriod.daily;
         break;
-      case 'pages':
-        goalType = GoalType.monthly;
+      case 'weekly':
+        period = GoalPeriod.weekly;
         break;
-      case 'time':
-        goalType = GoalType.daily;
+      case 'monthly':
+        period = GoalPeriod.monthly;
+        break;
+      case 'yearly':
+        period = GoalPeriod.yearly;
         break;
       default:
-        goalType = GoalType.weekly;
+        period = GoalPeriod.weekly;
     }
 
-    // Parse unit from type
+    // Parse unit from type (books, pages, time)
     GoalUnit unit;
     switch (json['type']) {
       case 'books':
@@ -41,7 +44,7 @@ class ReadingGoalModel extends ReadingGoal {
 
     return ReadingGoalModel(
       id: json['id'] ?? '',
-      type: goalType,
+      period: period,
       targetAmount: json['target'] ?? 0,
       currentAmount: json['current'] ?? 0,
       unit: unit,
@@ -62,9 +65,26 @@ class ReadingGoalModel extends ReadingGoal {
         typeStr = 'pages';
     }
 
+    String periodStr;
+    switch (period) {
+      case GoalPeriod.daily:
+        periodStr = 'daily';
+        break;
+      case GoalPeriod.weekly:
+        periodStr = 'weekly';
+        break;
+      case GoalPeriod.monthly:
+        periodStr = 'monthly';
+        break;
+      case GoalPeriod.yearly:
+        periodStr = 'yearly';
+        break;
+    }
+
     return {
       'id': id,
       'type': typeStr,
+      'period': periodStr,
       'target': targetAmount,
       'current': currentAmount,
     };

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../domain/entities/book.dart';
+import 'add_to_collection_dialog.dart';
+// import '../../../../core/utils/image_cache_manager.dart';
 
 class BookCard extends StatelessWidget {
   final Book book;
@@ -13,13 +15,13 @@ class BookCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -38,14 +40,25 @@ class BookCard extends StatelessWidget {
                   CachedNetworkImage(
                     imageUrl: book.coverUrl ?? '',
                     fit: BoxFit.cover,
+                    // Memory cache constraints for better performance
+                    memCacheWidth: 400,
+                    memCacheHeight: 600,
+                    maxWidthDiskCache: 800,
+                    maxHeightDiskCache: 1200,
+                    // Using default cache manager for now
+                    // cacheManager: BookCoverCacheManager.instance,
                     placeholder: (context, url) => Container(
-                      color: Colors.grey[100],
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       child: const Center(
                         child: Icon(Icons.image, color: Colors.grey),
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[100],
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       child: Center(
                         child: Icon(
                           Icons.book,
@@ -55,6 +68,8 @@ class BookCard extends StatelessWidget {
                       ),
                     ),
                   ),
+
+                  // Progress indicator
                   if (book.status == BookStatus.reading)
                     Positioned(
                       bottom: 0,
@@ -69,9 +84,112 @@ class BookCard extends StatelessWidget {
                         minHeight: 4,
                       ),
                     ),
+
+                  // Action menu button
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        color: Theme.of(context).cardColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        offset: const Offset(0, 40),
+                        onSelected: (value) {
+                          _handleMenuAction(context, value, book);
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'download',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.download_rounded,
+                                  size: 20,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Download',
+                                  style: GoogleFonts.inter(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'mark_read',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle_outline,
+                                  size: 20,
+                                  color: Colors.green,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Mark as Read',
+                                  style: GoogleFonts.inter(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'add_collection',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.bookmark_add_outlined,
+                                  size: 20,
+                                  color: Colors.amber,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Add to Collection',
+                                  style: GoogleFonts.inter(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuDivider(),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.delete_outline,
+                                  size: 20,
+                                  color: Colors.red,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Delete',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
+
+            /* Book info */
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -84,7 +202,7 @@ class BookCard extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.titleMedium?.color,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -93,7 +211,7 @@ class BookCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
-                      color: Colors.grey[600],
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -103,6 +221,72 @@ class BookCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  static void _handleMenuAction(
+    BuildContext context,
+    String action,
+    Book book,
+  ) {
+    switch (action) {
+      case 'download':
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Downloading "${book.title}"...'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        // TODO: Implement download functionality
+        break;
+      case 'mark_read':
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Marked "${book.title}" as read'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        // TODO: Implement mark as read functionality
+        break;
+      case 'add_collection':
+        showDialog(
+          context: context,
+          builder: (context) =>
+              AddToCollectionDialog(bookId: book.id, bookTitle: book.title),
+        );
+        break;
+      case 'delete':
+        _showDeleteConfirmation(context, book);
+        break;
+    }
+  }
+
+  static void _showDeleteConfirmation(BuildContext context, Book book) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Book'),
+        content: Text('Are you sure you want to delete "${book.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Deleted "${book.title}"'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+              // TODO: Implement delete functionality
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
