@@ -10,13 +10,8 @@ import {
   BarChart3,
   Calendar
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { 
-  LineChart, 
-  Line, 
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -24,20 +19,27 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+
+// Lazy load heavy chart components
+const LineChart = dynamic(() => import('recharts').then(mod => mod.LineChart), { ssr: false });
+const Line = dynamic(() => import('recharts').then(mod => mod.Line), { ssr: false });
+const AreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), { ssr: false });
+const Area = dynamic(() => import('recharts').then(mod => mod.Area), { ssr: false });
+const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
+const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
 import { getReadingStats, ReadingStats } from '@/lib/api';
-import { Button } from '@/components/ui/button';
 
-interface ReadingStatsDashboardProps {
-  accessToken: string;
-}
+import { useAuth } from '@clerk/nextjs';
 
-export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProps) {
+export function ReadingStatsDashboard() {
+  const { getToken } = useAuth();
   const [isDark, setIsDark] = useState(false);
+
+  // ... (theme detection useEffect remains same)
 
   useEffect(() => {
     const mql = window.matchMedia('(prefers-color-scheme: dark)');
     const update = () => {
-      // detect both explicit dark class (next-themes) and system preference
       setIsDark(document.documentElement.classList.contains('dark') || mql.matches);
     };
     update();
@@ -95,7 +97,9 @@ export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProp
   const loadStats = async () => {
     try {
       setIsLoading(true);
-      const data = await getReadingStats(period, accessToken);
+      const token = await getToken();
+      if (!token) return;
+      const data = await getReadingStats(period, token);
       setStats(data);
     } catch (error) {
       console.error('Error loading reading stats:', error);
@@ -137,264 +141,307 @@ export function ReadingStatsDashboard({ accessToken }: ReadingStatsDashboardProp
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Period Selector */}
-      <div className="flex gap-2">
-        <Button
-          variant={period === 'week' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setPeriod('week')}
-        >
-          Week
-        </Button>
-        <Button
-          variant={period === 'month' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setPeriod('month')}
-        >
-          Month
-        </Button>
-        <Button
-          variant={period === 'year' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setPeriod('year')}
-        >
-          Year
-        </Button>
-        <Button
-          variant={period === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setPeriod('all')}
-        >
-          All Time
-        </Button>
+      <div className="flex justify-center">
+        <div className="inline-flex p-1 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-sm">
+          {(['week', 'month', 'year', 'all'] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`
+                px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                ${period === p 
+                  ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                }
+              `}
+            >
+              {p.charAt(0).toUpperCase() + p.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {/* Books Read */}
-        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+        <Card className="border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl relative overflow-hidden group hover:border-blue-300/50 dark:hover:border-blue-700/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <BookOpen className="h-16 w-16 text-blue-500 transform rotate-12" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Books Finished</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Books Finished</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.booksFinished}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.booksReading} currently reading
+            <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+              {stats.booksFinished ?? 0}
+            </div>
+            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
+              {stats.booksReading ?? 0} currently reading
             </p>
           </CardContent>
         </Card>
 
         {/* Reading Time */}
-        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+        <Card className="border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl relative overflow-hidden group hover:border-purple-300/50 dark:hover:border-purple-700/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Clock className="h-16 w-16 text-purple-500 transform -rotate-12" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reading Time</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Reading Time</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatTime(stats.totalReadingTime)}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.sessionsCount} reading sessions
+            <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+              {formatTime(stats.totalReadingTime ?? 0)}
+            </div>
+            <p className="text-xs font-medium text-purple-600 dark:text-purple-400 mt-1">
+              {stats.sessionsCount ?? 0} reading sessions
             </p>
           </CardContent>
         </Card>
 
         {/* Pages Read */}
-        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+        <Card className="border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl relative overflow-hidden group hover:border-green-300/50 dark:hover:border-green-700/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <TrendingUp className="h-16 w-16 text-green-500 transform rotate-6" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pages Read</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pages Read</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPagesRead.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              ~{stats.readingSpeed} pages/hour
+            <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+              {(stats.totalPagesRead ?? 0).toLocaleString()}
+            </div>
+            <p className="text-xs font-medium text-green-600 dark:text-green-400 mt-1">
+              ~{stats.readingSpeed ?? 0} pages/hour
             </p>
           </CardContent>
         </Card>
 
         {/* Current Streak */}
-        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+        <Card className="border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl relative overflow-hidden group hover:border-orange-300/50 dark:hover:border-orange-700/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Flame className="h-16 w-16 text-orange-500 transform -rotate-6" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Streak</CardTitle>
-            <Flame className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Current Streak</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.currentStreak}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.currentStreak === 1 ? 'day' : 'days'} in a row
+            <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+              {stats.currentStreak ?? 0}
+            </div>
+            <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mt-1">
+              {(stats.currentStreak ?? 0) === 1 ? 'day' : 'days'} in a row
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Charts */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Reading Time Chart */}
-        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+        <Card className="border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <BarChart3 className="h-5 w-5 text-blue-500" />
+              </div>
               Daily Reading Time
             </CardTitle>
             <CardDescription>Minutes spent reading per day</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={stats.chartData}>
-                <defs>
-                  <linearGradient id="colorMinutes" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={palette.primaryGradientStart} stopOpacity={0.9}/>
-                    <stop offset="95%" stopColor={palette.primaryGradientEnd} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="date" 
-                  className="text-xs"
-                  tickFormatter={(value) => formatDateDM(value)}
-                />
-                <YAxis className="text-xs" />
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                          <p className="text-sm font-semibold">
-                            {formatDateDM(data.date)}
-                          </p>
-                          <p className="text-sm" style={{ color: palette.minutesTooltip }}>
-                            {data.minutes} minutes
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="minutes" 
-                  stroke={palette.primary} 
-                  fillOpacity={1} 
-                  fill="url(#colorMinutes)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorMinutes" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={palette.primaryGradientStart} stopOpacity={0.9}/>
+                      <stop offset="95%" stopColor={palette.primaryGradientEnd} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-800" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    className="text-xs font-medium text-gray-500"
+                    tickFormatter={(value) => formatDateDM(value)}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                  />
+                  <YAxis 
+                    className="text-xs font-medium text-gray-500" 
+                    tickLine={false}
+                    axisLine={false}
+                    dx={-10}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-gray-200 dark:border-gray-700 p-3 rounded-xl shadow-xl">
+                            <p className="text-sm font-semibold mb-1 text-gray-900 dark:text-white">
+                              {formatDateDM(data.date)}
+                            </p>
+                            <p className="text-sm font-medium flex items-center gap-2" style={{ color: palette.minutesTooltip }}>
+                              <Clock className="w-3 h-3" />
+                              {data.minutes} minutes
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="minutes" 
+                    stroke={palette.primary} 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorMinutes)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
         {/* Pages Read Chart */}
-        <Card className="border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+        <Card className="border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <div className="p-1.5 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <Calendar className="h-5 w-5 text-orange-500" />
+              </div>
               Pages Per Day
             </CardTitle>
             <CardDescription>Number of pages read daily</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={stats.chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-800" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    className="text-xs font-medium text-gray-500"
+                    tickFormatter={(value) => formatDateDM(value)}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                  />
+                  <YAxis 
+                    className="text-xs font-medium text-gray-500" 
+                    tickLine={false}
+                    axisLine={false}
+                    dx={-10}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-gray-200 dark:border-gray-700 p-3 rounded-xl shadow-xl">
+                            <p className="text-sm font-semibold mb-1 text-gray-900 dark:text-white">
+                              {formatDateDM(data.date)}
+                            </p>
+                            <p className="text-sm font-medium flex items-center gap-2" style={{ color: palette.pagesTooltip }}>
+                              <BookOpen className="w-3 h-3" />
+                              {data.pages} pages
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar 
+                    dataKey="pages" 
+                    fill={palette.bar} 
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={50}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Combined Chart */}
+      <Card className="border-gray-200/50 dark:border-gray-700/50 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
+        <CardHeader>
+          <CardTitle className="text-lg">Reading Activity Overview</CardTitle>
+          <CardDescription>Combined view of reading time and pages</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-800" vertical={false} />
                 <XAxis 
                   dataKey="date" 
-                  className="text-xs"
+                  className="text-xs font-medium text-gray-500"
                   tickFormatter={(value) => formatDateDM(value)}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={10}
                 />
-                <YAxis className="text-xs" />
+                <YAxis yAxisId="left" className="text-xs font-medium text-gray-500" tickLine={false} axisLine={false} dx={-10} />
+                <YAxis yAxisId="right" orientation="right" className="text-xs font-medium text-gray-500" tickLine={false} axisLine={false} dx={10} />
                 <Tooltip 
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
-                        <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                          <p className="text-sm font-semibold">
+                        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-gray-200 dark:border-gray-700 p-3 rounded-xl shadow-xl">
+                          <p className="text-sm font-semibold mb-2 text-gray-900 dark:text-white">
                             {formatDateDM(data.date)}
                           </p>
-                          <p className="text-sm" style={{ color: palette.pagesTooltip }}>
-                            {data.pages} pages
-                          </p>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium flex items-center gap-2" style={{ color: palette.minutesTooltip }}>
+                              <Clock className="w-3 h-3" />
+                              {data.minutes} minutes
+                            </p>
+                            <p className="text-sm font-medium flex items-center gap-2" style={{ color: palette.pagesTooltip }}>
+                              <BookOpen className="w-3 h-3" />
+                              {data.pages} pages
+                            </p>
+                          </div>
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Bar 
-                  dataKey="pages" 
-                  fill={palette.bar} 
-                  radius={[8, 8, 0, 0]}
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Line 
+                  yAxisId="left"
+                  type="monotone" 
+                  dataKey="minutes" 
+                  stroke={palette.primary} 
+                  strokeWidth={3}
+                  dot={{ r: 4, strokeWidth: 2, fill: palette.primary }}
+                  activeDot={{ r: 6, strokeWidth: 0 }}
+                  name="Minutes"
                 />
-              </BarChart>
+                <Line 
+                  yAxisId="right"
+                  type="monotone" 
+                  dataKey="pages" 
+                  stroke={palette.pagesLine} 
+                  strokeWidth={3}
+                  dot={{ r: 4, strokeWidth: 2, fill: palette.pagesLine }}
+                  activeDot={{ r: 6, strokeWidth: 0 }}
+                  name="Pages"
+                />
+              </LineChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Combined Chart */}
-      <Card className="border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
-        <CardHeader>
-          <CardTitle>Reading Activity Overview</CardTitle>
-          <CardDescription>Combined view of reading time and pages</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={stats.chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis 
-                dataKey="date" 
-                className="text-xs"
-                tickFormatter={(value) => formatDateDM(value)}
-              />
-              <YAxis yAxisId="left" className="text-xs" />
-              <YAxis yAxisId="right" orientation="right" className="text-xs" />
-              <Tooltip 
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const data = payload[0].payload;
-                    return (
-                      <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                        <p className="text-sm font-semibold mb-2">
-                          {formatDateDM(data.date)}
-                        </p>
-                        <p className="text-sm" style={{ color: palette.minutesTooltip }}>
-                          ⏱️ {data.minutes} minutes
-                        </p>
-                        <p className="text-sm" style={{ color: palette.pagesTooltip }}>
-                          📖 {data.pages} pages
-                        </p>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Legend />
-              <Line 
-                yAxisId="left"
-                type="monotone" 
-                dataKey="minutes" 
-                stroke={palette.primary} 
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-                name="Minutes"
-              />
-              <Line 
-                yAxisId="right"
-                type="monotone" 
-                dataKey="pages" 
-                stroke={palette.pagesLine} 
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-                name="Pages"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>

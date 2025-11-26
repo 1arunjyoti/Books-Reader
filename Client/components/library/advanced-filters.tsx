@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, memo } from 'react';
-import { X, Calendar, Tag, Globe, SortAsc, SidebarOpen, FileText } from 'lucide-react';
+import { Calendar, Tag, Globe, SortAsc, SidebarOpen, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/label';
@@ -160,35 +160,36 @@ const AdvancedFiltersComponent = memo(function AdvancedFiltersComponent({ filter
       <SheetTrigger asChild>
         <Button
           variant="outline"
-          className="h-auto w-auto p-3 rounded-lg justify-between border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 group text-sm sm:text-base gap-2"
+          className="h-12 px-4 border-gray-200/50 dark:border-gray-700/50 bg-white dark:bg-gray-800 backdrop-blur-sm text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:border-blue-300/50 dark:hover:border-blue-700/50 group text-sm font-medium rounded-xl transition-all duration-200 shadow-sm gap-2"
         >
-          <SidebarOpen className="h-4 w-4" />
+          <SidebarOpen className="h-4 w-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
+          <span className="hidden sm:inline">Filters</span>
           
           {activeFiltersCount > 0 && (
-            <span className="ml-2 text-xs font-semibold rounded-full  text-blue-500">
+            <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600 dark:text-blue-400">
               {activeFiltersCount}
             </span>
           )}
         </Button>
       </SheetTrigger>
       
-      <SheetContent className="overflow-y-auto border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900">
+      <SheetContent className="flex flex-col h-full border-l border-gray-200/50 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl w-full sm:max-w-md p-0 overflow-hidden">
 
         {/* SheetHeader */}
-        <SheetHeader>
-          <SheetTitle>Advanced Filters</SheetTitle>
-          <SheetDescription>
-            Refine your library search with advanced filtering options
+        <SheetHeader className="flex-none px-6 py-6 border-b border-gray-100 dark:border-gray-800">
+          <SheetTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">Advanced Filters</SheetTitle>
+          <SheetDescription className="text-gray-500 dark:text-gray-400">
+            Refine your library search with specific criteria
           </SheetDescription>
         </SheetHeader>
 
         {/* Filters */}
-        <div className="py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
           {/* Genre Filter */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="flex items-center text-base font-semibold">
-                <Tag className="h-4 w-4 mr-2" />
+              <Label className="flex items-center text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <Tag className="h-4 w-4 mr-2 text-blue-500" />
                 Genres
               </Label>
               {filters.genre.length > 0 && (
@@ -196,46 +197,42 @@ const AdvancedFiltersComponent = memo(function AdvancedFiltersComponent({ filter
                   variant="ghost"
                   size="sm"
                   onClick={handleClearGenres}
-                  className="h-7 text-xs"
+                  className="h-6 px-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
-                  Clear All
+                  Clear
                 </Button>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-wrap gap-2">
               {GENRES.map((genre) => (
-                <Button
+                <button
                   key={genre}
-                  variant={filters.genre.includes(genre) ? "default" : "outline"}
-                  size="sm"
                   onClick={() => handleGenreToggle(genre)}
-                  className="justify-start text-sm"
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border ${
+                    filters.genre.includes(genre)
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 shadow-sm'
+                      : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
                 >
                   {genre}
-                  {filters.genre.includes(genre) && (
-                    <X className="ml-auto h-3 w-3" />
-                  )}
-                </Button>
+                </button>
               ))}
             </div>
-            {filters.genre.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {filters.genre.length} genre{filters.genre.length > 1 ? 's' : ''} selected
-              </p>
-            )}
           </div>
 
+          <div className="h-px bg-gray-100 dark:bg-gray-800" />
+
           {/* Language Filter */}
-          <div className="space-y-3">
-            <Label className="flex items-center text-base font-semibold">
-              <Globe className="h-4 w-4 mr-2" />
+          <div className="space-y-4">
+            <Label className="flex items-center text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <Globe className="h-4 w-4 mr-2 text-purple-500" />
               Language
             </Label>
             <Select 
               value={filters.language === '' ? 'all' : filters.language} 
               onValueChange={handleLanguageChange}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:ring-purple-500/20">
                 <SelectValue placeholder="All Languages" />
               </SelectTrigger>
               <SelectContent>
@@ -248,71 +245,72 @@ const AdvancedFiltersComponent = memo(function AdvancedFiltersComponent({ filter
             </Select>
           </div>
 
+          <div className="h-px bg-gray-100 dark:bg-gray-800" />
+
           {/* Date Range Filter */}
-          <div className="space-y-3">
-            <Label className="flex items-center text-base font-semibold">
-              <Calendar className="h-4 w-4 mr-2" />
-              Upload Date Range
+          <div className="space-y-4">
+            <Label className="flex items-center text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <Calendar className="h-4 w-4 mr-2 text-orange-500" />
+              Upload Date
             </Label>
-            <div className="space-y-2">
-              <div>
-                <Label className="text-xs text-muted-foreground">From</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-500 dark:text-gray-400 ml-1">From</Label>
                 <Input
                   type="date"
                   value={filters.dateFrom}
                   onChange={(e) => handleDateFromChange(e.target.value)}
-                  className="mt-1"
+                  className="h-10 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-orange-500/20"
                 />
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">To</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-500 dark:text-gray-400 ml-1">To</Label>
                 <Input
                   type="date"
                   value={filters.dateTo}
                   onChange={(e) => handleDateToChange(e.target.value)}
-                  className="mt-1"
+                  className="h-10 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-orange-500/20"
                 />
               </div>
             </div>
           </div>
 
+          <div className="h-px bg-gray-100 dark:bg-gray-800" />
+
           {/* Format Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center text-base font-semibold">
-                <FileText className="h-4 w-4 mr-2" />
-                Format
-              </Label>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-4">
+            <Label className="flex items-center text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <FileText className="h-4 w-4 mr-2 text-green-500" />
+              Format
+            </Label>
+            <div className="grid grid-cols-3 gap-3">
               {['PDF', 'EPUB', 'TXT'].map((fmt) => (
-                <Button
+                <button
                   key={fmt}
-                  variant={filters.format!.includes(fmt) ? "default" : "outline"}
-                  size="sm"
                   onClick={() => handleFormatToggle(fmt)}
-                  className="justify-center text-sm"
+                  className={`flex items-center justify-center py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
+                    filters.format!.includes(fmt)
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 shadow-sm'
+                      : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
+                  }`}
                 >
                   {fmt}
-                </Button>
+                </button>
               ))}
             </div>
-            {filters.format && filters.format.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {filters.format.length} format{filters.format.length > 1 ? 's' : ''} selected
-              </p>
-            )}
           </div>
 
+          <div className="h-px bg-gray-100 dark:bg-gray-800" />
+
           {/* Sort Options */}
-          <div className="space-y-3">
-            <Label className="flex items-center text-base font-semibold">
-              <SortAsc className="h-4 w-4 mr-2" />
+          <div className="space-y-4">
+            <Label className="flex items-center text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <SortAsc className="h-4 w-4 mr-2 text-pink-500" />
               Sort By
             </Label>
-            <div className="space-y-2">
+            <div className="grid grid-cols-[1fr,auto] gap-3">
               <Select value={filters.sortBy} onValueChange={handleSortByChange}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:ring-pink-500/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -325,23 +323,29 @@ const AdvancedFiltersComponent = memo(function AdvancedFiltersComponent({ filter
               </Select>
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleSortOrderToggle}
-                className="w-full"
+                className="h-11 w-11 px-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
+                title={filters.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
               >
-                {filters.sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
+                {filters.sortOrder === 'asc' ? '↑' : '↓'}
               </Button>
             </div>
           </div>
         </div>
 
         {/* Footer Buttons */}
-        <SheetFooter className="flex gap-2">
-          <Button variant="outline" onClick={handleReset} className="flex-1">
+        <SheetFooter className="flex-none p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 flex-row gap-3 sm:justify-between">
+          <Button 
+            variant="ghost" 
+            onClick={handleReset} 
+            className="flex-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
             Reset All
           </Button>
           <SheetClose asChild>
-            <Button className="flex-1">Apply Filters</Button>
+            <Button className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20">
+              Apply Filters
+            </Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>

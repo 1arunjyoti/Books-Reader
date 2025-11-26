@@ -22,6 +22,14 @@
 import { logger } from '../logger';
 import { API_ENDPOINTS } from '../config';
 
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  xp: number;
+}
+
 export interface UserProfile {
   id?: string;
   email?: string;
@@ -29,12 +37,17 @@ export interface UserProfile {
   picture?: string;
   nickname?: string;
   updatedAt?: string;
+  createdAt?: string;
+  usedStorage?: number;
+  level?: number;
+  xp?: number;
+  achievements?: Achievement[];
 }
 
 /**
  * Allowed fields that can be fetched
  */
-const ALLOWED_FIELDS = ['id', 'email', 'name', 'picture', 'nickname', 'updatedAt'] as const;
+const ALLOWED_FIELDS = ['id', 'email', 'name', 'picture', 'nickname', 'updatedAt', 'createdAt', 'usedStorage', 'level', 'xp', 'achievements'] as const;
 
 /**
  * Fetch user profile from server API with caching and timeout

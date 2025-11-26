@@ -22,7 +22,7 @@ const paginationSchema = z.object({
 
 const sortSchema = z.object({
   sortBy: z
-    .enum(["createdAt", "updatedAt", "title", "author", "uploadedAt"])
+    .enum(["createdAt", "updatedAt", "title", "author", "uploadedAt", "fileSize"])
     .optional(),
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });

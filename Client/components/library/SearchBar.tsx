@@ -28,7 +28,7 @@ const SearchBar = memo(function SearchBar({
         <Input
           id={id}
           type="text"
-          className="h-12 pl-11 pr-4 text-sm border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent transition-all"
+          className="h-12 pl-11 pr-4 text-sm bg-white dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent transition-all"
           placeholder={placeholder}
           value={value}
           onChange={onChange}

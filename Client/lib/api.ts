@@ -218,6 +218,25 @@ export async function deleteBook(id: string, accessToken: string): Promise<void>
 }
 
 /**
+ * Bulk delete books
+ */
+export async function deleteBooks(bookIds: string[], accessToken: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/books/bulk-delete`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ bookIds }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Failed to delete books' }));
+    throw new Error(error.error || 'Failed to delete books');
+  }
+}
+
+/**
  * Get presigned URL for a book file
  */
 export async function getPresignedUrl(
