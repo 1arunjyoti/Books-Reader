@@ -90,7 +90,7 @@ export default function ColorPickerPopup({
       {/* Popup */}
       <div
         ref={popupRef}
-        className={`fixed z-50 rounded-full shadow-lg border ${
+        className={`fixed z-50 rounded-xl shadow-lg border ${
           isMobile 
             ? 'bg-white/95 border-gray-200 px-3 py-2' 
             : 'bg-white/95 border-gray-200 px-3 py-2'
@@ -127,7 +127,7 @@ export default function ColorPickerPopup({
           <button
             type="button"
             onClick={onDismiss}
-            className="ml-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-1 rounded-full text-xs text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 "
           >
             Cancel
           </button>

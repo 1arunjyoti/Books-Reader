@@ -5,7 +5,6 @@ import { ReactReader } from 'react-reader';
 import type { Rendition, NavItem, Contents } from 'epubjs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import {
   ChevronLeft,
   ChevronRight,
@@ -51,6 +50,7 @@ import {
 } from './hooks';
 import { useReadingMode } from '@/hooks/useReadingMode';
 import { useAuthToken } from '@/contexts/AuthTokenContext';
+import { Progress } from '@/components/ui/progress';
 
 interface ReactEpubViewerProps {
   fileUrl: string;
@@ -187,6 +187,7 @@ export default function ReactEpubViewer({
     renditionRef,
     onPageChange,
     onLocationsGenerated: highlights.updateHighlightPageNumbers,
+    initialPage: currentPage,
   });
 
   const bookmarks = useEpubBookmarks({
@@ -725,69 +726,65 @@ export default function ReactEpubViewer({
 
   const readerStyles = getReaderStyles(displayOptions.colorFilter, displayOptions.customBgColor);
 
+  // Calculate reading progress
+  const progress = navigation.pageInfo.total > 0 
+    ? (navigation.pageInfo.current / navigation.pageInfo.total) * 100 
+    : 0;
+
   return (
     <div 
       className="fixed inset-0 flex flex-col z-50"
       style={{ backgroundColor: readerStyles.readerArea.backgroundColor }}
     >
-      {/* Header Toolbar */}
+      {/* Header Toolbar - Auto-hides in reading mode */}
       {(!readingMode || toolbarVisible) && (
-      <div className={`border-b px-4 sm:px-4 py-4 sm:py-4 flex-shrink-0 ${
-        displayOptions.colorFilter === 'dark' 
-          ? 'bg-gray-900 border-gray-800 text-white' 
-          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-      }`}>
-        <div className="flex items-center justify-between gap-2">
-          {/* Left Section - Title */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <BookOpen className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${
-              displayOptions.colorFilter === 'dark' ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'
-            }`} />
-            <h1 className={`text-sm sm:text-lg font-semibold truncate ${
-              displayOptions.colorFilter === 'dark' ? 'text-white' : 'text-gray-900 dark:text-white'
-            }`}>
-              {bookTitle}
-            </h1>
-          </div>
+        <div className="absolute top-0 left-0 right-0 z-40 transition-all duration-300 transform translate-y-0">
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+            <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+              {/* Left Section - Title */}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                  <BookOpen className="h-5 w-5" />
+                </div>
+                <h1 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white truncate">
+                  {bookTitle}
+                </h1>
+                {navigation.currentChapter && (
+                  <span className="hidden sm:inline text-sm text-gray-500 dark:text-gray-400 truncate border-l border-gray-300 dark:border-gray-600 pl-3 ml-1">
+                    {navigation.currentChapter}
+                  </span>
+                )}
+              </div>
 
-          {/* Center Section - Page Info (Desktop Only) */}
-          <div className="hidden md:flex items-center gap-2">
-            {navigation.currentChapter && (
-              <span className={`text-sm max-w-xs truncate ${
-                displayOptions.colorFilter === 'dark' ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'
-              }`}>
-                {navigation.currentChapter}
-              </span>
-            )}
+              {/* Center Section - Navigation (Desktop Only) */}
+              <div className="hidden md:flex items-center gap-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg p-1 border border-gray-200/50 dark:border-gray-700/50">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={navigation.pageInfo.current <= 1}
+                  onClick={navigation.goToPrevPage}
+                  title="Previous page"
+                  className="h-8 w-8 hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm transition-all"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled={navigation.pageInfo.current <= 1}
-              onClick={navigation.goToPrevPage}
-              title="Previous page"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-
-            {/* Page Input */}
-            <div className="flex items-center gap-2">
-              <form onSubmit={navigation.handlePageInputSubmit} className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  value={navigation.pageInput}
-                  onChange={(e) => navigation.setPageInput(e.target.value)}
-                  min={1}
-                  max={navigation.pageInfo.total}
-                  className="w-16 text-center h-8 text-sm"
-                  disabled={navigation.pageInfo.total === 0}
-                />
-                <span className={`text-sm ${
-                  displayOptions.colorFilter === 'dark' ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'
-                }`}>
-                  / {navigation.pageInfo.total}
-                </span>
-              </form>
+                {/* Page Input */}
+                <div className="flex items-center gap-2 px-2">
+                  <form onSubmit={navigation.handlePageInputSubmit} className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      value={navigation.pageInput}
+                      onChange={(e) => navigation.setPageInput(e.target.value)}
+                      min={1}
+                      max={navigation.pageInfo.total}
+                      className="w-12 text-center h-7 text-sm border-none bg-transparent focus-visible:ring-0 p-0"
+                      disabled={navigation.pageInfo.total === 0}
+                    />
+                    <span className="text-sm text-gray-400 dark:text-gray-500 select-none">
+                      / {navigation.pageInfo.total}
+                    </span>
+                  </form>
               {navigation.isGeneratingLocations && (
                 <div className="flex flex-col gap-1 ml-2 min-w-[120px]">
                   <div className="flex items-center gap-2">
@@ -804,197 +801,188 @@ export default function ReactEpubViewer({
                   />
                 </div>
               )}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={navigation.goToNextPage}
+                  disabled={navigation.pageInfo.current >= navigation.pageInfo.total}
+                  title="Next page"
+                  className="h-8 w-8 hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm transition-all"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Right Section - Essential Controls */}
+              <div className="flex items-center gap-1 sm:gap-2">
+
+                {/* Search - Always visible */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={search.toggleSearchPanel}
+                  title="Search"
+                  className={`h-9 w-9 rounded-lg transition-all ${search.showSearchPanel ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                >
+                  <Search className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+
+                {/* Bookmark Controls - Always visible */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleBookmark}
+                  disabled={bookmarks.isLoadingBookmarks}
+                  title={isCurrentPageBookmarked ? "Remove bookmark" : "Add bookmark"}
+                  className={`h-9 w-9 rounded-lg transition-all ${isCurrentPageBookmarked ? "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                >
+                  {isCurrentPageBookmarked ? (
+                    <Bookmark className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
+                  ) : (
+                    <BookmarkPlus className="h-4 w-4 sm:h-5 sm:w-5" />
+                  )}
+                </Button>
+
+                {/* Contents & Bookmarks Panel - Always visible */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowContentsAndBookmarks(!showContentsAndBookmarks)}
+                  disabled={bookmarks.isLoadingBookmarks}
+                  title="Contents & Bookmarks"
+                  className={`h-9 w-9 rounded-lg transition-all ${showContentsAndBookmarks ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                >
+                  <List className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+
+                {/* Highlights Panel - Always visible */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowHighlightsPanel(!showHighlightsPanel)}
+                  disabled={highlights.highlights.length === 0}
+                  title="Highlights"
+                  className={`h-9 w-9 rounded-lg transition-all ${showHighlightsPanel ? "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                >
+                  <Highlighter className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+
+                {/* Desktop Advanced Features */}
+                <div className="hidden lg:flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-gray-700 ml-1">
+                  
+                  {/* Display Options Panel Button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={displayOptions.toggleDisplayOptions}
+                    title="Display options"
+                    className={`h-9 w-9 rounded-lg transition-all ${displayOptions.showDisplayOptions ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Button>
+
+                  {/* Text-to-Speech */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={tts.toggleTTSControls}
+                    title="Text-to-Speech"
+                    className={`h-9 w-9 rounded-lg transition-all ${tts.showTTSControls ? "bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                  >
+                    <Volume2 className="h-5 w-5" />
+                  </Button>
+
+                  {/* Text Selection Toggle */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEnableTextSelection(!enableTextSelection)}
+                    title={enableTextSelection ? "Disable text selection" : "Enable text selection"}
+                    className={`h-9 w-9 rounded-lg transition-all ${enableTextSelection ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                  >
+                    <Type className="h-5 w-5" />
+                  </Button>
+
+                  {/* Reading Mode Toggle */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setReadingMode(!readingMode)}
+                    title={readingMode ? "Exit reading mode (R)" : "Enter reading mode (R)"}
+                    className={`h-9 w-9 rounded-lg transition-all ${readingMode ? "bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                  >
+                    {readingMode ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </Button>
+
+                </div>
+
+                {/* Mobile More Options Menu */}
+                <div className="flex lg:hidden items-center gap-1 pl-1 border-l border-gray-200 dark:border-gray-700 ml-1">
+                  {/* More Options Button - Mobile */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowMobileOptions(!showMobileOptions)}
+                    title="More options"
+                    className="h-9 w-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </div>
+                  
+                {/* Fullscreen button - Tablet and up */}
+                <div className="hidden sm:flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-gray-700 ml-1">
+                  {/* Fullscreen Toggle */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={displayOptions.toggleFullscreen}
+                    className={`h-9 w-9 rounded-lg transition-all ${displayOptions.isFullscreen ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                  >
+                    {displayOptions.isFullscreen ? (
+                      <Minimize className="h-5 w-5" />
+                    ) : (
+                      <Maximize className="h-5 w-5" />
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Close Reader - Always visible */}
+                {onClose && (
+                  <div className="">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onClose}
+                      title="Close"
+                      className="h-9 w-9 rounded-lg hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={navigation.goToNextPage}
-              disabled={navigation.pageInfo.current >= navigation.pageInfo.total}
-              title="Next page"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
+
+            {/* Progress Bar - Gradient */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-100 dark:bg-gray-800">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
-
-        {/* Right section - Controls */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          
-          {/* Search - Always visible */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={search.toggleSearchPanel}
-            title="Search"
-            className={`h-8 w-8 sm:h-9 sm:w-9 hover:bg-blue-200 dark:hover:bg-blue-900 ${search.showSearchPanel ? 'bg-blue-200 dark:bg-blue-900' : ''}`}
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-
-          {/* Bookmark Controls - Always visible */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleBookmark}
-            disabled={bookmarks.isLoadingBookmarks}
-            title={isCurrentPageBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-            className={`h-8 w-8 sm:h-9 sm:w-9 hover:bg-blue-200 dark:hover:bg-blue-900 ${isCurrentPageBookmarked ? 'text-blue-600 dark:text-blue-400' : ''}`}
-          >
-            {isCurrentPageBookmarked ? (
-              <Bookmark className="h-4 w-4 fill-current" />
-            ) : (
-              <BookmarkPlus className="h-4 w-4" />
-            )}
-          </Button>
-
-          {/* Contents & Bookmarks Panel - Always visible */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowContentsAndBookmarks(!showContentsAndBookmarks)}
-            disabled={bookmarks.isLoadingBookmarks}
-            title="Contents & Bookmarks"
-            className={`h-8 w-8 sm:h-9 sm:w-9 hover:bg-blue-200 dark:hover:bg-blue-900 ${showContentsAndBookmarks ? 'bg-blue-200 dark:bg-blue-900' : ' '}`}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-
-          {/* Highlights Panel - Mobile only */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowHighlightsPanel(!showHighlightsPanel)}
-            disabled={highlights.highlights.length === 0}
-            title="Highlights"
-            className={`h-8 w-8 sm:h-9 sm:w-9 lg:hidden ${showHighlightsPanel ? 'bg-blue-200 dark:bg-blue-900' : ''}`}
-          >
-            <Highlighter className="h-4 w-4" />
-          </Button>
-
-          {/* Desktop Advanced Features */}
-          <div className="hidden lg:flex items-center gap-2">
-            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-
-            {/* Highlights Panel - Desktop */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowHighlightsPanel(!showHighlightsPanel)}
-              disabled={highlights.highlights.length === 0}
-              title="Highlights"
-              className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${showHighlightsPanel ? 'bg-blue-200 dark:bg-blue-900' : ''}`}
-            >
-              <Highlighter className="h-4 w-4" />
-            </Button>
-
-            {/* Display Options Panel Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={displayOptions.toggleDisplayOptions}
-              title="Display options"
-              className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${displayOptions.showDisplayOptions ? 'bg-blue-200 dark:bg-blue-900' : ''}`}
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-
-            {/* Text-to-Speech */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={tts.toggleTTSControls}
-              title="Text-to-Speech"
-              className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${tts.showTTSControls ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-            >
-              <Volume2 className="h-4 w-4" />
-            </Button>
-
-            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-
-            {/* Text Selection Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setEnableTextSelection(!enableTextSelection)}
-              title={enableTextSelection ? "Disable text selection" : "Enable text selection"}
-              className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${enableTextSelection ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-            >
-              <Type className="h-4 w-4" />
-            </Button>
-
-            {/* Reading Mode Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setReadingMode(!readingMode)}
-              title={readingMode ? "Exit reading mode (R)" : "Enter reading mode (R)"}
-              className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${readingMode ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-            >
-              {readingMode ? (
-                <EyeOff className="h-5 w-5" />
-              ) : (
-                <Eye className="h-5 w-5" />
-              )}
-            </Button>
-
-            {/* Fullscreen */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={displayOptions.toggleFullscreen}
-              title={displayOptions.isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-              className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${displayOptions.isFullscreen ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-            >
-              {displayOptions.isFullscreen ? (
-                <Minimize className="h-4 w-4" />
-              ) : (
-                <Maximize className="h-4 w-4" />
-              )}
-            </Button>
-
-          </div>
-
-          {/* Mobile More Options Menu */}
-          <div className="flex lg:hidden items-center gap-1">
-            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-            
-            {/* More Options Button - Mobile */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowMobileOptions(!showMobileOptions)}
-              title="More options"
-              className="h-8 w-8 sm:h-9 sm:w-9"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Close - Always visible */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-red-300 dark:hover:bg-red-700"
-            title="Close"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </div>
-        </div>
-      </div>
       )}
 
-      {/* Progress Bar */}
-      <div className="h-1 bg-blue-200 dark:bg-blue-900/30 flex-shrink-0">
-        <Progress 
-          value={navigation.pageInfo.total > 0 ? (navigation.pageInfo.current / navigation.pageInfo.total) * 100 : 0}
-          className="h-full rounded-none [&>*]:bg-gray-600 dark:[&>*]:bg-gray-500"
-        />
-      </div>
-
       {/* Main reader area */}
-      <div className="flex-1 min-h-0 relative flex items-center justify-center">
+      <div className="flex-1 min-h-0 relative flex items-center justify-center pt-16 pb-16 sm:pb-0">
         <div 
           style={{ 
             height: '100%',
@@ -1025,7 +1013,7 @@ export default function ReactEpubViewer({
           <>
             {/* Overlay */}
             <div
-              className="absolute inset-0 bg-black/20 dark:bg-black/40 z-10"
+              className="absolute inset-0"
               onClick={() => setShowContentsAndBookmarks(false)}
             />
             {/* Panel */}
@@ -1109,7 +1097,7 @@ export default function ReactEpubViewer({
           <>
             {/* Overlay */}
             <div
-              className="absolute inset-0 bg-black/20 dark:bg-black/40 z-10"
+              className="absolute inset-0"
               onClick={tts.toggleTTSControls}
             />
             <EpubTTSPanel
@@ -1147,7 +1135,7 @@ export default function ReactEpubViewer({
           <>
             {/* Overlay */}
             <div
-              className="absolute inset-0 bg-black/20 dark:bg-black/40 z-10"
+              className="absolute inset-0"
               onClick={displayOptions.toggleDisplayOptions}
             />
             <DisplayOptionsPanel
@@ -1222,41 +1210,40 @@ export default function ReactEpubViewer({
         />
       )}
 
-      {/* Bottom Navigation Bar (Mobile Only) */}
+      {/* Bottom Toolbar (Mobile) - Floating Glassmorphic */}
       {(!readingMode || toolbarVisible) && (
-        <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 flex-shrink-0 flex flex-col items-center">
-          {/* Current Chapter (Mobile) */}
-          {navigation.currentChapter && (
-            <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-full">
-              {navigation.currentChapter}
-            </span>
-          )}
+        <div className="md:hidden fixed bottom-6 left-4 right-4 z-40">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg px-4 py-3">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={navigation.goToPrevPage}
+                disabled={navigation.pageInfo.current <= 1}
+                className="h-10 w-10 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
 
-          {/* Page change buttons */}
-          <div className="flex items-center justify-between w-full mt-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={navigation.goToPrevPage}
-              disabled={navigation.pageInfo.current <= 1}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
+              <div className="flex flex-col items-center">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  Page {navigation.pageInfo.current}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  of {navigation.pageInfo.total}
+                </span>
+              </div>
 
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {navigation.pageInfo.current} / {navigation.pageInfo.total}
-            </span>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={navigation.goToNextPage}
-              disabled={navigation.pageInfo.current >= navigation.pageInfo.total}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={navigation.goToNextPage}
+                disabled={navigation.pageInfo.current >= navigation.pageInfo.total}
+                className="h-10 w-10 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       )}

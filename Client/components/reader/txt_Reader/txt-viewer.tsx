@@ -147,7 +147,7 @@ export default function TxtViewer({
     if (!selection || selection.isCollapsed) return;
 
     const selectedText = selection.toString().trim();
-    // SECURITY: Validate selection length to prevent abuse
+    // Validate selection length to prevent abuse
     if (!selectedText || selectedText.length < 3 || selectedText.length > 5000) {
       return;
     }
@@ -525,7 +525,7 @@ export default function TxtViewer({
       {showHighlightsPanel && (
         <>
           <div
-            className="fixed inset-0 bg-black/20 z-10"
+            className="fixed inset-0"
             onClick={() => setShowHighlightsPanel(false)}
           />
           <TxtHighlightsPanel
@@ -544,7 +544,7 @@ export default function TxtViewer({
       {showDisplayOptions && (
         <>
           <div
-            className="fixed inset-0 bg-black/20 z-10"
+            className="fixed inset-0"
             onClick={() => setShowDisplayOptions(false)}
           />
           <TxtDisplayOptionsPanel
@@ -571,7 +571,7 @@ export default function TxtViewer({
       {showTTSPanel && (
         <>
           <div
-            className="fixed inset-0 bg-black/20 z-10"
+            className="fixed inset-0"
             onClick={() => setShowTTSPanel(false)}
           />
           <TxtTTSPanel

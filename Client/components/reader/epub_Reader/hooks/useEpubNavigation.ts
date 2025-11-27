@@ -12,9 +12,10 @@ interface UseEpubNavigationProps {
   onPageChange?: (page: number, totalPages: number) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onLocationsGenerated?: (book: any) => void;
+  initialPage?: number;
 }
 
-export function useEpubNavigation({ renditionRef, onPageChange, onLocationsGenerated }: UseEpubNavigationProps) {
+export function useEpubNavigation({ renditionRef, onPageChange, onLocationsGenerated, initialPage = 1 }: UseEpubNavigationProps) {
   const [location, setLocation] = useState<string | number>(0);
   const [toc, setToc] = useState<NavItem[]>([]);
   const [currentChapter, setCurrentChapter] = useState('');
@@ -218,6 +219,16 @@ export function useEpubNavigation({ renditionRef, onPageChange, onLocationsGener
                   pageInfoRef.current = newPageInfo;
                   setPageInfo(newPageInfo);
 
+                  // Do not report page changes to parent until we have restored the initial page
+                  // This prevents overwriting the saved page with page 1 during initialization
+                  if (!hasNavigatedToInitialPage.current && initialPage > 1) {
+                    logger.log('Skipping page change report during initialization', {
+                      current: newPageInfo.current,
+                      initialPage
+                    });
+                    return;
+                  }
+
                   pageChangeDebounceRef.current = setTimeout(() => {
                     onPageChange?.(newPageInfo.current, newPageInfo.total);
                   }, 300);
@@ -243,6 +254,11 @@ export function useEpubNavigation({ renditionRef, onPageChange, onLocationsGener
                 ) {
                   pageInfoRef.current = newPageInfo;
                   setPageInfo(newPageInfo);
+
+                  // Do not report page changes to parent until we have restored the initial page
+                  if (!hasNavigatedToInitialPage.current && initialPage > 1) {
+                    return;
+                  }
 
                   if (pageChangeDebounceRef.current) {
                     clearTimeout(pageChangeDebounceRef.current);
@@ -275,7 +291,7 @@ export function useEpubNavigation({ renditionRef, onPageChange, onLocationsGener
         logger.error('Error getting current chapter:', err);
       }
     },
-    [renditionRef, onPageChange]
+    [renditionRef, onPageChange, initialPage]
   );
 
   // PERFORMANCE FIX: Chunked location generation to prevent UI blocking

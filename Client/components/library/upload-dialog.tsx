@@ -304,7 +304,7 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
 
         {/* Tabs for Upload Methods */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'files' | 'url')} className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-6 pt-6">
+          <div className="px-6 pt-0">
             <TabsList className="grid w-full grid-cols-2 bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-xl">
               <TabsTrigger 
                 value="files" 

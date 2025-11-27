@@ -56,17 +56,17 @@ describe('EpubTTSPanel', () => {
       render(<EpubTTSPanel {...defaultProps} />);
       
       expect(screen.getByText('Voice')).toBeInTheDocument();
-      expect(screen.getByText(/Speed:/)).toBeInTheDocument();
-      expect(screen.getByText(/Pitch:/)).toBeInTheDocument();
-      expect(screen.getByText(/Volume:/)).toBeInTheDocument();
+      expect(screen.getByText('Speed')).toBeInTheDocument();
+      expect(screen.getByText('Pitch')).toBeInTheDocument();
+      expect(screen.getByText('Volume')).toBeInTheDocument();
     });
 
     it('should render panel with correct styling classes', () => {
       const { container } = render(<EpubTTSPanel {...defaultProps} />);
       
       const panel = container.firstChild as HTMLElement;
-      expect(panel).toHaveClass('absolute', 'top-0', 'right-0', 'bottom-0', 'w-80');
-      expect(panel).toHaveClass('bg-white', 'dark:bg-gray-800');
+      expect(panel).toHaveClass('absolute', 'top-16', 'right-0', 'bottom-0', 'w-80');
+      expect(panel).toHaveClass('bg-white/90', 'dark:bg-gray-900/90');
       expect(panel).toHaveClass('border-l', 'border-gray-200', 'dark:border-gray-700');
     });
   });
@@ -109,7 +109,8 @@ describe('EpubTTSPanel', () => {
     it('should display current speech rate', () => {
       render(<EpubTTSPanel {...defaultProps} speechRate={1.2} />);
       
-      expect(screen.getByText('Speed: 1.2x')).toBeInTheDocument();
+      expect(screen.getByText('Speed')).toBeInTheDocument();
+      expect(screen.getByText('1.2x')).toBeInTheDocument();
     });
 
     it('should call setSpeechRate when adjusting rate slider', () => {
@@ -126,7 +127,8 @@ describe('EpubTTSPanel', () => {
     it('should display rate range labels', () => {
       render(<EpubTTSPanel {...defaultProps} />);
       
-      const labels = screen.getAllByText(/0\.5x|1\.0x|1\.5x/);
+      // Labels changed to Slow/Normal/Fast
+      const labels = screen.getAllByText(/Slow|Normal|Fast/);
       expect(labels.length).toBeGreaterThanOrEqual(3);
     });
 

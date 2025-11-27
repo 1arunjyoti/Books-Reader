@@ -170,7 +170,7 @@ function PDFContentsAndBookmarksPanel({
       <div key={item.title} className="select-none">
         <div
           className={`
-            flex items-center gap-2 py-2 px-3 cursor-pointer rounded-md transition-colors
+            flex items-center gap-2 mb-2 py-2 px-3 cursor-pointer rounded-md transition-colors
             ${isActive 
               ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
               : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
@@ -223,9 +223,9 @@ function PDFContentsAndBookmarksPanel({
   };
 
   return (
-    <div className="absolute top-0 right-0 bottom-0 w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-lg z-20 flex flex-col" ref={panelRef}>
+    <div className="absolute top-16 right-0 bottom-0 w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-700/50 shadow-2xl z-20 flex flex-col" ref={panelRef}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {activeTab === 'contents' ? 'Contents' : 'Bookmarks'}
         </h2>
@@ -233,30 +233,30 @@ function PDFContentsAndBookmarksPanel({
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
         >
           <X className="w-4 h-4" />
         </Button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex-shrink-0">
+      <div className="flex gap-0 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/30 flex-shrink-0">
         <button
           onClick={() => setActiveTab('contents')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+          className={`flex-1 px-4 py-3 text-sm font-medium transition-all border-b-2 ${
             activeTab === 'contents'
-              ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
-              : 'text-gray-600 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200'
+              ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+              : 'text-gray-600 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/30'
           }`}
         >
           Contents
         </button>
         <button
           onClick={() => setActiveTab('bookmarks')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+          className={`flex-1 px-4 py-3 text-sm font-medium transition-all border-b-2 ${
             activeTab === 'bookmarks'
-              ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
-              : 'text-gray-600 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200'
+              ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+              : 'text-gray-600 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/30'
           }`}
         >
           Bookmarks
@@ -269,13 +269,13 @@ function PDFContentsAndBookmarksPanel({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         {/* Contents Tab */}
         {activeTab === 'contents' && (
           <div className="p-2">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">
                   Loading table of contents...
                 </div>
               </div>
@@ -298,16 +298,18 @@ function PDFContentsAndBookmarksPanel({
           <div>
             {bookmarks.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                <BookmarkIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+                  <BookmarkIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                </div>
+                <p className="text-gray-900 dark:text-gray-100 font-medium mb-1">
                   No bookmarks yet
                 </p>
-                <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+                <p className="text-gray-500 dark:text-gray-400 text-xs">
                   Click the bookmark icon in the toolbar to save a page
                 </p>
               </div>
             ) : (
-              <div ref={bookmarksContainerRef} className="h-full overflow-auto">
+              <div ref={bookmarksContainerRef} className="h-full overflow-auto custom-scrollbar">
                 <div
                   style={{
                     height: `${bookmarksVirtualizer.getTotalSize()}px`,
@@ -332,10 +334,10 @@ function PDFContentsAndBookmarksPanel({
                         }}
                       >
                         <div
-                          className={`p-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                          className={`p-4 border-b border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors ${
                             bookmark.pageNumber === currentPage
-                              ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600'
-                              : ''
+                              ? 'bg-blue-50/80 dark:bg-blue-900/20 border-l-4 border-l-blue-500'
+                              : 'border-l-4 border-l-transparent'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
@@ -345,14 +347,18 @@ function PDFContentsAndBookmarksPanel({
                             >
                               <div className="flex items-center gap-2 mb-1">
                                 <BookmarkIcon
-                                  className={`w-4 h-4 flex-shrink-0 ${
+                                  className={`w-4 h-4 flex-shrink-0 transition-colors ${
                                     bookmark.pageNumber === currentPage
                                       ? 'text-blue-600 dark:text-blue-400 fill-blue-600 dark:fill-blue-400'
                                       : 'text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400'
                                   }`}
                                 />
                                 <div>
-                                  <span className="font-medium text-sm text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                  <span className={`font-medium text-sm transition-colors ${
+                                    bookmark.pageNumber === currentPage
+                                      ? 'text-blue-700 dark:text-blue-300'
+                                      : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                                  }`}>
                                     Page {bookmark.pageNumber}
                                   </span>
                                   <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -365,28 +371,28 @@ function PDFContentsAndBookmarksPanel({
                                 </div>
                               </div>
                               {bookmark.note && (
-                                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1">
+                                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1 pl-6 border-l-2 border-gray-200 dark:border-gray-700 ml-1">
                                   {sanitizeBookmarkNote(bookmark.note)}
                                 </p>
                               )}
                             </button>
-                            <div className="flex gap-1 flex-shrink-0">
+                            <div className="flex gap-1 flex-shrink-0 transition-opacity">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onEditBookmark(bookmark)}
-                                className="h-8 w-8 p-0"
+                                className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-md"
                               >
-                                <Edit2 className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                                <Edit2 className="w-3.5 h-3.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDelete(bookmark.id)}
                                 disabled={deletingId === bookmark.id}
-                                className="h-8 w-8 p-0"
+                                className="h-7 w-7 p-0 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-md"
                               >
-                                <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-600 dark:hover:text-red-400" />
+                                <Trash2 className="w-3.5 h-3.5 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400" />
                               </Button>
                             </div>
                           </div>

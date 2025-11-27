@@ -207,9 +207,9 @@ function PDFSearchPanel({
   };
 
   return (
-    <div className="absolute right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-lg flex flex-col">
+    <div className="absolute right-0 top-16 h-full w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-700/50 shadow-2xl flex flex-col z-20">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
+      <div className="bg-transparent border-b border-gray-200/50 dark:border-gray-700/50 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <Search className="h-5 w-5 text-gray-600 dark:text-gray-300" />
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -220,14 +220,14 @@ function PDFSearchPanel({
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="h-8 w-8"
+          className="h-8 w-8 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
         >
           <X className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Search Input */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
         <form onSubmit={handleSearch} className="space-y-3">
           <div className="flex gap-2">
             <Input
@@ -235,7 +235,7 @@ function PDFSearchPanel({
               placeholder="Enter search term..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
+              className="flex-1 bg-white/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 focus:ring-blue-500/20 focus:border-blue-500"
               autoFocus
               disabled={searching}
             />
@@ -245,7 +245,7 @@ function PDFSearchPanel({
                 size="sm" 
                 variant="destructive" 
                 onClick={cancelSearch}
-                className="min-w-[70px]"
+                className="min-w-[70px] shadow-sm"
                 title="Cancel search (Esc)"
               >
                 Cancel
@@ -255,7 +255,7 @@ function PDFSearchPanel({
                 type="submit" 
                 size="sm" 
                 disabled={!searchQuery.trim()}
-                className="min-w-[70px]"
+                className="min-w-[70px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-sm"
               >
                 Search
               </Button>
@@ -264,18 +264,18 @@ function PDFSearchPanel({
 
           {/* Progress Bar - Enhanced visibility */}
           {searching && (
-            <div className="space-y-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+            <div className="space-y-2 p-3 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/50 animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center justify-between text-sm text-blue-900 dark:text-blue-100">
                 <span className="font-medium">Searching PDF...</span>
                 <span className="font-semibold">{searchProgress}%</span>
               </div>
-              <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+              <div className="w-full bg-blue-200/50 dark:bg-blue-800/50 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
                   style={{ width: `${searchProgress}%` }}
                 />
               </div>
-              <div className="text-xs text-blue-700 dark:text-blue-300 text-center">
+              <div className="text-xs text-blue-700 dark:text-blue-300 text-center font-medium">
                 Press Cancel or Esc to stop
               </div>
             </div>
@@ -283,8 +283,8 @@ function PDFSearchPanel({
 
           {/* Navigation */}
           {searchResults.length > 0 && !searching && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300">
+            <div className="flex items-center justify-between text-sm px-1">
+              <span className="text-gray-600 dark:text-gray-300 font-medium">
                 {currentResultIndex + 1} of {searchResults.length} results
               </span>
               <div className="flex gap-1">
@@ -292,7 +292,7 @@ function PDFSearchPanel({
                   variant="ghost"
                   size="icon"
                   onClick={goToPreviousResult}
-                  className="h-8 w-8"
+                  className="h-8 w-8 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 rounded-lg"
                   title="Previous result"
                 >
                   <ChevronUp className="h-4 w-4" />
@@ -301,7 +301,7 @@ function PDFSearchPanel({
                   variant="ghost"
                   size="icon"
                   onClick={goToNextResult}
-                  className="h-8 w-8"
+                  className="h-8 w-8 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 rounded-lg"
                   title="Next result"
                 >
                   <ChevronDown className="h-4 w-4" />
@@ -313,11 +313,14 @@ function PDFSearchPanel({
       </div>
 
       {/* Results */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
         {searching ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Searching...
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+              <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                Searching...
+              </div>
             </div>
           </div>
         ) : searchResults.length > 0 ? (
@@ -330,17 +333,22 @@ function PDFSearchPanel({
                   onJumpToPage(result.pageNumber);
                 }}
                 className={`
-                  p-3 rounded-md cursor-pointer transition-colors
+                  p-3 rounded-lg cursor-pointer transition-all duration-200
                   ${index === currentResultIndex
-                    ? 'bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700'
-                    : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
+                    ? 'bg-blue-50/80 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 shadow-sm'
+                    : 'bg-transparent hover:bg-gray-50/80 dark:hover:bg-gray-800/50 border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
                   }
                 `}
               >
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  Page {result.pageNumber}
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className={`text-xs font-medium ${index === currentResultIndex ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                    Page {result.pageNumber}
+                  </span>
+                  {index === currentResultIndex && (
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  )}
                 </div>
-                <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">
+                <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3 leading-relaxed">
                   {highlightText(result.text, searchQuery)}
                 </div>
               </div>
@@ -348,16 +356,26 @@ function PDFSearchPanel({
           </div>
         ) : searchQuery && !searching ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
-            <Search className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" />
+            <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+              <Search className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+            </div>
+            <p className="text-gray-900 dark:text-gray-100 font-medium mb-1">
+              No results found
+            </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-              No results found for &quot;{searchQuery}&quot;
+              We couldn&apos;t find any matches for &quot;{searchQuery}&quot;
             </p>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 px-4">
-            <Search className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" />
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-              Enter a search term to find text in the PDF
+            <div className="p-4 rounded-full bg-blue-50 dark:bg-gray-800 mb-4">
+              <Search className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+            </div>
+            <p className="text-gray-900 dark:text-gray-100 font-medium mb-1">
+              Search in PDF
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-[200px]">
+              Enter a keyword above to find text within this document
             </p>
           </div>
         )}

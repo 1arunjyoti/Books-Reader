@@ -55,11 +55,11 @@ function PDFDisplayOptionsPanel({
 
   return (
     <div
-      className="absolute top-0 right-0 bottom-0 w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-lg z-20 flex flex-col overflow-y-auto"
+      className="absolute top-16 right-0 bottom-0 w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-700/50 shadow-2xl z-20 flex flex-col overflow-y-auto custom-scrollbar"
       ref={panelRef}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Display Options
         </h2>
@@ -67,7 +67,7 @@ function PDFDisplayOptionsPanel({
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="h-8 w-8 bg-gray-300 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full flex items-center justify-center"
+          className="h-8 w-8 bg-gray-100/50 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -89,7 +89,7 @@ function PDFDisplayOptionsPanel({
         </div>
         
         {/* Color Filters Section */}
-        <div className='pt-4 border-t border-gray-200 dark:border-gray-600'>
+        <div className='pt-4 border-t border-gray-200/50 dark:border-gray-700/50'>
           <div className="flex items-center gap-2 mb-3">
             <Palette className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -99,79 +99,90 @@ function PDFDisplayOptionsPanel({
           <div className="space-y-2">
             <button
               onClick={() => setColorFilter('none')}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
                 colorFilter === 'none'
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-700/50'
+                  : 'hover:bg-gray-100/50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300 border border-transparent'
               }`}
             >
-              None (Default)
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-white border border-gray-300 shadow-sm" />
+                None (Default)
+              </div>
             </button>
             <button
               onClick={() => setColorFilter('sepia')}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
                 colorFilter === 'sepia'
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-700/50'
+                  : 'hover:bg-gray-100/50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300 border border-transparent'
               }`}
             >
-              Sepia (Warm)
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-[#f4ecd8] border border-amber-200 shadow-sm" />
+                Sepia (Warm)
+              </div>
             </button>
             <button
               onClick={() => setColorFilter('dark')}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
                 colorFilter === 'dark'
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  ? 'bg-gradient-to-r from-gray-800/20 to-gray-900/20 text-gray-900 dark:text-gray-100 border border-gray-300/50 dark:border-gray-600/50'
+                  : 'hover:bg-gray-100/50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300 border border-transparent'
               }`}
             >
-              Night Mode
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-gray-900 border border-gray-700 shadow-sm" />
+                Night Mode
+              </div>
             </button>
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
-              <label className="text-xs text-gray-600 dark:text-gray-400 mb-2 block">
+            <div className="pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block uppercase tracking-wider">
                 Custom Color
               </label>
               <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={customBgColor}
-                  onChange={(e) => {
-                    setCustomBgColor(e.target.value);
-                    setColorFilter('custom');
-                  }}
-                  className="h-8 w-full rounded cursor-pointer"
-                />
+                <div className="relative w-full">
+                  <input
+                    type="color"
+                    value={customBgColor}
+                    onChange={(e) => {
+                      setCustomBgColor(e.target.value);
+                      setColorFilter('custom');
+                    }}
+                    className="h-10 w-full rounded-lg cursor-pointer border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-gray-800"
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Zoom Section */}
-        <div>
+        <div className='pt-4 border-t border-gray-200/50 dark:border-gray-700/50'>
           <div className="flex items-center gap-2 mb-3">
             <ZoomOut className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               Zoom
             </h3>
           </div>
-          <div className="flex items-center justify-between gap-3 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+          <div className="flex items-center justify-between gap-3 p-2 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
             <Button
               variant="ghost"
               size="sm"
               onClick={onZoomOut}
-              className="h-8 w-8 p-0"
+              className="h-9 w-9 p-0 hover:bg-white dark:hover:bg-gray-700 rounded-lg shadow-sm transition-all"
               title="Zoom out"
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-semibold text-gray-900 dark:text-white min-w-[3rem] text-center">
+            <span className="text-sm font-bold text-gray-900 dark:text-white min-w-[3rem] text-center">
               {Math.round(scale * 100)}%
             </span>
             <Button
               variant="ghost"
               size="sm"
               onClick={onZoomIn}
-              className="h-8 w-8 p-0"
+              className="h-9 w-9 p-0 hover:bg-white dark:hover:bg-gray-700 rounded-lg shadow-sm transition-all"
               title="Zoom in"
             >
               <ZoomIn className="h-4 w-4" />
@@ -180,7 +191,7 @@ function PDFDisplayOptionsPanel({
         </div>
 
         {/* Rotation Section */}
-        <div>
+        <div className='pt-4 border-t border-gray-200/50 dark:border-gray-700/50'>
           <div className="flex items-center gap-2 mb-3">
             <RotateCw className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -190,7 +201,7 @@ function PDFDisplayOptionsPanel({
           <div className="flex flex-col gap-2">
             <button
               onClick={onRotate}
-              className="w-full px-3 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2"
+              className="w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-gray-100/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-sm text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2"
             >
               <RotateCw className="h-4 w-4" />
               Rotate Page ({rotation}°)
@@ -198,7 +209,7 @@ function PDFDisplayOptionsPanel({
             {rotation !== 0 && (
               <button
                 onClick={onResetRotation}
-                className="w-full px-3 py-2 rounded-md text-sm font-medium transition-colors bg-gray-50 dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300"
+                className="w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-red-50/50 dark:bg-red-900/20 hover:bg-red-100/50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200/50 dark:border-red-800/50"
               >
                 Reset Rotation
               </button>

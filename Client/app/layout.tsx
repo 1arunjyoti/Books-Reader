@@ -42,7 +42,17 @@ export const metadata: Metadata = {
       { rel: "android-chrome-512x512", url: "/android-chrome-512x512.png", sizes: "512x512" },
     ],
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Books Reader",
+  },
 };
+
+import { OfflineClerkBoundary } from "@/components/OfflineClerkBoundary";
+
+// ... imports
 
 export default async function RootLayout({
   children,
@@ -50,51 +60,53 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        
-        <head suppressHydrationWarning>
-          {/* Prevent flash of incorrect theme by setting class before hydration */}
-          <script
-            suppressHydrationWarning
-            dangerouslySetInnerHTML={{
-              __html: `(function () {
-                try {
-                  var key = 'theme';
-                  var theme = localStorage.getItem(key);
-                  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (theme === 'dark' || (!theme && prefersDark)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
+    <OfflineClerkBoundary>
+      <ClerkProvider>
+        <html lang="en" suppressHydrationWarning>
+          
+          <head suppressHydrationWarning>
+            {/* Prevent flash of incorrect theme by setting class before hydration */}
+            <script
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{
+                __html: `(function () {
+                  try {
+                    var key = 'theme';
+                    var theme = localStorage.getItem(key);
+                    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (theme === 'dark' || (!theme && prefersDark)) {
+                      document.documentElement.classList.add('dark');
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                    }
+                  } catch (e) {
+                    // silent
                   }
-                } catch (e) {
-                  // silent
-                }
-              })();`,
-            }}
-          />
-          {/* Preconnect to Google Fonts to speed up font fetch */}
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        </head>
-
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-900`}>
-          <QueryProvider>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <Navbar />
-              <main className="min-h-[calc(100vh-8rem)]">
-                <SpeedInsights />
-                <ErrorBoundary>
-                  {children}
-                </ErrorBoundary>
-                <Analytics />
-              </main>
-              <Footer />
-            </ThemeProvider>
-          </QueryProvider>
-        </body>
-        
-      </html>
-    </ClerkProvider>
+                })();`,
+              }}
+            />
+            {/* Preconnect to Google Fonts to speed up font fetch */}
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          </head>
+  
+          <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-900`}>
+            <QueryProvider>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                <Navbar />
+                <main className="min-h-[calc(100vh-8rem)]">
+                  <SpeedInsights />
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
+                  <Analytics />
+                </main>
+                <Footer />
+              </ThemeProvider>
+            </QueryProvider>
+          </body>
+          
+        </html>
+      </ClerkProvider>
+    </OfflineClerkBoundary>
   );
 }

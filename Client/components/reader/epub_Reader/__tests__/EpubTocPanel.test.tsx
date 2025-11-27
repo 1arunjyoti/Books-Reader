@@ -58,8 +58,8 @@ describe('EpubTocPanel', () => {
       const { container } = render(<EpubTocPanel {...defaultProps} />);
       
       const panel = container.firstChild as HTMLElement;
-      expect(panel).toHaveClass('absolute', 'top-0', 'left-0', 'h-full', 'w-80');
-      expect(panel).toHaveClass('bg-white', 'dark:bg-gray-800');
+      expect(panel).toHaveClass('absolute', 'top-16', 'left-0', 'h-full', 'w-80');
+      expect(panel).toHaveClass('bg-white/90', 'dark:bg-gray-900/90');
       expect(panel).toHaveClass('border-r', 'border-gray-200', 'dark:border-gray-700');
     });
   });
@@ -122,7 +122,8 @@ describe('EpubTocPanel', () => {
       render(<EpubTocPanel {...defaultProps} toc={[]} />);
       
       const emptyMessage = screen.getByText('No table of contents available');
-      expect(emptyMessage).toHaveClass('text-center', 'text-gray-500', 'dark:text-gray-400');
+      // Parent handles centering and color
+      expect(emptyMessage.parentElement).toHaveClass('flex', 'flex-col', 'items-center', 'justify-center', 'text-gray-500', 'dark:text-gray-400');
     });
   });
 
@@ -152,7 +153,7 @@ describe('EpubTocPanel', () => {
       const { container } = render(<EpubTocPanel {...defaultProps} />);
       
       const panel = container.firstChild as HTMLElement;
-      expect(panel).toHaveClass('shadow-lg', 'z-20');
+      expect(panel).toHaveClass('shadow-2xl', 'z-20');
     });
 
     it('should have overflow-auto class for scrolling', () => {

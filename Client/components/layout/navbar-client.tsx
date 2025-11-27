@@ -26,10 +26,15 @@ interface NavbarClientProps {
   } | null;
 }
 
+import { usePathname } from 'next/navigation';
+
 export default function NavbarClient({ user }: NavbarClientProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { signOut } = useClerk();
+  const pathname = usePathname();
+
+  const isStaticPage = pathname?.startsWith('/library') || pathname?.startsWith('/profile');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,11 +66,11 @@ export default function NavbarClient({ user }: NavbarClientProps) {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="rounded-full ring-2 ring-transparent hover:ring-blue-500/20 transition-all duration-200 focus:outline-none"
+          className="rounded-full border border-gray-200 dark:border-gray-700 ring-2 ring-transparent hover:ring-blue-500/20 transition-all duration-200 focus:outline-none"
           aria-label="Open user menu"
         >
           <Avatar className="h-9 w-9 border border-gray-200 dark:border-gray-700">
-            <AvatarImage src={user.picture} alt={user.name || 'User'} />
+            {/* <AvatarImage src={user.picture} alt={user.name || 'User'} /> */}
             <AvatarFallback className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium">
               {getUserInitials()}
             </AvatarFallback>
@@ -116,7 +121,7 @@ export default function NavbarClient({ user }: NavbarClientProps) {
       <motion.nav 
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+        className={`${isStaticPage ? 'absolute' : 'fixed'} top-0 left-0 right-0 z-40 transition-all duration-300 ${
           scrolled || isMenuOpen
             ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm' 
             : 'bg-transparent border-b border-transparent'

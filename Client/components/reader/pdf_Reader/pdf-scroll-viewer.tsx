@@ -75,8 +75,10 @@ interface SelectionToolbarProps {
 
 const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ onSelect, onCancel }) => {
   return (
-    <div className="flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 shadow-lg border border-gray-200">
-      <span className="text-xs font-medium text-gray-600">Highlight</span>
+
+    /* Highlight Color Selection toolbar */
+    <div className="flex items-center gap-2 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-700">
+      <span className="text-xs font-medium text-gray-600 dark:text-gray-200">Highlight</span>
       {PDF_HIGHLIGHT_COLORS.map((option) => (
         <button
           key={option.color}
@@ -90,7 +92,7 @@ const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ onSelect, onCancel 
       <button
         type="button"
         onClick={onCancel}
-        className="ml-1 text-xs text-gray-500 hover:text-gray-700"
+        className="p-1 rounded-full text-xs text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900"
       >
         Cancel
       </button>
@@ -294,11 +296,32 @@ const PdfViewerInner = React.forwardRef<PDFScrollViewerHandle, PdfViewerInnerPro
 
   useEffect(() => {
     const viewerInstance = highlighterRef.current?.viewer;
-    if (!viewerInstance) return;
-    const boundedPage = Math.min(Math.max(initialPage, 1), pdfDocument.numPages);
-    if (viewerInstance.currentPageNumber !== boundedPage) {
-      viewerInstance.currentPageNumber = boundedPage;
+    if (!viewerInstance) {
+      return;
     }
+    
+    // Wait for the viewer to be fully initialized
+    const scrollToInitialPage = () => {
+      const boundedPage = Math.min(Math.max(initialPage, 1), pdfDocument.numPages);
+      
+      if (boundedPage !== 1 && viewerInstance.pdfDocument) {
+        // Set the page number
+        viewerInstance.currentPageNumber = boundedPage;
+        
+        // Verify the page is set correctly after a brief delay
+        // This ensures the scroll position is properly applied
+        setTimeout(() => {
+          if (viewerInstance.currentPageNumber !== boundedPage) {
+            viewerInstance.currentPageNumber = boundedPage;
+          }
+        }, 100);
+      }
+    };
+    
+    // Wait for the viewer to be fully ready
+    const timer = setTimeout(scrollToInitialPage, 200);
+    
+    return () => clearTimeout(timer);
   }, [initialPage, pdfDocument.numPages]);
 
   useEffect(() => {
@@ -396,6 +419,45 @@ const PdfViewerInner = React.forwardRef<PDFScrollViewerHandle, PdfViewerInnerPro
       viewerInstance.eventBus.off('pagechanging', handlePageChanging);
     };
   }, [onPageChange, pdfDocument.numPages, isMobile]);
+
+  // Add scroll listener to handle mouse wheel scrolling
+  // PDF.js's pagechanging event may not fire consistently during rapid mouse scrolling
+  useEffect(() => {
+    const viewerInstance = highlighterRef.current?.viewer;
+    const viewerNode = viewerInstance?.viewer as HTMLElement | undefined;
+    if (!viewerNode || !viewerInstance) return;
+
+    let lastReportedPage = viewerInstance.currentPageNumber || initialPage;
+    let rafId: number | null = null;
+
+    const handleScroll = () => {
+      // Cancel any pending animation frame
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+
+      // Use requestAnimationFrame to throttle scroll events
+      rafId = requestAnimationFrame(() => {
+        const currentPage = viewerInstance.currentPageNumber;
+        
+        // Only call onPageChange if the page actually changed
+        if (currentPage && currentPage !== lastReportedPage) {
+          lastReportedPage = currentPage;
+          onPageChange?.(currentPage, pdfDocument.numPages);
+        }
+      });
+    };
+
+    // Listen to scroll events on the viewer container
+    viewerNode.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      viewerNode.removeEventListener('scroll', handleScroll);
+    };
+  }, [onPageChange, pdfDocument.numPages, initialPage]);
 
   // Track existing bookmark ribbons to avoid unnecessary re-renders
   const existingRibbonsRef = useRef<Set<number>>(new Set());

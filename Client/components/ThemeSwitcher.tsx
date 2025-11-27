@@ -35,7 +35,7 @@ export function ThemeSwitcher() {
     <Button
       variant="outline"
       size="icon"
-      className="rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+      className="rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 ring-2 ring-transparent hover:ring-blue-500/20 transition-all duration-200 focus:outline-none"
       onClick={toggleTheme}
       aria-label="Toggle theme"
     >

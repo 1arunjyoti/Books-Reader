@@ -262,33 +262,55 @@ function LibraryPageContent() {
   const { data: fetchedBooks, isLoading, error: fetchError } = useQuery<Book[], Error>({
     queryKey: booksQueryKey,
     queryFn: async () => {
-      const token = await getAccessToken();
-      if (!token) throw new Error('Please sign in to view your library');
-
-      if (selectedCollectionId) {
-        const collectionData = await getCollectionBooks(selectedCollectionId, token);
-        // Backend handles filtering - no client-side filter needed
-        return collectionData.books || [];
+      // 1. Check if offline first
+      if (typeof window !== 'undefined' && !window.navigator.onLine) {
+        console.log('App is offline, loading from local storage');
+        const { offlineStorage } = await import('@/lib/offline-storage');
+        const offlineBooks = await offlineStorage.getAllOfflineBooks();
+        return offlineBooks.map(ob => ob.book);
       }
 
-      const filterParams: SearchFilters = {
-        search: filters.advancedFilters.search,
-        status: filters.advancedFilters.status,
-        genre: filters.advancedFilters.genre,
-        language: filters.advancedFilters.language,
-        format: filters.advancedFilters.format,
-        dateFrom: filters.advancedFilters.dateFrom,
-        dateTo: filters.advancedFilters.dateTo,
-        sortBy: filters.advancedFilters.sortBy,
-        sortOrder: filters.advancedFilters.sortOrder,
-      };
+      try {
+        const token = await getAccessToken();
+        if (!token) throw new Error('Please sign in to view your library');
 
-      // Backend handles all filtering - no client-side filter needed
-      const fetched = await fetchBooks(token, filterParams);
-      return fetched || [];
+        if (selectedCollectionId) {
+          const collectionData = await getCollectionBooks(selectedCollectionId, token);
+          return collectionData.books || [];
+        }
+
+        const filterParams: SearchFilters = {
+          search: filters.advancedFilters.search,
+          status: filters.advancedFilters.status,
+          genre: filters.advancedFilters.genre,
+          language: filters.advancedFilters.language,
+          format: filters.advancedFilters.format,
+          dateFrom: filters.advancedFilters.dateFrom,
+          dateTo: filters.advancedFilters.dateTo,
+          sortBy: filters.advancedFilters.sortBy,
+          sortOrder: filters.advancedFilters.sortOrder,
+        };
+
+        const fetched = await fetchBooks(token, filterParams);
+        return fetched || [];
+      } catch (error) {
+        console.error('Error fetching books:', error);
+        
+        // Fallback to offline storage on error
+        if (typeof window !== 'undefined') {
+          console.log('Fetch failed, falling back to offline storage');
+          const { offlineStorage } = await import('@/lib/offline-storage');
+          const offlineBooks = await offlineStorage.getAllOfflineBooks();
+          if (offlineBooks.length > 0) {
+            return offlineBooks.map(ob => ob.book);
+          }
+        }
+        throw error;
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
+    retry: false, // Don't retry if we're going to fallback to offline anyway
   });
 
   // keep local books state for compatibility with selection and optimistic updates
@@ -681,7 +703,7 @@ function LibraryPageContent() {
         <div className={
           viewMode === 'grid' 
             ? "grid items-stretch grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-6"
-            : "flex flex-col gap-3 max-w-4xl mx-auto"
+            : "flex flex-col gap-3"
         }>
           {currentBooks.map((book, index) => {
             // Prioritize first row images for faster LCP

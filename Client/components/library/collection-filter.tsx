@@ -164,7 +164,7 @@ export function CollectionFilter({
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-50 ring-1 ring-border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <DropdownMenuContent className="w-45 sm:w-50 ring-1 ring-border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
         <DropdownMenuLabel className="px-8">Filter by Collection</DropdownMenuLabel>
         <DropdownMenuSeparator />
         

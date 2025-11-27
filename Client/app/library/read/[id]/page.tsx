@@ -10,6 +10,8 @@ import { fetchBook, updateBook, getPresignedUrl } from '@/lib/api';
 import { getCachedPresignedUrl } from '@/lib/epub-cache';
 import type { Book } from '@/lib/api';
 
+import { offlineStorage } from '@/lib/offline-storage';
+
 // Lazy load the EPUB viewer for better performance
 const ReactEpubViewer = dynamic(
   () => import('@/components/reader/epub_Reader/react-epub-viewer-refactored'),
@@ -48,29 +50,51 @@ export default function ReadPage({ params }: ReadPageProps) {
     });
   }, [params]);
 
+
+
   useEffect(() => {
     if (!bookId) return;
 
     const loadBook = async () => {
       try {
         setLoading(true);
+        setError(null);
+
+        console.log(`[ReadPage] Checking offline availability for book: ${bookId}`);
+        
+        // 1. Check if book is available offline
+        try {
+          const offlineBook = await offlineStorage.getOfflineBook(bookId);
+          console.log(`[ReadPage] Offline book found: ${!!offlineBook}`);
+
+          if (offlineBook) {
+            console.log('[ReadPage] Loading book from offline storage');
+            setBook(offlineBook.book);
+            const objectUrl = URL.createObjectURL(offlineBook.fileBlob);
+            setFileUrl(objectUrl);
+            setLoading(false);
+            return;
+          }
+        } catch (storageError) {
+          console.error('[ReadPage] Error checking offline storage:', storageError);
+        }
+
+        // 2. If not offline, try to fetch from server
         const accessToken = await getCachedAccessToken();
 
         if (!accessToken) {
+          // If no token and not offline, redirect to login
           router.push('/sign-in?returnTo=/library');
           return;
         }
 
-        // OPTIMIZATION: Fetch book metadata and presigned URL in parallel
-        // This reduces loading time by ~400-600ms by eliminating sequential API delays
-        // OPTIMIZATION 2: Cache presigned URLs in sessionStorage to avoid redundant generation
-        // This saves 100-200ms on repeat visits to the same book
+        // Fetch book metadata and presigned URL in parallel
         const [fetchedBook, presignedUrl] = await Promise.all([
           fetchBook(bookId, accessToken),
           getCachedPresignedUrl(
             bookId,
-            () => getPresignedUrl(bookId, accessToken, 604800), // 7 days (max S3 allows)
-            604800 // Cache for 7 days
+            () => getPresignedUrl(bookId, accessToken, 604800), // 7 days
+            604800
           ),
         ]);
 
@@ -78,15 +102,27 @@ export default function ReadPage({ params }: ReadPageProps) {
         setFileUrl(presignedUrl);
       } catch (err) {
         console.error('Error loading book:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load book');
+        // Check if it's a network error
+        if (!window.navigator.onLine) {
+          setError('You are offline and this book is not downloaded.');
+        } else {
+          setError(err instanceof Error ? err.message : 'Failed to load book');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadBook();
+    
+    // Cleanup ObjectURL on unmount if it was created
+    return () => {
+      if (fileUrl && fileUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(fileUrl);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookId]); // Only depend on bookId, not router
+  }, [bookId]); // Only depend on bookId
 
   /* Handle page change - memoized to prevent infinite loops */
   const handlePageChange = useCallback(async (page: number, totalPages: number) => {

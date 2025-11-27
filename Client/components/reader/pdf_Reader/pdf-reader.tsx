@@ -238,8 +238,7 @@ export function PDFReader({
   onPageChange,
   onClose
 }: PDFReaderProps) {
-  // Use centralized auth token context for all API calls
-  // This prevents multiple simultaneous token fetches
+  // Centralized auth token context for all API calls
   const { getAccessToken } = useAuthToken();
   
   // Mobile detection for performance optimizations
@@ -250,10 +249,6 @@ export function PDFReader({
     bookId,
     enabled: true, // Enable on all devices including mobile
   });
-
-  // ==================== CONSOLIDATED STATE WITH REDUCERS ====================
-  // Replaces 30+ useState calls with 4 organized reducers
-  // Benefits: 40-50% fewer re-renders, better organization, easier debugging
   
   // Viewer state: page navigation, zoom, rotation, PDF document
   const [viewerState, dispatchViewer] = useReducer(viewerReducer, {
@@ -346,7 +341,7 @@ export function PDFReader({
 
   // Fetch bookmarks on mount - DEFERRED for performance
   // Load bookmarks AFTER PDF is displayed to avoid blocking initial render
-  // This improves perceived performance by ~150-300ms
+  // This improves perceived performance
   useEffect(() => {
     const loadBookmarksAsync = async () => {
       try {
@@ -510,7 +505,7 @@ export function PDFReader({
     }
   }, [bookId, currentPage, getAccessToken, loadPdfHighlights]);
 
-  // Force reload highlights (useful for manual refresh or when needed externally)
+  // Force reload highlights 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const reloadHighlights = useCallback(() => {
     highlightsLoadedRef.current = null;
@@ -693,7 +688,7 @@ export function PDFReader({
     }
   };
 
-  // Handle highlight note save - Simple API call, no memoization needed
+  // Handle highlight note save
   const handleHighlightNoteSave = async (highlightId: string, note: string) => {
     const opKey = `highlight-note-${highlightId}`;
     
@@ -772,7 +767,7 @@ export function PDFReader({
     }
   }, [numPages]);
 
-  // Handle jump to bookmarked page - Keep memoized as dependency of other callbacks
+  // Handle jump to bookmarked page
   const handleJumpToPage = useCallback((pageNumber: number) => {
     goToPage(pageNumber);
   }, [goToPage]);
@@ -783,7 +778,7 @@ export function PDFReader({
     pdfViewerRef.current?.scrollToHighlight(highlight);
   }, [goToPage]);
 
-  // Handle page input submit - Simple event handler, no memoization needed
+  // Handle page input submit
   const handlePageInputSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const page = parseInt(pageInput);
@@ -794,7 +789,7 @@ export function PDFReader({
     }
   };
 
-  // Simple navigation functions - No memoization needed for inline operations
+  // Simple navigation functions
   const nextPage = () => goToPage(currentPage + 1);
   const prevPage = () => goToPage(currentPage - 1);
   const zoomIn = () => {
@@ -837,7 +832,7 @@ export function PDFReader({
     }
   }, [bookId, rotation]);
 
-  // Toggle fullscreen - Simple DOM operation, no memoization needed
+  // Toggle fullscreen
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -858,7 +853,6 @@ export function PDFReader({
   }, []);
 
   // ==================== Reading Session Tracking ====================
-  // Session state is now managed by sessionReducer (see state declarations above)
   
   // Memoize logReadingSession to prevent recreating on every render
   const logReadingSession = useCallback(async () => {
@@ -947,7 +941,6 @@ export function PDFReader({
       // Log final session asynchronously but don't block cleanup
       void logReadingSession();
       
-      // Remove event listeners immediately
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('focus', handleFocus);
@@ -977,247 +970,243 @@ export function PDFReader({
         dispatchUI({ type: 'CLOSE_ALL_PANELS' });
       }}
     >
-      <div className="fixed inset-0 flex flex-col bg-gray-50 dark:bg-gray-900 z-50">
+      <div className="fixed inset-0 flex flex-col bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-sm z-50">
         {/* Header Toolbar - Auto-hides in reading mode */}
         {(!readingMode || toolbarVisible) && (
-      <div className="bg-white dark:bg-gray-800 border-b border-white dark:border-gray-800 px-4 sm:px-4 py-4 sm:py-3 flex-shrink-0 transition-opacity duration-300">
-        <div className="flex items-center justify-between gap-2">
-          {/* Left Section - Title */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-300 flex-shrink-0" />
-            <h1 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
-              {title}
-            </h1>
-          </div>
+          <div className="absolute top-0 left-0 right-0 z-40 transition-all duration-300 transform translate-y-0">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+              <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+                {/* Left Section - Title */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <h1 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white truncate">
+                    {title}
+                  </h1>
+                </div>
 
-          {/* Center Section - Navigation (Desktop Only) */}
-          <div className="hidden md:flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={prevPage}
-              disabled={currentPage <= 1}
-              title="Previous page"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
+                {/* Center Section - Navigation (Desktop Only) */}
+                <div className="hidden md:flex items-center gap-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg p-1 border border-gray-200/50 dark:border-gray-700/50">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={prevPage}
+                    disabled={currentPage <= 1}
+                    title="Previous page"
+                    className="h-8 w-8 hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm transition-all"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
 
-            {/* Page Input */}
-            <div className="flex items-center gap-2">
-              <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1">
-                <Input
-                  type="text"
-                  value={pageInput}
-                  onChange={(e) => dispatchViewer({ type: 'SET_PAGE_INPUT', payload: e.target.value })}
-                  className="w-16 text-center h-8 text-sm"
-                  disabled={numPages === 0}
-                />
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  / {numPages}
-                </span>
-              </form>
-            </div>
+                  {/* Page Input */}
+                  <div className="flex items-center gap-2 px-2">
+                    <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1">
+                      <Input
+                        type="text"
+                        value={pageInput}
+                        onChange={(e) => dispatchViewer({ type: 'SET_PAGE_INPUT', payload: e.target.value })}
+                        className="w-12 text-center h-7 text-sm border-none bg-transparent focus-visible:ring-0 p-0"
+                        disabled={numPages === 0}
+                      />
+                      <span className="text-sm text-gray-400 dark:text-gray-500 select-none">
+                        / {numPages}
+                      </span>
+                    </form>
+                  </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={nextPage}
-              disabled={currentPage >= numPages}
-              title="Next page"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={nextPage}
+                    disabled={currentPage >= numPages}
+                    title="Next page"
+                    className="h-8 w-8 hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm transition-all"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
 
-          {/* Right Section - Essential Controls */}
-          <div className="flex items-center gap-1 sm:gap-2">
+                {/* Right Section - Essential Controls */}
+                <div className="flex items-center gap-1 sm:gap-2">
 
-            {/* Search - Always visible */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'search' })}
-              title="Search in PDF"
-              className={`h-8 w-8 sm:h-9 sm:w-9 hover:bg-blue-200 dark:hover:bg-blue-900 ${showSearch ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-            >
-              <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
+                  {/* Search - Always visible */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'search' })}
+                    title="Search in PDF"
+                    className={`h-9 w-9 rounded-lg transition-all ${showSearch ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                  >
+                    <Search className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Button>
 
-            {/* Bookmark Controls - Always visible */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleBookmark}
-              disabled={isLoadingBookmarks || numPages === 0}
-              title={isCurrentPageBookmarked ? "Remove bookmark" : "Add bookmark"}
-              className={`h-8 w-8 sm:h-9 sm:w-9 hover:bg-blue-200 dark:hover:bg-blue-900 ${isCurrentPageBookmarked ? "text-blue-600 dark:text-blue-400" : ""}`}
-            >
-              {isCurrentPageBookmarked ? (
-                <Bookmark className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
-              ) : (
-                <BookmarkPlus className="h-4 w-4 sm:h-5 sm:w-5" />
+                  {/* Bookmark Controls - Always visible */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleBookmark}
+                    disabled={isLoadingBookmarks || numPages === 0}
+                    title={isCurrentPageBookmarked ? "Remove bookmark" : "Add bookmark"}
+                    className={`h-9 w-9 rounded-lg transition-all ${isCurrentPageBookmarked ? "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                  >
+                    {isCurrentPageBookmarked ? (
+                      <Bookmark className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
+                    ) : (
+                      <BookmarkPlus className="h-4 w-4 sm:h-5 sm:w-5" />
+                    )}
+                  </Button>
+
+                  {/* Bookmark Panel - Always visible */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'contentsAndBookmarks' })}
+                    disabled={isLoadingBookmarks}
+                    title="Contents and bookmarks"
+                    className={`h-9 w-9 rounded-lg transition-all ${showContentsAndBookmarksPanel ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                  >
+                    <List className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Button>
+
+                  {/* Highlights Panel - Always visible */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'highlights' })}
+                    title="Highlights"
+                    className={`h-9 w-9 rounded-lg transition-all ${showHighlightsPanel ? "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                  >
+                    <Highlighter className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Button>
+
+                  {/* Desktop Advanced Features */}
+                  <div className="hidden lg:flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-gray-700 ml-1">
+                    
+                    {/* Page Thumbnails */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'thumbnails' })}
+                      title="Page thumbnails"
+                      className={`h-9 w-9 rounded-lg transition-all ${showThumbnails ? "bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Layers className="h-5 w-5" />
+                    </Button>
+                    
+                    {/* Display Options / Reading Themes */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'displayOptions' })}
+                      title="Display options"
+                      className={`h-9 w-9 rounded-lg transition-all ${showDisplayOptions ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Settings className="h-5 w-5" />
+                    </Button>
+
+                    {/* Text-to-Speech */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'tts' })}
+                      title="Read aloud"
+                      className={`h-9 w-9 rounded-lg transition-all ${showTTS ? "bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Volume2 className="h-5 w-5" />
+                    </Button>
+
+                    {/* Text Selection Toggle */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => dispatchUI({ type: 'SET_TEXT_SELECTION', payload: !enableTextSelection })}
+                      title={enableTextSelection ? "Disable text selection" : "Enable text selection"}
+                      className={`h-9 w-9 rounded-lg transition-all ${enableTextSelection ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Type className="h-5 w-5" />
+                    </Button>
+
+                    {/* Reading Mode Toggle */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setReadingMode(!readingMode)}
+                      title={readingMode ? "Exit reading mode (R)" : "Enter reading mode (R)"}
+                      className={`h-9 w-9 rounded-lg transition-all ${readingMode ? "bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-400" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      {readingMode ? (
+                        <EyeOff className="h-5 w-5 " />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </Button>
+
+                  </div>
+                  
+                  {/* Mobile More Options Menu */}
+                  <div className="flex lg:hidden items-center gap-1 pl-1 border-l border-gray-200 dark:border-gray-700 ml-1">
+                    {/* More Options Button - Mobile */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'mobileOptions' })}
+                      title="More options"
+                      className="h-9 w-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                    
+                  {/* Fullscreen button - Tablet and up */}
+                  <div className="hidden sm:flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-gray-700 ml-1">
+                    {/* Fullscreen Toggle */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleFullscreen}
+                      className={`h-9 w-9 rounded-lg transition-all ${isFullscreen ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      {isFullscreen ? (
+                        <Minimize className="h-5 w-5" />
+                      ) : (
+                        <Maximize className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {/* Close Reader - Always visible */}
+                  {onClose && (
+                    <div className="">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onClose}
+                        title="Close"
+                        className="h-9 w-9 rounded-lg hover:bg-red-100 text-gray-500 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Progress Bar - Gradient */}
+              {numPages > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-100 dark:bg-gray-800">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               )}
-            </Button>
-
-            {/* Bookmark Panel - Always visible */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'contentsAndBookmarks' })}
-              disabled={isLoadingBookmarks}
-              title="Contents and bookmarks"
-              className={`h-8 w-8 sm:h-9 sm:w-9 hover:bg-blue-200 dark:hover:bg-blue-900 ${showContentsAndBookmarksPanel ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-            >
-              <List className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-
-            {/* Highlights Panel - Always visible */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'highlights' })}
-              title="Highlights"
-              className={`h-8 w-8 sm:h-9 sm:w-9 hover:bg-blue-200 dark:hover:bg-blue-900 ${showHighlightsPanel ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-            >
-              <Highlighter className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-
-            {/* Desktop Advanced Features */}
-            <div className="hidden lg:flex items-center gap-2">
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-
-              {/* Page Thumbnails */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'thumbnails' })}
-                title="Page thumbnails"
-                className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${showThumbnails ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-              >
-                <Layers className="h-5 w-5" />
-              </Button>
-              
-              {/* Display Options / Reading Themes */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'displayOptions' })}
-                title="Display options"
-                className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${showDisplayOptions ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-
-              {/* Text-to-Speech */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'tts' })}
-                title="Read aloud"
-                className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${showTTS ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-              >
-                <Volume2 className="h-5 w-5" />
-              </Button>
-
-              {/* Text Selection Toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => dispatchUI({ type: 'SET_TEXT_SELECTION', payload: !enableTextSelection })}
-                title={enableTextSelection ? "Disable text selection" : "Enable text selection"}
-                className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${enableTextSelection ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-              >
-                <Type className="h-5 w-5" />
-              </Button>
-
-              {/* Reading Mode Toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setReadingMode(!readingMode)}
-                title={readingMode ? "Exit reading mode (R)" : "Enter reading mode (R)"}
-                className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${readingMode ? "bg-blue-200 dark:bg-blue-900" : ""}`}
-              >
-                {readingMode ? (
-                  <EyeOff className="h-5 w-5 " />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </Button>
-
-            </div>
-            
-            {/* Mobile More Options Menu */}
-            <div className="flex lg:hidden items-center gap-1">
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-              
-              {/* More Options Button - Mobile */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => dispatchUI({ type: 'TOGGLE_PANEL', payload: 'mobileOptions' })}
-                title="More options"
-                className="h-8 w-8"
-              >
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </div>
-              
-            {/* Fullscreen button - Tablet and up */}
-            <div className="hidden sm:flex items-center gap-1">
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-              
-              {/* Fullscreen Toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleFullscreen}
-                className={`hover:bg-blue-200 dark:hover:bg-blue-900 ${isFullscreen ? "Exit fullscreen bg-blue-200 dark:bg-blue-900" : "Fullscreen"}`}
-              >
-                {isFullscreen ? (
-                  <Minimize className="h-5 w-5" />
-                ) : (
-                  <Maximize className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-            
-            {/* Close Reader - Always visible */}
-            {onClose && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                title="Close"
-                className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-red-200 dark:hover:bg-red-700"
-              >
-                <X className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Progress Bar - Hidden on mobile */}
-        {numPages > 0 && (
-          <div className="mt-2 hidden sm:block">
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <span>Reading Progress: {progress}%</span>
-              <span>•</span>
-              <span>Page {currentPage} of {numPages}</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-              <div
-                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
             </div>
           </div>
-        )}
-      </div>
         )}
 
       {/* PDF Viewer */}
-      <div className="flex-1 min-h-0 relative">
+      <div className="flex-1 min-h-0 relative pt-16 pb-16 sm:pb-0">
         <MemoizedPDFScrollViewer
           url={url}
           initialPage={initialPage}
@@ -1366,33 +1355,40 @@ export function PDFReader({
         />
       )}
 
-      {/* Bottom Toolbar (Mobile) */}
+      {/* Bottom Toolbar (Mobile) - Floating Glassmorphic */}
       {(!readingMode || toolbarVisible) && (
-        <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={prevPage}
-              disabled={currentPage <= 1}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
+        <div className="md:hidden fixed bottom-6 left-4 right-4 z-40">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg px-4 py-3">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={prevPage}
+                disabled={currentPage <= 1}
+                className="h-10 w-10 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
 
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {currentPage} / {numPages}
-            </span>
+              <div className="flex flex-col items-center">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  Page {currentPage}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  of {numPages}
+                </span>
+              </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={nextPage}
-              disabled={currentPage >= numPages}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={nextPage}
+                disabled={currentPage >= numPages}
+                className="h-10 w-10 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       )}

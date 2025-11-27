@@ -90,7 +90,7 @@ describe('ContentsAndBookmarksPanel', () => {
       const { container } = render(<ContentsAndBookmarksPanel {...defaultProps} />);
       
       const panel = container.firstChild as HTMLElement;
-      expect(panel).toHaveClass('absolute', 'top-0', 'right-0', 'bottom-0', 'w-80');
+      expect(panel).toHaveClass('absolute', 'top-16', 'right-0', 'bottom-0', 'w-80');
       expect(panel).toHaveClass('bg-white', 'dark:bg-gray-800');
       expect(panel).toHaveClass('border-l', 'border-gray-200', 'dark:border-gray-700');
     });

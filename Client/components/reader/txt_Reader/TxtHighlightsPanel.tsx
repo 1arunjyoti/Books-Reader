@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { logger } from '@/lib/logger';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,23 @@ export default function TxtHighlightsPanel({
   const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Memoize handleClose to prevent listener churn
+  const handleClose = useCallback(() => onClose(), [onClose]);
+
+  // Handle click outside to close panel
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        handleClose();
+      }
+    };
+
+    // Use passive listener for better performance
+    document.addEventListener('mousedown', handleClickOutside, { passive: true } as AddEventListenerOptions);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [handleClose]);
 
   const handleCopyText = (text: string, index: number) => {
     const sanitizedText = sanitizeText(text, { maxLength: 5000 });
@@ -132,9 +149,12 @@ export default function TxtHighlightsPanel({
   };
 
   return (
-    <div className="absolute top-0 right-0 bottom-0 w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-lg z-50 flex flex-col overflow-y-auto">
+    <div 
+      className="absolute top-16 right-0 bottom-0 w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-700/50 shadow-2xl z-20 flex flex-col overflow-y-auto custom-scrollbar"
+      ref={panelRef}
+    >
       {/* Header */}
-      <div className="flex flex-col border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="flex flex-col border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
         <div className="flex items-center justify-between p-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -150,11 +170,15 @@ export default function TxtHighlightsPanel({
               variant={activeFilterCount > 0 ? "default" : "ghost"}
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="h-8 gap-1 rounded-full relative flex items-center justify-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+              className={`h-8 gap-1 rounded-full relative flex items-center justify-center transition-all ${
+                activeFilterCount > 0 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' 
+                  : 'bg-gray-100/50 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'
+              }`}
             >
-              <Filter className="w-4 h-4" />
+              <Filter className="w-3.5 h-3.5" />
               {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border border-white dark:border-gray-900">
                   {activeFilterCount}
                 </span>
               )}
@@ -163,7 +187,7 @@ export default function TxtHighlightsPanel({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-8 w-8 p-0 rounded-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+              className="h-8 w-8 p-0 rounded-full flex items-center justify-center bg-gray-100/50 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -172,9 +196,9 @@ export default function TxtHighlightsPanel({
 
         {/* Filter Panel */}
         {showFilters && (
-          <div className="px-4 pb-4 space-y-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+          <div className="px-4 pb-4 space-y-3 border-t border-gray-200/50 dark:border-gray-700/50 pt-3 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Filter by Color
               </span>
               {activeFilterCount > 0 && (
@@ -182,7 +206,7 @@ export default function TxtHighlightsPanel({
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="h-6 text-xs px-2"
+                  className="h-6 text-[10px] px-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 >
                   Clear All
                 </Button>
@@ -198,25 +222,26 @@ export default function TxtHighlightsPanel({
                       checked={selectedColors.has(colorOption.color)}
                       onCheckedChange={() => toggleColorFilter(colorOption.color)}
                       disabled={count === 0}
+                      className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                     />
                     <label
                       htmlFor={`filter-${colorOption.color}`}
-                      className={`flex items-center gap-2 text-sm flex-1 cursor-pointer ${
+                      className={`flex items-center gap-2 text-sm flex-1 cursor-pointer select-none ${
                         count === 0 ? 'opacity-40' : ''
                       }`}
                     >
                       <div
-                        className="h-3 w-3 rounded-full"
+                        className="h-3 w-3 rounded-full shadow-sm border border-black/5"
                         style={{ 
                           backgroundColor: colorOption.hex,
-                          opacity: 0.7
+                          opacity: 0.9
                         }}
                       />
-                      <span className="text-gray-700 dark:text-gray-300">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium text-xs">
                         {colorOption.name}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
-                        ({count})
+                      <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
+                        {count}
                       </span>
                     </label>
                   </div>
@@ -236,10 +261,18 @@ export default function TxtHighlightsPanel({
           </div>
         </div>
       ) : highlights.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-            No highlights yet. Select text to create one!
-          </p>
+        <div className="flex-1 flex items-center justify-center p-8 text-center">
+          <div className="flex flex-col items-center gap-3 max-w-[200px]">
+            <div className="h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <StickyNote className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+            </div>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              No highlights yet
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Select any text in the book to create a highlight and add notes.
+            </p>
+          </div>
         </div>
       ) : filteredHighlights.length === 0 ? (
         <div className="flex-1 flex items-center justify-center p-4">
@@ -250,7 +283,7 @@ export default function TxtHighlightsPanel({
       ) : (
         <div 
           ref={parentRef}
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto custom-scrollbar"
         >
           <div
             style={{
@@ -277,36 +310,36 @@ export default function TxtHighlightsPanel({
                     width: '100%',
                     transform: `translateY(${virtualItem.start}px)`,
                   }}
-                  className="border-b border-gray-200 dark:border-gray-700"
+                  className="border-b border-gray-100 dark:border-gray-800/50"
                 >
-                  <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div className="p-4 hover:bg-gray-50/80 dark:hover:bg-gray-800/30 transition-colors group">
                     {/* Highlight Text Preview */}
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-3">
                       <div 
-                        className="h-3 w-3 rounded-full mt-1 flex-shrink-0"
+                        className="h-2.5 w-2.5 rounded-full mt-1.5 flex-shrink-0 shadow-sm border border-black/5"
                         style={{ 
                           backgroundColor: highlight.hex,
-                          opacity: 0.7
+                          opacity: 0.9
                         }}
                       />
                       <div 
                         onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
-                        className="w-full text-left group cursor-pointer flex items-start gap-2"
+                        className="w-full text-left cursor-pointer flex items-start gap-2"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 break-words">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 break-words font-medium leading-relaxed">
                             &quot;{highlight.text}&quot;
                           </p>
                           {highlight.note && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <StickyNote className="h-3 w-3 text-blue-500" />
-                              <p className="text-xs text-blue-600 dark:text-blue-400 line-clamp-1">
+                            <div className="flex items-center gap-1.5 mt-2 bg-blue-50/50 dark:bg-blue-900/10 p-1.5 rounded-md border border-blue-100 dark:border-blue-900/30 w-fit max-w-full">
+                              <StickyNote className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                              <p className="text-xs text-blue-700 dark:text-blue-300 line-clamp-1 truncate">
                                 {highlight.note}
                               </p>
                             </div>
                           )}
                           {/* Metadata: Section and Date */}
-                          <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center gap-2 mt-2 text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
                             {highlight.sectionIndex !== undefined && (
                               <span>Section {highlight.sectionIndex + 1}</span>
                             )}
@@ -318,19 +351,19 @@ export default function TxtHighlightsPanel({
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex items-center gap-1 flex-shrink-0 self-start">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               onJumpToHighlight(highlight.sectionIndex);
                             }}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                            className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                             title="Jump to highlight"
                           >
-                            <MapPin className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                            <MapPin className="h-3.5 w-3.5" />
                           </button>
                           <ChevronDown
-                            className={`h-4 w-4 text-gray-400 transition-transform ${
+                            className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
                               expandedIndex === index ? 'rotate-180' : ''
                             }`}
                           />
@@ -340,28 +373,15 @@ export default function TxtHighlightsPanel({
 
                     {/* Expanded View */}
                     {isExpanded && (
-                      <div className="mt-3 ml-5 space-y-3 border-l border-gray-200 dark:border-gray-600 pl-3">
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <div className="mt-4 ml-[1.375rem] space-y-4 border-l-2 border-gray-100 dark:border-gray-800 pl-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed italic">
                           {highlight.text}
                         </p>
-
-                        {/* Metadata */}
-                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                          {highlight.sectionIndex !== undefined && (
-                            <span className="font-medium">Section {highlight.sectionIndex + 1}</span>
-                          )}
-                          {highlight.sectionIndex !== undefined && highlight.createdAt && (
-                            <span>•</span>
-                          )}
-                          {highlight.createdAt && (
-                            <span>Created: {formatDate(highlight.createdAt)}</span>
-                          )}
-                        </div>
 
                         {/* Note Section */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                            <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                               <StickyNote className="h-3 w-3" />
                               Note
                             </label>
@@ -370,26 +390,26 @@ export default function TxtHighlightsPanel({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditNote(highlight.id, highlight.note)}
-                                className="text-xs h-6 px-2"
+                                className="text-[10px] h-6 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
                               >
-                                {highlight.note ? 'Edit' : 'Add Note'}
+                                {highlight.note ? 'Edit Note' : 'Add Note'}
                               </Button>
                             ) : null}
                           </div>
 
                           {isEditingNote ? (
-                            <div className="space-y-2">
+                            <div className="space-y-2 bg-white dark:bg-gray-900 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                               <Textarea
                                 value={noteText}
                                 onChange={(e) => setNoteText(e.target.value)}
                                 placeholder="Add your note here... (max 500 characters)"
                                 maxLength={500}
                                 rows={3}
-                                className="text-xs resize-none"
+                                className="p-2 text-xs resize-none border-0 focus-visible:ring-0 bg-transparent"
                                 autoFocus
                               />
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500">
+                              <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+                                <span className="text-[10px] text-gray-400">
                                   {noteText.length}/500
                                 </span>
                                 <div className="flex gap-2">
@@ -397,7 +417,7 @@ export default function TxtHighlightsPanel({
                                     variant="ghost"
                                     size="sm"
                                     onClick={handleCancelEdit}
-                                    className="text-xs h-6 px-2"
+                                    className="text-[10px] h-6 px-2"
                                     disabled={savingNoteId === highlight.id}
                                   >
                                     Cancel
@@ -406,7 +426,7 @@ export default function TxtHighlightsPanel({
                                     variant="default"
                                     size="sm"
                                     onClick={() => handleSaveNote(highlight.id)}
-                                    className="text-xs h-6 px-2"
+                                    className="text-[10px] h-6 px-2 bg-blue-600 hover:bg-blue-700 text-white"
                                     disabled={savingNoteId === highlight.id}
                                   >
                                     <Save className="h-3 w-3 mr-1" />
@@ -416,11 +436,11 @@ export default function TxtHighlightsPanel({
                               </div>
                             </div>
                           ) : highlight.note ? (
-                            <p className="text-xs text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800">
                               {highlight.note}
                             </p>
                           ) : (
-                            <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+                            <p className="text-xs text-gray-400 dark:text-gray-500 italic pl-1">
                               No note added yet
                             </p>
                           )}
@@ -428,19 +448,19 @@ export default function TxtHighlightsPanel({
 
                         {/* Color Picker */}
                         <div className="space-y-2">
-                          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Change color</span>
-                          <div className="grid grid-cols-6 gap-2">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Color</span>
+                          <div className="flex gap-2">
                             {HIGHLIGHT_COLORS.map((option) => (
                               <button
                                 key={option.color}
                                 type="button"
                                 onClick={() => onChangeColor(highlight.id)}
-                                className={`h-6 w-6 rounded-full border ${
+                                className={`h-6 w-6 rounded-full border shadow-sm transition-all duration-200 ${
                                   highlight.color === option.color
-                                    ? 'border-blue-500 scale-110'
-                                    : 'border-transparent'
-                                } transition-transform duration-150`}
-                                style={{ backgroundColor: option.hex, opacity: 0.75 }}
+                                    ? 'border-blue-500 scale-110 ring-2 ring-blue-100 dark:ring-blue-900'
+                                    : 'border-transparent hover:scale-105'
+                                }`}
+                                style={{ backgroundColor: option.hex, opacity: 0.9 }}
                                 title={option.name}
                               />
                             ))}
@@ -448,31 +468,33 @@ export default function TxtHighlightsPanel({
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-2 flex-wrap pt-2">
+                        <div className="flex gap-2 flex-wrap pt-2 border-t border-gray-100 dark:border-gray-800">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => onJumpToHighlight(highlight.sectionIndex)}
-                            className="text-xs h-7 px-2"
+                            className="text-xs h-8 px-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                           >
-                            Jump to
+                            <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                            Jump to location
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => handleCopyText(highlight.text, index)}
-                            className="text-xs h-7 px-2"
+                            className="text-xs h-8 px-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                           >
-                            <Copy className="h-3 w-3 mr-1" />
-                            {copiedIndex === index ? 'Copied!' : 'Copy'}
+                            <Copy className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                            {copiedIndex === index ? 'Copied!' : 'Copy text'}
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => onRemoveHighlight(highlight.id)}
-                            className="text-xs h-7 px-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            className="text-xs h-8 px-3 ml-auto text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            Delete
                           </Button>
                         </div>
                       </div>
