@@ -23,7 +23,7 @@ const SearchBar = memo(function SearchBar({
     <div className={`flex-1 min-w-0 ${className}`}>
       <div className="relative h-12">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+          <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
         </div>
         <Input
           id={id}

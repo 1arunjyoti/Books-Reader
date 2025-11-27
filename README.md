@@ -67,4 +67,7 @@ docker compose up -d --build
 
 ---
 
+**Setup the project, run, and deploy on your own infrastructure.**
+Gether all the prerequisites and environment variables from the `.env.example` files in both `Client/` and `Server/` directories. Follow the guide to run the application locally or use Docker Compose for the server.
+
 For deeper details, see `Client/README.md`, `Server/Readme.md`, and `API_ENDPOINTS.md`.

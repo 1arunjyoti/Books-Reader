@@ -151,7 +151,7 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                 <div className="flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-gray-300">
                   <Link href="/#features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</Link>
                   <Link href="/about" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About</Link>
-                  <Link href="/pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Pricing</Link>
+                  {/* <Link href="/pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Pricing</Link> */}
                 </div>
               )}
 
@@ -235,14 +235,14 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                   About
                   <ChevronRight className="w-4 h-4 text-gray-400" />
                 </Link>
-                <Link 
+                {/* <Link 
                   href="/pricing" 
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 font-medium"
                 >
                   Pricing
                   <ChevronRight className="w-4 h-4 text-gray-400" />
-                </Link>
+                </Link> */}
               </div>
               )}
 

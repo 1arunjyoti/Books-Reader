@@ -16,13 +16,13 @@ const Footer = () => {
   const footerLinks = {
     product: [
       { name: "Features", href: "/#features" },
-      { name: "Pricing", href: "/pricing" },
+      /* { name: "Pricing", href: "/pricing" }, */
       { name: "Library", href: "/library" },
       { name: "Changelog", href: "/changelog" },
     ],
     company: [
       { name: "About", href: "/about" },
-      { name: "Blog", href: "/blog" },
+      /* { name: "Blog", href: "/blog" }, */
       { name: "Contact", href: "/contact" },
     ],
     legal: [
@@ -53,7 +53,7 @@ const Footer = () => {
               <a href="#" className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a href="#" className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
+              <a href="https://github.com/1arunjyoti/Books-Reader" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <Github className="w-5 h-5" />
               </a>
             </div>

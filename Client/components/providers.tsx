@@ -2,6 +2,7 @@
 
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AuthTokenProvider } from "@/contexts/AuthTokenContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 type ThemeProviderProps = React.ComponentProps<typeof NextThemesProvider>;
 
@@ -18,9 +19,11 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
       themes={["light", "dark"]}
       {...props}
     >
-      <AuthTokenProvider>
-        {children}
-      </AuthTokenProvider>
+      <ErrorBoundary>
+        <AuthTokenProvider>
+          {children}
+        </AuthTokenProvider>
+      </ErrorBoundary>
     </NextThemesProvider>
   );
 }

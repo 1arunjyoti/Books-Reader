@@ -162,7 +162,7 @@ const AdvancedFiltersComponent = memo(function AdvancedFiltersComponent({ filter
           variant="outline"
           className="h-12 px-4 border-gray-200/50 dark:border-gray-700/50 bg-white dark:bg-gray-800 backdrop-blur-sm text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:border-blue-300/50 dark:hover:border-blue-700/50 group text-sm font-medium rounded-xl transition-all duration-200 shadow-sm gap-2"
         >
-          <SidebarOpen className="h-4 w-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
+          <SidebarOpen className="h-4 w-4  group-hover:text-blue-500 transition-colors" />
           <span className="hidden sm:inline">Filters</span>
           
           {activeFiltersCount > 0 && (

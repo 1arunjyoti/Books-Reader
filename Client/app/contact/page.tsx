@@ -63,7 +63,7 @@ export default function ContactPage() {
                       <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Social Media</h3>
                       <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Follow us for updates</p>
                       <a href="https://twitter.com/booksreader" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
-                        @booksreader
+                        {/* @booksreader */}
                       </a>
                     </div>
                   </div>
@@ -84,7 +84,7 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 text-white shadow-lg">
+              {/* <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 text-white shadow-lg">
                 <h3 className="text-xl font-bold mb-4">Community Support</h3>
                 <p className="text-blue-100 mb-6">
                   Join our community forum to discuss features, report bugs, and connect with other readers.
@@ -92,7 +92,7 @@ export default function ContactPage() {
                 <a href="#" className="inline-flex items-center gap-2 text-white font-medium hover:gap-3 transition-all">
                   Visit Community <ArrowRight className="w-4 h-4" />
                 </a>
-              </div>
+              </div> */}
             </motion.div>
 
             {/* Contact Form Column */}

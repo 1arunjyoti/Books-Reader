@@ -14,8 +14,8 @@ import {
   RefreshCw, 
   Settings, 
   Mic,
-  CheckCircle2,
-  Sparkles
+  Sparkles,
+  CircleMinus
 } from "lucide-react";
 
 export default function AboutPage() {
@@ -146,7 +146,7 @@ export default function AboutPage() {
                 transition={{ delay: index * 0.05 }}
                 className="flex items-start gap-3"
               >
-                <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                <CircleMinus className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                 <span className="text-gray-300">{plan}</span>
               </motion.div>
             ))}

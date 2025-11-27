@@ -19,7 +19,7 @@ const ViewModeToggle = memo(function ViewModeToggle({ viewMode, setViewMode }: P
         className={`h-10 px-3 rounded-lg transition-all duration-200 ${
           viewMode === 'grid'
             ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-transparent'
+            : ' hover:text-gray-700 dark:hover:text-gray-200 hover:bg-transparent'
         }`}
         title="Grid view"
       >
@@ -32,7 +32,7 @@ const ViewModeToggle = memo(function ViewModeToggle({ viewMode, setViewMode }: P
         className={`h-10 px-3 rounded-lg transition-all duration-200 ${
           viewMode === 'list'
             ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-transparent'
+            : ' hover:text-gray-700 dark:hover:text-gray-200 hover:bg-transparent'
         }`}
         title="List view"
       >

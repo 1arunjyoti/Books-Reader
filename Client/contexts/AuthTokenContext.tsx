@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useRef, useCallback, useState } from 'react';
+import React, { createContext, useContext, useRef, useCallback, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 
 interface TokenCache {
@@ -22,6 +23,7 @@ const AuthTokenContext = createContext<AuthTokenContextValue | null>(null);
  * Manages token caching and prevents redundant API calls
  */
 export function AuthTokenProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const cacheRef = useRef<TokenCache>({
     token: null,
     expiresAt: 0,
@@ -30,6 +32,15 @@ export function AuthTokenProvider({ children }: { children: React.ReactNode }) {
   const fetchingRef = useRef<Promise<string | null> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
+
+  // Handle 401 Unauthorized errors (e.g., after account deletion)
+  useEffect(() => {
+    if (isUnauthorized) {
+      logger.info('User is unauthorized, redirecting to sign-in');
+      router.push('/sign-in');
+    }
+  }, [isUnauthorized, router]);
 
   /**
    * Helper to decode JWT and get expiration
@@ -83,6 +94,18 @@ export function AuthTokenProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch('/api/auth/token');
         
         if (!response.ok) {
+          // Handle 401 Unauthorized - user is not authenticated
+          if (response.status === 401) {
+            logger.warn('Received 401 from token endpoint, marking as unauthorized');
+            setIsUnauthorized(true);
+            // Clear cache on unauthorized
+            cacheRef.current = {
+              token: null,
+              expiresAt: 0,
+            };
+            return null;
+          }
+          
           throw new Error(`Token fetch failed: ${response.statusText}`);
         }
         

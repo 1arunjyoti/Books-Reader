@@ -1,27 +1,42 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Calendar, Tag, ArrowRight } from "lucide-react";
+import { Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function ChangelogPage() {
   const releases = [
     {
-      version: "v1.2.0",
-      date: "October 25, 2025",
-      title: "Dark Mode & Performance",
+      version: "v1.0.0",
+      date: "November 27, 2025",
+      title: "Launch Release",
+      description: "A fresh new look and exciting additions to enhance your reading experience.",
+      changes: [
+        "Redesigned the main dashboard for better visual hierarchy",
+        "Added manage storage options",
+        "Introduced offline book reading support",
+        "Added Books Download Capability",
+      ],
+      type: "Major",
+    },
+    {
+      version: "v0.5.0",
+      date: "November 20, 2025",
+      title: "Performance, Feature & Enhancements",
       description: "A major update focusing on visual comfort and speed.",
       changes: [
         "Added full dark mode support across all pages",
         "Improved PDF rendering speed by 40%",
         "New glassmorphism UI design",
         "Fixed mobile navigation issues",
+        "Enhanced analytics",
+        "Introduced user achievements and badges",
       ],
       type: "Major",
     },
     {
-      version: "v1.1.0",
-      date: "October 10, 2025",
+      version: "v0.0.5",
+      date: "November 10, 2025",
       title: "Collections & Organization",
       description: "Better ways to organize your growing library.",
       changes: [
@@ -33,8 +48,8 @@ export default function ChangelogPage() {
       type: "Feature",
     },
     {
-      version: "v1.0.5",
-      date: "September 28, 2025",
+      version: "v0.0.2",
+      date: "October 28, 2025",
       title: "Bug Fixes & Polish",
       description: "Squashing bugs and improving stability.",
       changes: [
@@ -46,8 +61,8 @@ export default function ChangelogPage() {
       type: "Patch",
     },
     {
-      version: "v1.0.0",
-      date: "September 1, 2025",
+      version: "v0.0.1",
+      date: "October 15, 2025",
       title: "Initial Release",
       description: "BooksReader is live! The best way to read on the web.",
       changes: [
