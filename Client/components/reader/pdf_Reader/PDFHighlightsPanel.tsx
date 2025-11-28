@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { logger } from '@/lib/logger';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { X, Trash2, Copy, Filter, StickyNote, Save, ChevronDown, MapPin } from 'lucide-react';
+import { X, Trash2, Copy, Filter, StickyNote, Save, ChevronDown, MapPin, Languages, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,6 +17,8 @@ interface PDFHighlightsPanelProps {
   onJumpToHighlight: (highlight: PdfHighlight) => void;
   onChangeColor: (highlightId: string, color: string, hex: string) => Promise<void> | void;
   onSaveNote: (highlightId: string, note: string) => Promise<void> | void;
+  onTranslate: (text: string) => void;
+  onDefine: (text: string) => void;
   onClose: () => void;
 }
 
@@ -27,6 +29,8 @@ export default function PDFHighlightsPanel({
   onJumpToHighlight,
   onChangeColor,
   onSaveNote,
+  onTranslate,
+  onDefine,
   onClose,
 }: PDFHighlightsPanelProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -463,6 +467,24 @@ export default function PDFHighlightsPanel({
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => onDefine(highlight.text)}
+                        className="text-xs h-7 px-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <Book className="h-3 w-3" />
+                        Define
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onTranslate(highlight.text)}
+                        className="text-xs h-7 px-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <Languages className="h-3 w-3" />
+                        Translate
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => onJumpToHighlight(highlight)}
                         className="text-xs h-7 px-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
@@ -474,7 +496,7 @@ export default function PDFHighlightsPanel({
                         onClick={() => handleCopy(highlight.id, highlight.text)}
                         className="text-xs h-7 px-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
-                        <Copy className="h-3 w-3 mr-1.5" />
+                        <Copy className="h-3 w-3" />
                         {copiedId === highlight.id ? 'Copied!' : 'Copy text'}
                       </Button>
                       <Button
@@ -483,7 +505,7 @@ export default function PDFHighlightsPanel({
                         onClick={() => onRemoveHighlight(highlight.id)}
                         className="text-xs h-7 px-3 ml-auto text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30"
                       >
-                        <Trash2 className="h-3 w-3 mr-1.5" />
+                        <Trash2 className="h-3 w-3" />
                         Delete
                       </Button>
                     </div>

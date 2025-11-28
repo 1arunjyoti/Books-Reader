@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useReducer, useRef } from 'react';
+import { useEffect, useCallback, useReducer, useRef, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { useAuthToken } from '@/contexts/AuthTokenContext';
 import { useMobileDetection } from '@/hooks/useMobileDetection';
@@ -60,6 +60,8 @@ import {
 import PDFHighlightsPanel from './PDFHighlightsPanel';
 import PDFMobileOptionsPanel from './PDFMobileOptionsPanel';
 import type { PdfHighlight, PdfHighlightRect } from '@/types/highlights';
+import TranslationPopup from '../TranslationPopup';
+import DictionaryPopup from '../DictionaryPopup';
 
 interface RawPdfHighlight extends Omit<PdfHighlight, 'rects' | 'boundingRect'> {
   rects?: unknown;
@@ -299,6 +301,25 @@ export function PDFReader({
     sessionStart: new Date(),
     sessionStartPage: initialPage,
     isWindowActive: true,
+  });
+
+  // Translation state
+  const [translationState, setTranslationState] = useState<{
+    isOpen: boolean;
+    text: string;
+    position?: { x: number; y: number };
+  }>({
+    isOpen: false,
+    text: '',
+  });
+
+  const [dictionaryState, setDictionaryState] = useState<{
+    isOpen: boolean;
+    text: string;
+    position?: { x: number; y: number };
+  }>({
+    isOpen: false,
+    text: '',
   });
 
   // Destructure for easier access
@@ -1219,6 +1240,18 @@ export function PDFReader({
           bookmarks={bookmarks}
           onCreateHighlight={handleCreateHighlight}
           onHighlightClick={handleJumpToHighlight}
+          onTranslate={(text) => {
+            setTranslationState({
+              isOpen: true,
+              text,
+            });
+          }}
+          onDefine={(text) => {
+            setDictionaryState({
+              isOpen: true,
+              text,
+            });
+          }}
           ref={pdfViewerRef}
         />
 
@@ -1264,6 +1297,18 @@ export function PDFReader({
             onJumpToHighlight={handleJumpToHighlight}
             onChangeColor={handleHighlightColorChange}
             onSaveNote={handleHighlightNoteSave}
+            onTranslate={(text) => {
+              setTranslationState({
+                isOpen: true,
+                text,
+              });
+            }}
+            onDefine={(text) => {
+              setDictionaryState({
+                isOpen: true,
+                text,
+              });
+            }}
             onClose={() => dispatchUI({ type: 'SET_PANEL', payload: { panel: 'highlights', open: false } })}
           />
         )}
@@ -1391,6 +1436,22 @@ export function PDFReader({
             </div>
           </div>
         </div>
+      )}
+      {/* Translation Popup */}
+      {translationState.isOpen && (
+        <TranslationPopup
+          text={translationState.text}
+          onDismiss={() => setTranslationState(prev => ({ ...prev, isOpen: false }))}
+          position={translationState.position}
+        />
+      )}
+      {/* Dictionary Popup */}
+      {dictionaryState.isOpen && (
+        <DictionaryPopup
+          text={dictionaryState.text}
+          onDismiss={() => setDictionaryState(prev => ({ ...prev, isOpen: false }))}
+          position={dictionaryState.position}
+        />
       )}
     </div>
     </PDFReaderErrorBoundary>

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { X, Trash2, Copy, ChevronDown, StickyNote, Save, Filter, MapPin } from 'lucide-react';
+import { X, Trash2, Copy, ChevronDown, StickyNote, Save, Filter, MapPin, Languages, Book } from 'lucide-react';
 import { sanitizeText } from '@/lib/sanitize-text';
 import { logger } from '@/lib/logger';
 
@@ -37,6 +37,8 @@ interface EpubHighlightsPanelProps {
   onJumpToHighlight: (cfiRange: string) => void;
   onChangeColor: (highlightId: string, cfiRange: string, currentHex: string) => void;
   onSaveNote: (highlightId: string, note: string) => void;
+  onTranslate: (text: string) => void;
+  onDefine: (text: string) => void;
   onClose: () => void;
 }
 
@@ -47,6 +49,8 @@ export default function EpubHighlightsPanel({
   onJumpToHighlight,
   onChangeColor,
   onSaveNote,
+  onTranslate,
+  onDefine,
   onClose,
 }: EpubHighlightsPanelProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -470,6 +474,24 @@ export default function EpubHighlightsPanel({
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => onDefine(highlight.text)}
+                            className="text-xs h-7 px-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            <Book className="h-3 w-3" />
+                            Define
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onTranslate(highlight.text)}
+                            className="text-xs h-7 px-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            <Languages className="h-3 w-3" />
+                            Translate
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => onJumpToHighlight(highlight.cfiRange)}
                             className="text-xs h-7 px-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                           >
@@ -481,7 +503,7 @@ export default function EpubHighlightsPanel({
                             onClick={() => handleCopyText(highlight.text, index)}
                             className="text-xs h-7 px-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                           >
-                            <Copy className="h-3 w-3 mr-1.5" />
+                            <Copy className="h-3 w-3" />
                             {copiedIndex === index ? 'Copied!' : 'Copy text'}
                           </Button>
                           <Button
@@ -490,7 +512,7 @@ export default function EpubHighlightsPanel({
                             onClick={() => onRemoveHighlight(highlight.id, highlight.cfiRange)}
                             className="text-xs h-7 px-3 ml-auto text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30"
                           >
-                            <Trash2 className="h-3 w-3 mr-1.5" />
+                            <Trash2 className="h-3 w-3" />
                             Delete
                           </Button>
                         </div>

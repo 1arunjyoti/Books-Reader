@@ -45,6 +45,7 @@ export default clerkMiddleware(async (auth, req) => {
     script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://unpkg.com https://*.clerk.accounts.dev https://clerk.com https://challenges.cloudflare.com;
     style-src 'self' 'unsafe-inline' blob: https://*.clerk.accounts.dev;
     img-src 'self' blob: data: https:;
+    media-src 'self' https://api.dictionaryapi.dev;
     font-src 'self' data: blob:;
     connect-src 'self' blob: ${apiUrl} ${apiUrl.replace('http://', 'https://')} https://va.vercel-scripts.com https://*.backblazeb2.com https://unpkg.com https://*.clerk.accounts.dev https://api.clerk.com https://clerk-telemetry.com https://clerk.com https://challenges.cloudflare.com wss://*.clerk.accounts.dev;
     worker-src 'self' blob: https://unpkg.com;

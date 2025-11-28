@@ -35,6 +35,8 @@ import EpubColorFilterPanel from './EpubColorFilterPanel';
 import EpubTTSPanel from './EpubTTSPanel';
 import DisplayOptionsPanel from './DisplayOptionsPanel';
 import MobileOptionsPanel from './MobileOptionsPanel';
+import TranslationPopup from '../TranslationPopup';
+import DictionaryPopup from '../DictionaryPopup';
 import { logger } from '@/lib/logger';
 import { useToast, ToastContainer } from '@/components/ui/toast';
 
@@ -224,6 +226,25 @@ export default function ReactEpubViewer({
   // Panel states
   const [showContentsAndBookmarks, setShowContentsAndBookmarks] = useState(false);
   const [showHighlightsPanel, setShowHighlightsPanel] = useState(false);
+  
+  // Translation state
+  const [translationState, setTranslationState] = useState<{
+    isOpen: boolean;
+    text: string;
+    position?: { x: number; y: number };
+  }>({
+    isOpen: false,
+    text: '',
+  });
+
+  const [dictionaryState, setDictionaryState] = useState<{
+    isOpen: boolean;
+    text: string;
+    position?: { x: number; y: number };
+  }>({
+    isOpen: false,
+    text: '',
+  });
 
   // Text selection toggle
   const [enableTextSelection, setEnableTextSelection] = useState(false);
@@ -1058,6 +1079,20 @@ export default function ReactEpubViewer({
             onRemoveHighlight={highlights.removeHighlight}
             onChangeColor={highlights.initiateColorChange}
             onSaveNote={highlights.saveHighlightNote}
+            onTranslate={(text) => {
+              setTranslationState({
+                isOpen: true,
+                text: text,
+                position: undefined
+              });
+            }}
+            onDefine={(text) => {
+              setDictionaryState({
+                isOpen: true,
+                text: text,
+                position: undefined
+              });
+            }}
             onClose={() => setShowHighlightsPanel(false)}
           />
         )}
@@ -1186,30 +1221,6 @@ export default function ReactEpubViewer({
         />
       )}
 
-      {highlights.pendingSelection && (
-        <ColorPickerPopup
-          x={highlights.pendingSelection.x}
-          y={highlights.pendingSelection.y}
-          selectionHeight={highlights.pendingSelection.height}
-          onColorSelect={(color) => {
-            highlights.createHighlight(color, navigation.pageInfo.current);
-          }}
-          onDismiss={() => highlights.setPendingSelection(null)}
-        />
-      )}
-
-      {highlights.editingHighlight && (
-        <ColorPickerPopup
-          x={highlights.editingHighlight.x}
-          y={highlights.editingHighlight.y}
-          selectionHeight={highlights.editingHighlight.height}
-          onColorSelect={(color) => {
-            highlights.updateHighlightColor(highlights.editingHighlight!.id, color);
-          }}
-          onDismiss={() => highlights.setEditingHighlight(null)}
-        />
-      )}
-
       {/* Bottom Toolbar (Mobile) - Floating Glassmorphic */}
       {(!readingMode || toolbarVisible) && (
         <div className="md:hidden fixed bottom-6 left-4 right-4 z-40">
@@ -1246,6 +1257,100 @@ export default function ReactEpubViewer({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Translation Popup */}
+      {translationState.isOpen && (
+        <TranslationPopup
+          text={translationState.text}
+          onDismiss={() => setTranslationState(prev => ({ ...prev, isOpen: false }))}
+          position={translationState.position}
+        />
+      )}
+
+      {/* Dictionary Popup */}
+      {dictionaryState.isOpen && (
+        <DictionaryPopup
+          text={dictionaryState.text}
+          onDismiss={() => setDictionaryState(prev => ({ ...prev, isOpen: false }))}
+          position={dictionaryState.position}
+        />
+      )}
+
+      {/* Pending Selection Popup */}
+      {highlights.pendingSelection && (
+        <ColorPickerPopup
+          x={highlights.pendingSelection.x}
+          y={highlights.pendingSelection.y}
+          selectionHeight={highlights.pendingSelection.height}
+          onColorSelect={(color) => {
+            if (color.color === 'translate') {
+              setTranslationState({
+                isOpen: true,
+                text: highlights.pendingSelection!.text,
+                position: {
+                  x: highlights.pendingSelection!.x,
+                  y: highlights.pendingSelection!.y
+                }
+              });
+              highlights.setPendingSelection(null);
+            } else if (color.color === 'define') {
+              setDictionaryState({
+                isOpen: true,
+                text: highlights.pendingSelection!.text,
+                position: {
+                  x: highlights.pendingSelection!.x,
+                  y: highlights.pendingSelection!.y
+                }
+              });
+              highlights.setPendingSelection(null);
+            } else {
+              highlights.createHighlight(color, navigation.pageInfo.current);
+            }
+          }}
+          onDismiss={() => highlights.setPendingSelection(null)}
+        />
+      )}
+
+      {/* Editing Highlight Popup */}
+      {highlights.editingHighlight && (
+        <ColorPickerPopup
+          x={highlights.editingHighlight.x}
+          y={highlights.editingHighlight.y}
+          selectionHeight={highlights.editingHighlight.height}
+          onColorSelect={(color) => {
+            if (color.color === 'translate') {
+               const highlight = highlights.highlights.find(h => h.id === highlights.editingHighlight!.id);
+               if (highlight) {
+                  setTranslationState({
+                    isOpen: true,
+                    text: highlight.text || '',
+                    position: {
+                      x: highlights.editingHighlight!.x,
+                      y: highlights.editingHighlight!.y
+                    }
+                  });
+               }
+               highlights.setEditingHighlight(null);
+            } else if (color.color === 'define') {
+               const highlight = highlights.highlights.find(h => h.id === highlights.editingHighlight!.id);
+               if (highlight) {
+                  setDictionaryState({
+                    isOpen: true,
+                    text: highlight.text || '',
+                    position: {
+                      x: highlights.editingHighlight!.x,
+                      y: highlights.editingHighlight!.y
+                    }
+                  });
+               }
+               highlights.setEditingHighlight(null);
+            } else {
+              highlights.updateHighlightColor(highlights.editingHighlight!.id, color);
+            }
+          }}
+          onDismiss={() => highlights.setEditingHighlight(null)}
+        />
       )}
 
       {/* Toast notifications */}

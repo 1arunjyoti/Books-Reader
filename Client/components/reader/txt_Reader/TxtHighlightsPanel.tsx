@@ -6,7 +6,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { X, Trash2, Copy, ChevronDown, StickyNote, Save, Filter, MapPin } from 'lucide-react';
+import { X, Trash2, Copy, ChevronDown, StickyNote, Save, Filter, MapPin, Languages, Book } from 'lucide-react';
 import { sanitizeText } from '@/lib/sanitize-text';
 
 // Available highlight colors
@@ -37,6 +37,8 @@ interface TxtHighlightsPanelProps {
   onJumpToHighlight: (sectionIndex: number) => void;
   onChangeColor: (highlightId: string) => void;
   onSaveNote: (highlightId: string, note: string) => void;
+  onTranslate: (text: string) => void;
+  onDefine: (text: string) => void;
   onClose: () => void;
 }
 
@@ -47,6 +49,8 @@ export default function TxtHighlightsPanel({
   onJumpToHighlight,
   onChangeColor,
   onSaveNote,
+  onTranslate,
+  onDefine,
   onClose,
 }: TxtHighlightsPanelProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -472,10 +476,28 @@ export default function TxtHighlightsPanel({
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => onDefine(highlight.text)}
+                            className="text-xs h-8 px-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                          >
+                            <Book className="h-3.5 w-3.5 text-gray-500" />
+                            Define
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onTranslate(highlight.text)}
+                            className="text-xs h-8 px-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                          >
+                            <Languages className="h-3.5 w-3.5 text-gray-500" />
+                            Translate
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => onJumpToHighlight(highlight.sectionIndex)}
                             className="text-xs h-8 px-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                           >
-                            <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                            <MapPin className="h-3.5 w-3.5 text-gray-500" />
                             Jump to location
                           </Button>
                           <Button
@@ -484,7 +506,7 @@ export default function TxtHighlightsPanel({
                             onClick={() => handleCopyText(highlight.text, index)}
                             className="text-xs h-8 px-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                           >
-                            <Copy className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                            <Copy className="h-3.5 w-3.5 text-gray-500" />
                             {copiedIndex === index ? 'Copied!' : 'Copy text'}
                           </Button>
                           <Button
@@ -493,7 +515,7 @@ export default function TxtHighlightsPanel({
                             onClick={() => onRemoveHighlight(highlight.id)}
                             className="text-xs h-8 px-3 ml-auto text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                           >
-                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            <Trash2 className="h-3.5 w-3.5" />
                             Delete
                           </Button>
                         </div>

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -190,11 +191,14 @@
    to enable smooth color/background transitions without making them
    permanent. Respects prefers-reduced-motion. */
 .theme-transition {
-  transition: background-color 220ms ease, color 220ms ease, border-color 220ms ease, fill 220ms ease, stroke 220ms ease;
+  transition: background-color 220ms ease, color 220ms ease,
+    border-color 220ms ease, fill 220ms ease, stroke 220ms ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .theme-transition { transition: none !important; }
+  .theme-transition {
+    transition: none !important;
+  }
 }
 
 /* Toast notification slide-in animation */
