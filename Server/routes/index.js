@@ -19,5 +19,6 @@ router.use('/collections', collectionsRoutes);
 router.use('/highlights', highlightsRoutes);
 router.use('/user', userRoutes);
 router.use('/webhooks', webhookRoutes); // Clerk webhooks
+router.use('/gutenberg', require('./gutenberg.routes'));
 
 module.exports = router;

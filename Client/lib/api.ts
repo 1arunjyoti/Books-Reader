@@ -6,6 +6,7 @@
 import { retryWithBackoff, API_RETRY_OPTIONS } from './retry-utils';
 import { logger } from './logger';
 import { API_ENDPOINTS } from './config';
+import { GutenbergBook } from './gutenberg';
 
 const API_BASE_URL = API_ENDPOINTS.BASE;
 
@@ -950,4 +951,30 @@ export async function markWelcomeShown(accessToken: string): Promise<void> {
     logger.warn('[API] Could not mark welcome as shown on server (network error):', error);
     logger.warn('[API] Welcome status still saved locally, will sync when server is available');
   }
+}
+/**
+ * Import a book from Project Gutenberg
+ */
+export async function importGutenbergBook(
+  accessToken: string,
+  bookData: GutenbergBook
+): Promise<Book> {
+  return retryWithBackoff(async () => {
+    const response = await fetch(`${API_BASE_URL}/api/gutenberg/import`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ bookData }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to import book' }));
+      throw new Error(error.error || 'Failed to import book');
+    }
+
+    const result = await response.json();
+    return result.book;
+  }, API_RETRY_OPTIONS);
 }

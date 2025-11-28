@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BookOpen, LogOut, Menu, User, X, ChevronRight } from 'lucide-react';
+import { BookOpen, LogOut, Menu, User, X, ChevronRight, Globe } from 'lucide-react';
 
 interface NavbarClientProps {
   user: {
@@ -91,6 +91,15 @@ export default function NavbarClient({ user }: NavbarClientProps) {
             <span className="font-medium">My Library</span>
           </Link>
         </DropdownMenuItem>
+
+        <DropdownMenuItem asChild className="rounded-lg cursor-pointer focus:bg-emerald-50 dark:focus:bg-emerald-900/20 mt-1">  
+          <Link href="/gutenberg" className="flex items-center gap-2.5 py-2.5 px-3">
+            <div className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+              <Globe className="h-4 w-4" />
+            </div>
+            <span className="font-medium">Browse Gutenberg</span>
+          </Link>
+        </DropdownMenuItem>
         
         <DropdownMenuItem asChild className="rounded-lg cursor-pointer focus:bg-purple-50 dark:focus:bg-purple-900/20 mt-1">
           <Link href="/profile" className="flex items-center gap-2.5 py-2.5 px-3">
@@ -152,6 +161,7 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                   <Link href="/#features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</Link>
                   <Link href="/about" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About</Link>
                   {/* <Link href="/pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Pricing</Link> */}
+                  <Link href="/gutenberg" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Gutenberg</Link>
                 </div>
               )}
 
@@ -207,8 +217,8 @@ export default function NavbarClient({ user }: NavbarClientProps) {
               {user && (
                 <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                   <Avatar className="h-12 w-12 border border-gray-200 dark:border-gray-700">
-                    <AvatarImage src={user.picture} alt={user.name || 'User'} />
-                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                    {/* <AvatarImage src={user.picture} alt={user.name || 'User'} /> */}
+                    <AvatarFallback className='bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'>{getUserInitials()}</AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-semibold text-gray-900 dark:text-white">{user.name || 'User'}</p>
@@ -243,6 +253,14 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                   Pricing
                   <ChevronRight className="w-4 h-4 text-gray-400" />
                 </Link> */}
+                <Link 
+                  href="/gutenberg" 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 font-medium"
+                >
+                  Gutenberg
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </Link>
               </div>
               )}
 
@@ -259,10 +277,16 @@ export default function NavbarClient({ user }: NavbarClientProps) {
                         My Library
                       </Button>
                     </Link>
+                    <Link href="/gutenberg" onClick={() => setIsMenuOpen(false)}>
+                      <Button className="w-full justify-start gap-2" variant="outline">
+                        <Globe className="w-4 h-4" />
+                        Browse Gutenberg
+                      </Button>
+                    </Link>
                     <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
                       <Button className="w-full justify-start gap-2" variant="outline">
                         <User className="w-4 h-4" />
-                        Profile
+                        Profile & Settings
                       </Button>
                     </Link>
                     <Button 

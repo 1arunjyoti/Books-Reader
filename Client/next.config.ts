@@ -51,11 +51,23 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    remotePatterns: allowedImageDomains.map(domain => ({
-      protocol: 'https',
-      hostname: domain,
-      pathname: '/**',
-    })),
+    remotePatterns: [
+      ...allowedImageDomains.map(domain => ({
+        protocol: 'https' as const,
+        hostname: domain,
+        pathname: '/**',
+      })),
+      {
+        protocol: 'https' as const,
+        hostname: 'www.gutenberg.org',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https' as const,
+        hostname: 'covers.openlibrary.org',
+        pathname: '/**',
+      }
+    ],
     // When no domains are provided, disable Next.js image optimization so external URLs still render.
     // This keeps development simple; for production, configure domains and remove this fallback.
     unoptimized: process.env.NODE_ENV !== 'production' && allowedImageDomains.length === 0,
