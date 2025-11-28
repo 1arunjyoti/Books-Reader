@@ -10,6 +10,8 @@ import TxtHighlightsPanel from './TxtHighlightsPanel';
 import TxtDisplayOptionsPanel from './TxtDisplayOptionsPanel';
 import TxtTTSPanel from './TxtTTSPanel';
 import ColorPickerPopup from './ColorPickerPopup';
+import TranslationPopup from '../TranslationPopup';
+import DictionaryPopup from '../DictionaryPopup';
 
 // Import custom hooks
 import { useTxtFileLoader } from './hooks/useTxtFileLoader';
@@ -44,6 +46,25 @@ export default function TxtViewer({
   const [enableTextSelection, setEnableTextSelection] = useState(false);
   // Local UI state to allow dismissing the keyboard shortcuts hint
   const [showShortcutsHint, setShowShortcutsHint] = useState(true);
+
+  // Translation state
+  const [translationState, setTranslationState] = useState<{
+    isOpen: boolean;
+    text: string;
+    position?: { x: number; y: number };
+  }>({
+    isOpen: false,
+    text: '',
+  });
+
+  const [dictionaryState, setDictionaryState] = useState<{
+    isOpen: boolean;
+    text: string;
+    position?: { x: number; y: number };
+  }>({
+    isOpen: false,
+    text: '',
+  });
 
   // Use custom hooks
   const {
@@ -147,7 +168,7 @@ export default function TxtViewer({
     if (!selection || selection.isCollapsed) return;
 
     const selectedText = selection.toString().trim();
-    // SECURITY: Validate selection length to prevent abuse
+    // Validate selection length to prevent abuse
     if (!selectedText || selectedText.length < 3 || selectedText.length > 5000) {
       return;
     }
@@ -512,11 +533,58 @@ export default function TxtViewer({
             x={pendingSelection.mouseX}
             y={pendingSelection.mouseY}
             selectionHeight={20}
-            onColorSelect={handleColorSelect}
+            onColorSelect={(color, hex) => {
+              if (color === 'translate') {
+                // Handle translation
+                setTranslationState({
+                  isOpen: true,
+                  text: pendingSelection.text,
+                  position: {
+                    x: pendingSelection.mouseX,
+                    y: pendingSelection.mouseY
+                  }
+                });
+                setPendingSelection(null);
+                setPendingSelection(null);
+                window.getSelection()?.removeAllRanges();
+              } else if (color === 'define') {
+                // Handle dictionary
+                setDictionaryState({
+                  isOpen: true,
+                  text: pendingSelection.text,
+                  position: {
+                    x: pendingSelection.mouseX,
+                    y: pendingSelection.mouseY
+                  }
+                });
+                setPendingSelection(null);
+                window.getSelection()?.removeAllRanges();
+              } else {
+                handleColorSelect(color, hex);
+              }
+            }}
             onDismiss={() => {
               setPendingSelection(null);
               window.getSelection()?.removeAllRanges();
             }}
+          />
+        )}
+
+        {/* Translation Popup */}
+        {translationState.isOpen && (
+          <TranslationPopup
+            text={translationState.text}
+            onDismiss={() => setTranslationState(prev => ({ ...prev, isOpen: false }))}
+            position={translationState.position}
+          />
+        )}
+
+        {/* Dictionary Popup */}
+        {dictionaryState.isOpen && (
+          <DictionaryPopup
+            text={dictionaryState.text}
+            onDismiss={() => setDictionaryState(prev => ({ ...prev, isOpen: false }))}
+            position={dictionaryState.position}
           />
         )}
       </div>
@@ -525,7 +593,7 @@ export default function TxtViewer({
       {showHighlightsPanel && (
         <>
           <div
-            className="fixed inset-0 bg-black/20 z-10"
+            className="fixed inset-0"
             onClick={() => setShowHighlightsPanel(false)}
           />
           <TxtHighlightsPanel
@@ -535,6 +603,20 @@ export default function TxtViewer({
             onJumpToHighlight={handleJumpToHighlight}
             onChangeColor={handleChangeColor}
             onSaveNote={handleSaveNote}
+            onTranslate={(text) => {
+              setTranslationState({
+                isOpen: true,
+                text,
+                position: { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+              });
+            }}
+            onDefine={(text) => {
+              setDictionaryState({
+                isOpen: true,
+                text,
+                position: { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+              });
+            }}
             onClose={() => setShowHighlightsPanel(false)}
           />
         </>
@@ -544,7 +626,7 @@ export default function TxtViewer({
       {showDisplayOptions && (
         <>
           <div
-            className="fixed inset-0 bg-black/20 z-10"
+            className="fixed inset-0"
             onClick={() => setShowDisplayOptions(false)}
           />
           <TxtDisplayOptionsPanel
@@ -571,7 +653,7 @@ export default function TxtViewer({
       {showTTSPanel && (
         <>
           <div
-            className="fixed inset-0 bg-black/20 z-10"
+            className="fixed inset-0"
             onClick={() => setShowTTSPanel(false)}
           />
           <TxtTTSPanel

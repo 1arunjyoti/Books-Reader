@@ -11,6 +11,8 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import type { Book } from '@/lib/api';
+import { getPresignedUrl } from "@/lib/api";
+import { useTokenCache } from "@/contexts/AuthTokenContext";
 
 type Props = {
   book: Book;
@@ -20,12 +22,32 @@ type Props = {
 };
 
 const ActionMenu = memo(function ActionMenu({ book, setEditingBook, handleUpdateStatus, handleDeleteBook }: Props) {
+  const getAccessToken = useTokenCache();
+
   // Memoize callbacks to prevent re-renders
   const onEdit = useCallback(() => setEditingBook(book), [book, setEditingBook]);
   const onMarkRead = useCallback(() => handleUpdateStatus(book.id, 'read'), [book.id, handleUpdateStatus]);
   const onMarkReading = useCallback(() => handleUpdateStatus(book.id, 'reading'), [book.id, handleUpdateStatus]);
   const onMarkWantToRead = useCallback(() => handleUpdateStatus(book.id, 'want-to-read'), [book.id, handleUpdateStatus]);
   const onDelete = useCallback(() => handleDeleteBook(book.id), [book.id, handleDeleteBook]);
+
+  const handleDownload = useCallback(async () => {
+    try {
+      const token = await getAccessToken();
+      if (!token) return;
+
+      const url = await getPresignedUrl(book.id, token);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = book.originalName || book.title;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Failed to download book:", error);
+    }
+  }, [book.id, book.originalName, book.title, getAccessToken]);
 
   return (
     <div className="absolute top-3 right-3 z-20" onClick={(e) => e.stopPropagation()}>
@@ -44,11 +66,9 @@ const ActionMenu = memo(function ActionMenu({ book, setEditingBook, handleUpdate
             <Edit className="mr-2 h-4 w-4" />
             <span>Edit Metadata</span>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <a href={book.fileUrl} download={book.originalName} className="cursor-pointer">
-              <Download className="mr-2 h-4 w-4" />
-              <span>Download Book</span>
-            </a>
+          <DropdownMenuItem onClick={handleDownload}>
+            <Download className="mr-2 h-4 w-4" />
+            <span>Download Book</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onMarkRead}>

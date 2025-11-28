@@ -9,6 +9,7 @@ A secure, production-ready Express backend for the BooksReader application. Hand
 ### 📚 Core Features
 
 #### File Upload & Management
+
 - **Multiple Format Support**: PDF, EPUB, and TXT file uploads
 - **Secure Upload Endpoint**: `POST /api/upload` — authenticated file upload with validation
 - **Upload from URL**: `POST /api/upload/from-url` — fetch and store files from external URLs
@@ -18,6 +19,7 @@ A secure, production-ready Express backend for the BooksReader application. Hand
 - **Metadata Extraction**: Automatic PDF metadata parsing and storage
 
 #### Book Management API
+
 - **List Books**: `GET /api/books` — retrieve all user's books with filters
 - **Get Book Details**: `GET /api/books/:id` — fetch comprehensive book information
 - **Update Book**: `PATCH /api/books/:id` — modify metadata (title, author, status, progress, genre, etc.)
@@ -26,18 +28,21 @@ A secure, production-ready Express backend for the BooksReader application. Hand
 - **Multi-format Support**: Separate utilities for PDF, EPUB, and TXT processing
 
 #### Reading Progress & Bookmarks
+
 - **Bookmarks API**: `GET/POST /api/bookmarks` — manage reading bookmarks
 - **Highlights API**: `GET/POST /api/highlights` — store and retrieve highlighted passages
 - **Analytics Tracking**: `GET/POST /api/analytics` — reading statistics and usage metrics
 - **Collections**: `GET/POST /api/collections` — organize books into custom collections
 
 #### Cover Image Generation
+
 - **Automatic Cover Extraction**: Python-based cover image extraction from PDF, EPUB, TXT
 - **Cover Generation Endpoint**: Generate and store cover images for books
 - **Image Processing**: Uses Pillow and Sharp for image optimization
 - **Supported Formats**: PNG, JPG extraction and conversion
 
 #### Security & Authentication
+
 - **Clerk JWT Validation**: RS256 token validation on all protected endpoints using Clerk-issued tokens
 - **User Data Isolation**: Complete data segregation using Clerk user ID
 - **CORS Protection**: Configurable Cross-Origin Resource Sharing
@@ -46,6 +51,7 @@ A secure, production-ready Express backend for the BooksReader application. Hand
 - **Request Validation**: Zod schema validation for all inputs
 
 #### Performance & Monitoring
+
 - **Response Compression**: Automatic gzip compression for responses >1KB
 - **Response Time Monitoring**: Track and log API performance metrics
 - **Health Check Endpoint**: `GET /health` for uptime monitoring
@@ -54,6 +60,7 @@ A secure, production-ready Express backend for the BooksReader application. Hand
 - **Request Timeouts**: Configurable timeout for long-running operations
 
 ### 🏗️ Architecture
+
 - **Express 5.x** framework with modern middleware stack
 - **Prisma ORM** for type-safe database operations
 - **Modular Structure**: Controllers, services, routes, middleware separation
@@ -65,19 +72,20 @@ A secure, production-ready Express backend for the BooksReader application. Hand
 ## Prerequisites
 
 ### Required Software
+
 - **Node.js 18+** or compatible version
 - **npm** or yarn package manager
 
 ### Required External Services
+
 - **Clerk Account** (https://clerk.com)
-     - Get your Publishable and Secret API keys in Clerk Dashboard
-     - Configure a JWT Template for API validation and ensure your allowed origins/paths are set
-  
+  - Get your Publishable and Secret API keys in Clerk Dashboard
+  - Configure a JWT Template for API validation and ensure your allowed origins/paths are set
 - **PostgreSQL Database** (https://neon.tech - recommended free tier)
   - Neon PostgreSQL URL with connection string
   - Database created and accessible
-  
 - **Backblaze B2 Account** (https://www.backblaze.com/b2)
+
   - S3-compatible endpoint configured
   - Application Key ID and Application Key
   - B2 bucket created with public or private access
@@ -86,8 +94,9 @@ A secure, production-ready Express backend for the BooksReader application. Hand
 - **Python 3.8+** (for cover image extraction)
   - Required for Cover_Image_Generator module
   - Poppler utilities installed (for PDF processing)
-  
+
 ### Optional Services
+
 - **Docker** (for containerized deployment)
 
 ---
@@ -106,7 +115,7 @@ npm install
 
 ### Step 2: Configure Environment Variables
 
-```powershell
+````powershell
 # Copy example configuration
 Copy-Item .env.example .env
 
@@ -121,8 +130,9 @@ CLERK_SECRET_KEY=sk_test_your-secret-key
 # Application
 PORT=3001
 CLIENT_URL=http://localhost:3000
-```
-```
+````
+
+````
 
 ### Step 3: Set Up Database
 
@@ -134,6 +144,21 @@ npx prisma migrate dev --name init
 # - Apply all migrations from prisma/migrations/
 # - Create required tables (Book, Bookmark, Highlight, Collection, etc.)
 # - Generate Prisma Client
+
+# Deploy to Neon
+npx prisma migrate deploy
+
+# Explicitly loading from a specific .env file and deploy to Neon
+npx dotenv -e .env.deploy -- npx prisma migrate deploy
+
+# Or PowerShell trick to load .env and run command
+Get-Content .env.production | ForEach-Object {
+    if ($_ -match '^([^#=]+)=(.*)$') {
+        [Environment]::SetEnvironmentVariable($matches[1], $matches[2], "Process")
+    }
+}
+npx prisma migrate deploy
+
 ```
 
 ### Step 4: Verify Configuration
@@ -170,6 +195,7 @@ cd ..
 ```
 
 **Note**: Poppler installation required for PDF cover extraction:
+
 - **Windows**: Download from https://github.com/oschwartz10612/poppler-windows/releases/ and add to PATH
 - **Linux**: `sudo apt install poppler-utils`
 - **macOS**: `brew install poppler`
@@ -374,6 +400,47 @@ Calculate time spent
 Compile statistics
      ↓
 Return analytics
+
+### 5. User Management Flow
+
+```
+
+POST /api/user/update-name
+↓
+Auth Check (checkJwt)
+↓
+Rate Limiter (bookOperationsLimiter)
+↓
+Validation (updateUserNameSchema)
+↓
+Update in Database (Prisma)
+↓
+Return updated user profile
+
+```
+
+```
+
+POST /api/user/delete
+↓
+Auth Check (checkJwt)
+↓
+Rate Limiter (sensitiveOperationsLimiter)
+↓
+Validation (deleteAccountSchema)
+↓
+Verify Password
+↓
+Delete Files from B2 (Upload Service)
+↓
+Delete User Data from Database (Prisma)
+↓
+Delete User from Clerk (Clerk Client)
+↓
+Return success message
+
+```
+
 ```
 
 ---
@@ -408,14 +475,20 @@ Server/
 │   ├── bookmarks.routes.js           # Bookmark endpoints
 │   ├── highlights.js                 # Highlights endpoints
 │   ├── analytics.routes.js           # Analytics endpoints
-│   └── collections.routes.js         # Collections endpoints
+│   ├── collections.routes.js         # Collections endpoints
+│   ├── user.routes.js                # User management endpoints
+│   ├── gutenberg.routes.js           # Project Gutenberg integration
+│   └── webhook.routes.js             # Webhook handlers (Clerk)
 │
 ├── controllers/
 │   ├── upload.controller.js          # Upload logic
 │   ├── books.controller.js           # Book CRUD logic
 │   ├── bookmarks.controller.js       # Bookmark operations
 │   ├── analytics.controller.js       # Analytics calculations
-│   └── collections.controller.js     # Collection management
+│   ├── collections.controller.js     # Collection management
+│   ├── user.controller.js            # User profile management
+│   ├── gutenberg.controller.js       # Gutenberg import logic
+│   └── clerk-webhook.controller.js   # Webhook processing
 │
 ├── services/
 │   ├── upload.service.js             # File upload/storage service
@@ -423,7 +496,9 @@ Server/
 │   ├── bookmarks.service.js          # Bookmark service
 │   ├── highlight-service.js          # Highlights service
 │   ├── analytics.service.js          # Analytics service
-│   └── collections.service.js        # Collections service
+│   ├── collections.service.js        # Collections service
+│   ├── user.service.js               # User service
+│   └── gutenberg.service.js          # Gutenberg service
 │
 ├── utils/
 │   ├── logger.js                     # Winston logger configuration
@@ -466,6 +541,7 @@ Server/
 ### Core Models
 
 **Book** — Main book record
+
 - `id` (UUID) - Primary key
 - `title`, `author`, `description`, `genre[]`
 - `fileName`, `originalName`, `fileUrl`, `fileSize`
@@ -478,6 +554,7 @@ Server/
 - `uploadedAt`, `updatedAt`, `lastReadAt`
 
 **Bookmark** — Reading bookmarks
+
 - `id` (UUID) - Primary key
 - `bookId` - Reference to Book
 - `page` / `location` - Position in book
@@ -485,6 +562,7 @@ Server/
 - `userId` - Owner
 
 **Highlight** — Highlighted passages
+
 - `id` (UUID) - Primary key
 - `bookId` - Reference to Book
 - `content` - Highlighted text
@@ -495,6 +573,7 @@ Server/
 - `userId` - Owner
 
 **Collection** — Book collections
+
 - `id` (UUID) - Primary key
 - `name` - Collection name
 - `description` - Collection details
@@ -505,3 +584,4 @@ Server/
 See `prisma/schema.prisma` for complete schema details.
 
 ---
+````

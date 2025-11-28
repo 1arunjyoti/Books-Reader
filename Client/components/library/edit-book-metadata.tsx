@@ -5,7 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/label';
-import { X, Upload, Loader2 } from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter 
+} from '@/components/ui/dialog';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Upload, Loader2, Book, User, Calendar, Hash, Building2, Globe, FileText } from 'lucide-react';
 import { useTokenCache } from '@/hooks/useTokenCache';
 import { API_ENDPOINTS } from '@/lib/config';
 
@@ -37,6 +52,21 @@ const COMMON_GENRES = [
   'Fiction', 'Non-Fiction', 'Science Fiction', 'Fantasy', 'Mystery', 'Thriller',
   'Romance', 'Horror', 'Biography', 'History', 'Self-Help', 'Business',
   'Science', 'Technology', 'Philosophy', 'Poetry', 'Drama'
+];
+
+const LANGUAGES = [
+  { value: 'en', label: 'English' },
+  { value: 'bn', label: 'Bangla' },
+  { value: 'hi', label: 'Hindi' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'fr', label: 'French' },
+  { value: 'de', label: 'German' },
+  { value: 'it', label: 'Italian' },
+  { value: 'pt', label: 'Portuguese' },
+  { value: 'ru', label: 'Russian' },
+  { value: 'ja', label: 'Japanese' },
+  { value: 'zh', label: 'Chinese' },
+  { value: 'ko', label: 'Korean' },
 ];
 
 export default function EditBookMetadata({ book, onClose, onSave }: EditBookMetadataProps) {
@@ -172,210 +202,246 @@ export default function EditBookMetadata({ book, onClose, onSave }: EditBookMeta
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[60vh] sm:max-h-[90vh] overflow-y-auto">
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-gray-200/50 dark:border-gray-800 shadow-2xl rounded-2xl">
+        
+        {/* Header */}
+        <DialogHeader className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+          <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+            Edit Metadata
+          </DialogTitle>
+          <DialogDescription className="text-gray-500 dark:text-gray-400">
+            Update the details and cover image for this book
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* SheetHeader */}
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Edit Book Metadata
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            <X className="w-8 h-8 p-1 rounded-full  bg-gray-300 dark:bg-gray-700" />
-          </button>
-        </div>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <form id="edit-book-form" onSubmit={handleSubmit} className="p-6 space-y-8">
+            
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                <div className="h-2 w-2 rounded-full bg-red-500" />
+                {error}
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          {/* Cover Image */}
-          <div>
-            <Label htmlFor="cover">Cover Image</Label>
-            <div className="mt-2 flex items-center gap-4">
-              {coverPreview && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={coverPreview}
-                  alt="Book cover preview"
-                  className="w-32 h-48 object-cover rounded border border-gray-300 dark:border-gray-600"
-                />
-              )}
-              <div className="flex-1">
+            <div className="flex flex-col md:flex-row gap-8">
+              
+              {/* Left Column: Cover Image */}
+              <div className="w-full md:w-1/3 space-y-4">
+                <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">Cover Image</Label>
+                <div className="relative group aspect-[2/3] w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow-sm transition-all hover:shadow-md">
+                  {coverPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={coverPreview}
+                      alt="Book cover preview"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                      <Book className="w-12 h-12 mb-2 opacity-50" />
+                      <span className="text-xs">No Cover</span>
+                    </div>
+                  )}
+                  
+                  {/* Overlay for upload */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center backdrop-blur-[2px]">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="bg-white/90 hover:bg-white text-gray-900 shadow-lg"
+                      onClick={() => document.getElementById('cover-upload')?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Change Cover
+                    </Button>
+                  </div>
+                </div>
+                
                 <input
                   type="file"
-                  id="cover"
+                  id="cover-upload"
                   accept="image/*"
                   onChange={handleCoverChange}
                   className="hidden"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('cover')?.click()}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {coverPreview ? 'Change Cover' : 'Upload Cover'}
-                </Button>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  JPEG, PNG, or WebP. Max 5MB.
+                <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+                  Recommended: 2:3 aspect ratio, max 5MB
                 </p>
               </div>
+
+              {/* Right Column: Metadata Fields */}
+              <div className="flex-1 space-y-6">
+                
+                {/* Title & Author */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <Book className="w-3.5 h-3.5" /> Title
+                    </Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange('title', e.target.value)}
+                      required
+                      className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-500/20 h-11"
+                      placeholder="Book Title"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="author" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <User className="w-3.5 h-3.5" /> Author
+                    </Label>
+                    <Input
+                      id="author"
+                      value={formData.author}
+                      onChange={(e) => handleInputChange('author', e.target.value)}
+                      className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-500/20 h-11"
+                      placeholder="Author Name"
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <FileText className="w-3.5 h-3.5" /> Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('description', e.target.value)}
+                    rows={4}
+                    className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-500/20 resize-none"
+                    placeholder="Enter a brief summary..."
+                  />
+                </div>
+
+                {/* Secondary Info Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="publicationYear" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <Calendar className="w-3.5 h-3.5" /> Year
+                    </Label>
+                    <Input
+                      id="publicationYear"
+                      type="number"
+                      value={formData.publicationYear}
+                      onChange={(e) => handleInputChange('publicationYear', e.target.value)}
+                      className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-500/20"
+                      placeholder="YYYY"
+                      min="1000"
+                      max={new Date().getFullYear() + 1}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="isbn" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <Hash className="w-3.5 h-3.5" /> ISBN
+                    </Label>
+                    <Input
+                      id="isbn"
+                      value={formData.isbn}
+                      onChange={(e) => handleInputChange('isbn', e.target.value)}
+                      className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-500/20"
+                      placeholder="978-..."
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="publisher" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <Building2 className="w-3.5 h-3.5" /> Publisher
+                    </Label>
+                    <Input
+                      id="publisher"
+                      value={formData.publisher}
+                      onChange={(e) => handleInputChange('publisher', e.target.value)}
+                      className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus-visible:ring-blue-500/20"
+                      placeholder="Publisher Name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="language" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <Globe className="w-3.5 h-3.5" /> Language
+                    </Label>
+                    <Select 
+                      value={formData.language} 
+                      onValueChange={(value) => handleInputChange('language', value)}
+                    >
+                      <SelectTrigger className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:ring-blue-500/20">
+                        <SelectValue placeholder="Select Language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map((lang) => (
+                          <SelectItem key={lang.value} value={lang.value}>
+                            {lang.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Genres */}
+                <div className="space-y-3">
+                  <Label className="text-gray-700 dark:text-gray-300">Genres</Label>
+                  <div className="flex flex-wrap gap-2 p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800">
+                    {COMMON_GENRES.map(genre => (
+                      <button
+                        key={genre}
+                        type="button"
+                        onClick={() => handleGenreToggle(genre)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border ${
+                          formData.genre.includes(genre)
+                            ? 'bg-blue-500 text-white border-blue-600 shadow-sm shadow-blue-500/20'
+                            : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        {genre}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
             </div>
-          </div>
+          </form>
+        </div>
 
-          {/* Title */}
-          <div>
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              required
-              className="mt-2"
-            />
-          </div>
+        {/* Footer */}
+        <DialogFooter className="px-6 py-5 border-t border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm flex-shrink-0 gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="edit-book-form"
+            disabled={isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 min-w-[120px]"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </Button>
+        </DialogFooter>
 
-          {/* Author */}
-          <div>
-            <Label htmlFor="author">Author</Label>
-            <Input
-              id="author"
-              value={formData.author}
-              onChange={(e) => handleInputChange('author', e.target.value)}
-              className="mt-2"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('description', e.target.value)}
-              rows={4}
-              className="mt-2 h-6"
-              placeholder="Enter a description or summary of the book..."
-            />
-          </div>
-
-          {/* Genres */}
-          <div>
-            <Label>Genres</Label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {COMMON_GENRES.map(genre => (
-                <button
-                  key={genre}
-                  type="button"
-                  onClick={() => handleGenreToggle(genre)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                    formData.genre.includes(genre)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {genre}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Publication Year */}
-          <div>
-            <Label htmlFor="publicationYear">Publication Year</Label>
-            <Input
-              id="publicationYear"
-              type="number"
-              value={formData.publicationYear}
-              onChange={(e) => handleInputChange('publicationYear', e.target.value)}
-              className="mt-2"
-              placeholder="e.g., 2024"
-              min="1000"
-              max={new Date().getFullYear() + 1}
-            />
-          </div>
-
-          {/* ISBN */}
-          <div>
-            <Label htmlFor="isbn">ISBN</Label>
-            <Input
-              id="isbn"
-              value={formData.isbn}
-              onChange={(e) => handleInputChange('isbn', e.target.value)}
-              className="mt-2"
-              placeholder="e.g., 978-3-16-148410-0"
-            />
-          </div>
-
-          {/* Publisher */}
-          <div>
-            <Label htmlFor="publisher">Publisher</Label>
-            <Input
-              id="publisher"
-              value={formData.publisher}
-              onChange={(e) => handleInputChange('publisher', e.target.value)}
-              className="mt-2"
-            />
-          </div>
-
-          {/* Language */}
-          <div>
-            <Label htmlFor="language">Language</Label>
-            <select
-              id="language"
-              value={formData.language}
-              onChange={(e) => handleInputChange('language', e.target.value)}
-              className="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="en">English</option>
-              <option value="bn">Bangla</option>
-              <option value="hi">Hindi</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
-              <option value="it">Italian</option>
-              <option value="pt">Portuguese</option>
-              <option value="ru">Russian</option>
-              <option value="ja">Japanese</option>
-              <option value="zh">Chinese</option>
-              <option value="ko">Korean</option>              
-              
-            </select>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

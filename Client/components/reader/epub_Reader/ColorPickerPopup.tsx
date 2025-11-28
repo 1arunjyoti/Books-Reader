@@ -90,7 +90,7 @@ export default function ColorPickerPopup({
       {/* Popup */}
       <div
         ref={popupRef}
-        className={`fixed z-50 rounded-full shadow-lg border ${
+        className={`fixed z-50 rounded-xl shadow-lg border ${
           isMobile 
             ? 'bg-white/95 border-gray-200 px-3 py-2' 
             : 'bg-white/95 border-gray-200 px-3 py-2'
@@ -127,9 +127,28 @@ export default function ColorPickerPopup({
           <button
             type="button"
             onClick={onDismiss}
-            className="ml-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-1 rounded-full text-xs text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 "
           >
             Cancel
+          </button>
+        </div>
+        
+        <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => onColorSelect({ name: 'Translate', color: 'translate', hex: 'translate' })}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+            Translate
+          </button>
+          <button
+            type="button"
+            onClick={() => onColorSelect({ name: 'Define', color: 'define', hex: 'define' })}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-book"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+            Define
           </button>
         </div>
       </div>

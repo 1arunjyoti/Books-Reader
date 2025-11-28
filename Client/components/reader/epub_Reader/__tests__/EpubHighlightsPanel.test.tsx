@@ -111,7 +111,8 @@ describe('EpubHighlightsPanel', () => {
     it('should show empty state when no highlights', () => {
       render(<EpubHighlightsPanel {...defaultProps} highlights={[]} />);
 
-      expect(screen.getByText('No highlights yet. Select text to create one!')).toBeInTheDocument();
+      expect(screen.getByText('No highlights yet')).toBeInTheDocument();
+      expect(screen.getByText('Select text in the document to create a highlight')).toBeInTheDocument();
     });
   });
 
@@ -203,7 +204,8 @@ describe('EpubHighlightsPanel', () => {
     it('should show "no highlights" message when highlights array is empty', () => {
       render(<EpubHighlightsPanel {...defaultProps} highlights={[]} />);
 
-      expect(screen.getByText('No highlights yet. Select text to create one!')).toBeInTheDocument();
+      expect(screen.getByText('No highlights yet')).toBeInTheDocument();
+      expect(screen.getByText('Select text in the document to create a highlight')).toBeInTheDocument();
     });
 
     it('should show "no matches" message when all highlights are filtered out', () => {
@@ -285,21 +287,21 @@ describe('EpubHighlightsPanel', () => {
       const { container } = render(<EpubHighlightsPanel {...defaultProps} />);
 
       const panel = container.firstChild;
-      expect(panel).toHaveClass('absolute', 'top-0', 'right-0', 'bottom-0');
+      expect(panel).toHaveClass('absolute', 'top-16', 'right-0', 'bottom-0');
     });
 
     it('should have correct width and styling classes', () => {
       const { container } = render(<EpubHighlightsPanel {...defaultProps} />);
 
       const panel = container.firstChild;
-      expect(panel).toHaveClass('w-80', 'bg-white', 'border-l', 'shadow-lg', 'z-50');
+      expect(panel).toHaveClass('w-80', 'bg-white/90', 'border-l', 'shadow-2xl', 'z-20');
     });
 
     it('should have dark mode classes', () => {
       const { container } = render(<EpubHighlightsPanel {...defaultProps} />);
 
       const panel = container.firstChild;
-      expect(panel).toHaveClass('dark:bg-gray-800', 'dark:border-gray-700');
+      expect(panel).toHaveClass('dark:bg-gray-900/90', 'dark:border-gray-700/50');
     });
   });
 

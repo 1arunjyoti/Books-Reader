@@ -54,6 +54,13 @@ router.delete('/:id',
   booksController.deleteBook
 );
 
+// Bulk delete books
+router.post('/bulk-delete',
+  checkJwt,
+  bookOperationsLimiter,
+  booksController.bulkDeleteBooks
+);
+
 // Upload custom cover image
 router.post('/:id/cover', 
   checkJwt, 

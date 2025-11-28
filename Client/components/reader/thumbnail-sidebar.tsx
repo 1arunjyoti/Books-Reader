@@ -174,10 +174,10 @@ function ThumbnailSidebar({
   return (
     <div
       ref={containerRef}
-      className="absolute left-0 top-0 h-full w-64 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-lg overflow-y-auto"
+      className="absolute left-0 top-16 h-full w-64 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 shadow-2xl overflow-y-auto custom-scrollbar z-20"
     >
       {/* Header */}
-      <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50 px-4 py-3 flex items-center justify-between z-10">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
           Page Thumbnails
         </h3>
@@ -185,14 +185,14 @@ function ThumbnailSidebar({
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="h-8 w-8"
+          className="h-8 w-8 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
         >
           <X className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Thumbnails Grid */}
-      <div className="p-3 space-y-3">
+      <div className="p-4 space-y-4">
         {Array.from({ length: numPages }, (_, i) => i + 1).map((pageNum) => {
           const isActive = pageNum === currentPage;
           const thumbnail = thumbnails.get(pageNum);
@@ -203,40 +203,46 @@ function ThumbnailSidebar({
               data-page={pageNum}
               onClick={() => onPageClick(pageNum)}
               className={`
-                relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all
+                relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 group
                 ${isActive 
-                  ? 'border-blue-500 shadow-lg ring-2 ring-blue-300 dark:ring-blue-600' 
-                  : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
+                  ? 'border-blue-500 shadow-lg shadow-blue-500/20 scale-[1.02]' 
+                  : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md bg-gray-50 dark:bg-gray-800'
                 }
               `}
             >
               {/* Thumbnail Image */}
-              <div className=" bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+              <div className="aspect-[1/1.4] bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative">
                 {thumbnail ? (
                   <Image
                     src={thumbnail}
                     alt={`Page ${pageNum}`}
-                    width={200}
-                    height={260}
-                    className="w-full h-full object-contain"
+                    fill
+                    className="object-contain p-2"
+                    sizes="200px"
                     unoptimized
                   />
                 ) : (
-                  <div className="text-gray-400 dark:text-gray-500 text-xs">
-                    Loading...
+                  <div className="flex flex-col items-center gap-2 text-gray-400 dark:text-gray-500">
+                    <div className="w-6 h-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 rounded-full animate-spin" />
+                    <span className="text-xs">Loading...</span>
                   </div>
+                )}
+                
+                {/* Active Overlay */}
+                {isActive && (
+                  <div className="absolute inset-0 bg-blue-500/10 pointer-events-none" />
                 )}
               </div>
 
               {/* Page Number */}
               <div className={`
-                absolute bottom-0 left-0 right-0 py-1 text-center text-xs font-medium
+                absolute bottom-0 left-0 right-0 py-1.5 text-center text-xs font-medium backdrop-blur-sm transition-colors
                 ${isActive 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300'
+                  ? 'bg-blue-500/90 text-white' 
+                  : 'bg-white/80 dark:bg-gray-900/80 text-gray-700 dark:text-gray-300 group-hover:bg-white/95 dark:group-hover:bg-gray-900/95'
                 }
               `}>
-                {pageNum}
+                Page {pageNum}
               </div>
             </div>
           );

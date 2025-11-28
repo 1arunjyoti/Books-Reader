@@ -20,6 +20,7 @@ A modern, feature-rich web application for reading and managing digital books (P
 ## Features
 
 ### 🔐 Authentication & Security
+
 - **Clerk Integration**: Secure authentication with support for multiple OAuth providers (Google, GitHub, etc.)
 - **JWT Token Management**: Centralized token caching with automatic refresh and race condition prevention
 - **Protected Routes**: Middleware-based route protection for authenticated pages
@@ -28,11 +29,19 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **Input Sanitization**: Multi-layer sanitization for all user inputs (text, HTML, URLs, metadata)
 
 ### 📚 Library Management
+
 - **Multi-format Support**: Upload and manage PDF, EPUB, and TXT files (up to 100MB per file)
-- **Dual Upload Methods**: 
+- **Dual Upload Methods**:
   - Direct file upload (drag & drop or file picker)
   - URL-based import for remote files
+- **Project Gutenberg Integration**:
+  - Browse and search thousands of free public domain books
+  - Direct import to library with one click
+  - Filter by popularity, latest releases, and more
 - **Rich Metadata**: Track title, author, genre, publication year, language, and custom tags
+- **Cover Management**:
+  - Upload custom cover images
+  - Auto-generate covers for books without them
 - **Advanced Filtering**: Filter by status, genre, language, tags, and publication year
 - **Search Functionality**: Real-time search across titles, authors, and metadata
 - **Collections**: Organize books into custom collections with drag-and-drop management
@@ -40,16 +49,18 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **Bulk Operations**: Select multiple books for batch status updates, collection assignment, or deletion
 - **View Modes**: Switch between grid, list, and compact views with pagination
 - **Book Statistics**: View reading progress, completion percentage, and time spent
+- **Welcome Screen**: Guided onboarding for new users
 
 ### 📖 Reading Experience
 
 #### PDF Reader
+
 - **Mozilla PDF.js**: Industry-standard PDF rendering with full feature support
 - **Page Navigation**: Previous/next, jump to page, thumbnail sidebar
 - **Zoom Controls**: Fit-to-width, fit-to-page, custom zoom levels (50%-200%)
 - **Search**: Full-text search within PDFs with match highlighting
 - **Bookmarks**: Create, edit, and navigate page bookmarks
-- **Highlights**: 
+- **Highlights**:
   - Multi-color text highlighting (5 preset colors)
   - Add notes to highlights
   - Highlight management panel
@@ -60,9 +71,10 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **Keyboard Shortcuts**: Arrow keys for navigation, Esc to exit fullscreen
 
 #### EPUB Reader
+
 - **ePub.js Integration**: Native EPUB 2/3 support with reflowable text
 - **Chapter Navigation**: Table of contents with hierarchical chapter structure
-- **Text Customization**: 
+- **Text Customization**:
   - Font family selection (5+ system fonts)
   - Font size adjustment (12px-32px)
   - Line height control
@@ -70,7 +82,7 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **Themes**: Light, sepia, and dark reading modes
 - **Color Filters**: Night mode with adjustable opacity
 - **Bookmarks**: Chapter-based bookmarking with CFI (Canonical Fragment Identifier) support
-- **Highlights**: 
+- **Highlights**:
   - Context-aware text highlighting
   - Color-coded annotations
   - Notes and comments
@@ -80,6 +92,7 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **Responsive**: Adaptive layout for desktop, tablet, and mobile
 
 #### TXT Reader
+
 - **Plain Text Support**: Fast, lightweight text file rendering
 - **Font Customization**: Multiple font families and sizes
 - **Reading Themes**: Light, sepia, dark modes
@@ -89,20 +102,33 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **Text-to-Speech**: Built-in TTS support
 - **Word Count**: Display total words and estimated reading time
 
-### 📊 Analytics & Insights
-- **Reading Stats Dashboard**: 
+### 📊 Analytics & Gamification
+
+- **Reading Stats Dashboard**:
   - Total books read, pages read, reading time
   - Books by status breakdown
   - Reading streak tracking
   - Weekly/monthly reading trends
   - Genre distribution charts
-- **Reading Goals**: 
+- **Gamification**:
+  - Earn XP and level up by reading
+  - Unlock achievements and badges
+  - Maintain daily reading streaks
+- **Reading Goals**:
   - Set annual/monthly reading goals
   - Track progress with visual indicators
   - Goal history and completion rates
 - **Session Tracking**: Automatic reading session recording with timestamps
 
+### 👤 User Profile
+
+- **Profile Management**: Update name, email, and password
+- **Storage Usage**: Track storage consumption for uploaded books
+- **Profile Sync**: Sync profile data with Auth provider
+- **Account Management**: Secure account deletion with data cleanup
+
 ### 🎨 User Experience
+
 - **Dark Mode**: System-aware theme with manual toggle (light/dark/system)
 - **Responsive Design**: Fully responsive layout for all screen sizes
 - **Progressive Web App**: Installable with offline support (planned)
@@ -114,6 +140,7 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **Lazy Loading**: Dynamic imports for code splitting and faster initial load
 
 ### 🔧 Developer Features
+
 - **TypeScript**: Full type safety across the codebase
 - **React Query**: Powerful data fetching with caching and automatic refetching
 - **Custom Hooks**: Reusable hooks for auth, library state, reading mode, etc.
@@ -128,11 +155,13 @@ A modern, feature-rich web application for reading and managing digital books (P
 ## Tech Stack
 
 ### Core Framework
+
 - **Next.js 15.5.4**: React framework with App Router, server components, and API routes
 - **React 19.1.0**: Latest React with concurrent features and automatic batching
 - **TypeScript 5.x**: Static typing for enhanced developer experience and reliability
 
 ### UI & Styling
+
 - **Tailwind CSS 4**: Utility-first CSS framework with custom configuration
 - **Radix UI**: Unstyled, accessible component primitives
   - Dialog, Dropdown Menu, Select, Slider, Tabs, Progress, Checkbox, Avatar, Alert Dialog
@@ -142,27 +171,32 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **clsx & tailwind-merge**: Conditional class merging
 
 ### Authentication & State
+
 - **Clerk (@clerk/nextjs)**: Secure authentication with OAuth 2.0/OpenID Connect, session management and client-side SDK
 - **React Query (@tanstack/react-query)**: Server state management with caching
 - **Immer**: Immutable state updates with mutable syntax
 - **cookies-next**: Cookie management for client and server
 
 ### Reading & Document Handling
+
 - **PDF.js (pdfjs-dist 4.4.168)**: Mozilla's PDF rendering engine
 - **ePub.js**: EPUB reader library for reflowable books
 - **react-reader**: React wrapper for ePub.js
 - **react-pdf-highlighter**: PDF annotation and highlighting library
 
 ### Performance & Optimization
+
 - **@tanstack/react-virtual**: Virtual scrolling for large lists
 - **react-window**: Windowing library for efficient rendering
 - **next-themes**: Theme management with system preference detection
 - **Dynamic Imports**: Code splitting for lazy-loaded components
 
 ### Data Visualization
+
 - **Recharts**: Composable charting library for reading analytics
 
 ### Development Tools
+
 - **ESLint**: Linting with Next.js recommended config
 - **Jest**: Testing framework with jsdom environment
 - **@testing-library/react**: Component testing utilities
@@ -170,6 +204,7 @@ A modern, feature-rich web application for reading and managing digital books (P
 - **ts-node**: TypeScript execution for scripts
 
 ### Build Tools
+
 - **Turbopack**: Next.js's Rust-based bundler (dev & build)
 - **PostCSS**: CSS transformations for Tailwind
 - **TypeScript Compiler**: Type checking and transpilation
@@ -181,20 +216,23 @@ A modern, feature-rich web application for reading and managing digital books (P
 Before setting up the BooksReader client, ensure you have:
 
 ### Required
+
 - **Node.js 18+**: JavaScript runtime (LTS version recommended)
 - **npm 9+**: Package manager (comes with Node.js)
 - **Backend Server**: The BooksReader backend must be running (see `Server/` directory)
 
 ### Required External Services
+
 - **Clerk Account**: For authentication
-   - Free tier available at [clerk.com](https://clerk.com)
-   - Requires configured application and API keys
+  - Free tier available at [clerk.com](https://clerk.com)
+  - Requires configured application and API keys
 - **Backend API**: Running Express.js server with:
   - PostgreSQL database (Neon recommended)
   - Backblaze B2 storage configured
-   - Clerk JWT validation
+  - Clerk JWT validation
 
 ### Recommended
+
 - **Git**: Version control
 - **VS Code**: Recommended IDE with extensions:
   - ESLint
@@ -203,6 +241,7 @@ Before setting up the BooksReader client, ensure you have:
   - TypeScript and JavaScript Language Features
 
 ### Browser Support
+
 - **Modern Browsers**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
 - **JavaScript**: Must be enabled
 - **Cookies**: Must be enabled for authentication
@@ -213,22 +252,26 @@ Before setting up the BooksReader client, ensure you have:
 ## Installation
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/1arunjyoti/BooksReader.git
 cd BooksReader/Client
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 npm install
 ```
 
 This will:
+
 - Install all required packages from `package.json`
 - Run the postinstall script to copy the PDF.js worker file to `public/`
 - Set up development environment
 
 ### 3. Create Environment File
+
 ```bash
 cp .env.example .env.local
 ```
@@ -258,11 +301,13 @@ NEXT_PUBLIC_IMAGE_DOMAINS=
 ```
 
 ### 5. Verify Installation
+
 ```bash
 npm run dev
 ```
 
 If successful, you'll see:
+
 ```
 ▲ Next.js 15.5.4
 - Local:        http://localhost:3000
@@ -272,6 +317,7 @@ If successful, you'll see:
 ---
 
 ## Quick Setup
+
 Authentication is handled by Clerk.
 
 ### 1. Clerk Setup
@@ -279,15 +325,18 @@ Authentication is handled by Clerk.
 Here are the quick steps to get started with Clerk (development):
 
 #### Create a Clerk Application
+
 1. Go to [Clerk Dashboard](https://dashboard.clerk.com) and create a new application (name it BooksReader).
 2. Configure the sign-in/sign-up paths and the after sign-in redirect to `/library`.
 3. Add `http://localhost:3000` to allowed origins (CORS) and local paths.
 
 #### Obtain API Keys
+
 1. In Clerk dashboard, go to **API Keys** and copy the publishable key (`pk_test_*`) and secret key (`sk_test_*`).
 2. Use the publishable key in the client and the secret key on the server.
 
 #### Configure Client `.env.local`
+
 Copy the following to `.env.local` and replace with your Clerk keys and desired URLs:
 
 ```env
@@ -305,6 +354,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 The client requires the backend server to be running. See `../Server/README.md` for detailed setup.
 
 **Quick Backend Start:**
+
 ```bash
 cd ../Server
 npm install
@@ -355,6 +405,9 @@ Client/
 │   │       └── [id]/
 │   │           └── page.tsx      # Dynamic book reader
 │   │
+│   ├── gutenberg/                # Project Gutenberg integration
+│   │   └── page.tsx              # Gutenberg browse & import
+│   │
 │   ├── profile/                  # User profile & settings
 │   │   └── page.tsx              # Profile dashboard
 │   │
@@ -387,6 +440,7 @@ Client/
 │   │   ├── upload-files.tsx      # File upload component
 │   │   ├── upload-from-url.tsx   # URL import component
 │   │   ├── edit-book-metadata.tsx# Metadata editor
+│   │   ├── welcome-screen.tsx    # New user onboarding
 │   │   ├── SearchBar.tsx         # Search input
 │   │   ├── StatusFilter.tsx      # Status dropdown filter
 │   │   ├── ViewModeToggle.tsx    # Grid/list view toggle
@@ -399,6 +453,10 @@ Client/
 │   │   ├── LibraryPagination.tsx # Pagination controls
 │   │   ├── VirtualizedBooks.tsx  # Virtual scrolling list
 │   │   └── Skeletons.tsx         # Loading skeletons
+│   │
+│   ├── gutenberg/                # Gutenberg components
+│   │   ├── GutenbergBookCard.tsx # Book display card
+│   │   └── GutenbergSearch.tsx   # Search interface
 │   │
 │   ├── reader/                   # Reading components
 │   │   ├── pdf_Reader/           # PDF reader components
@@ -448,9 +506,13 @@ Client/
 │   │   └── reading-goals.tsx     # Goal tracking
 │   │
 │   ├── profile/                  # Profile components
-│   │   ├── delete-account.tsx    # Account deletion
+│   │   ├── gamification-dashboard.tsx # XP & levels
+│   │   ├── used-storage.tsx      # Storage usage
+│   │   ├── sync-profile-button.tsx # Profile sync
+│   │   ├── change-name.tsx       # Name update
 │   │   ├── change-email.tsx      # Email change
-│   │   └── change-password.tsx   # Password change
+│   │   ├── change-password.tsx   # Password change
+│   │   └── delete-account.tsx    # Account deletion
 │   │
 │   ├── auth/                     # Auth components
 │   │
@@ -582,24 +644,28 @@ BooksReader Client follows a modern **Next.js App Router** architecture with a c
 ### Key Design Patterns
 
 #### 1. **Authentication Flow**
+
 - **Clerk SDK**: Handles OAuth 2.0 flow, session cookies, token refresh
 - **Middleware**: Intercepts requests, validates sessions, protects routes
 - **Token Context**: Centralizes token management, prevents race conditions
 - **Caching**: Tokens cached in memory with expiry tracking (reduces API calls by 95%)
 
 #### 2. **Data Fetching Strategy**
+
 - **React Query**: Automatic caching, background refetching, optimistic updates
 - **Parallel Requests**: Fetch book metadata and presigned URL simultaneously
 - **Retry Logic**: Exponential backoff for failed requests
 - **Stale-While-Revalidate**: Show cached data while fetching fresh data
 
 #### 3. **State Management**
+
 - **Server State**: React Query for API data (books, highlights, bookmarks)
 - **Client State**: React Context for global state (auth, theme)
 - **Local State**: React hooks for component-specific state
 - **URL State**: Search params for pagination, filters (shareable, refresh-persistent)
 
 #### 4. **Performance Optimizations**
+
 - **Code Splitting**: Dynamic imports for heavy components (EPUB reader)
 - **Virtual Scrolling**: Render only visible items in large lists
 - **Image Optimization**: Next.js Image component with lazy loading
@@ -608,6 +674,7 @@ BooksReader Client follows a modern **Next.js App Router** architecture with a c
 - **Presigned URL Caching**: Cache presigned URLs for 7 days to avoid regeneration
 
 #### 5. **Security Measures**
+
 - **CSP Headers**: Prevent XSS attacks with strict Content Security Policy
 - **Input Sanitization**: All user inputs sanitized before display/storage
 - **JWT Validation**: Backend validates all JWT tokens
@@ -618,24 +685,28 @@ BooksReader Client follows a modern **Next.js App Router** architecture with a c
 ### Technology Integration
 
 #### PDF.js Integration
+
 1. Worker file copied to `public/` during `npm install` (postinstall script)
 2. Worker initialized in `lib/pdf-worker-init.ts`
 3. PDF.js loaded dynamically when PDF reader is opened
 4. Canvas-based rendering with text layer for selection/search
 
 #### ePub.js Integration
+
 1. Dynamically imported to reduce initial bundle size
 2. CFI (Canonical Fragment Identifier) for precise location tracking
 3. Custom theme support with CSS injection
 4. Rendition hooks for chapter navigation and progress
 
 #### Clerk Integration
+
 1. SDK handles all OAuth flows automatically
 2. Middleware validates sessions on every protected route
 3. Token Context provides centralized token access
 4. Automatic token refresh before expiry
 
 #### React Query Integration
+
 1. Queries for GET requests (fetchBooks, fetchHighlights)
 2. Mutations for POST/PUT/DELETE (createBook, updateHighlight)
 3. Optimistic updates for instant UI feedback
@@ -942,17 +1013,17 @@ npm run postinstall
 
 ## Environment Variables Reference
 
-| Variable | Description | Required | Example |
-|----------|-------------|----------|---------|  
-| `APP_BASE_URL` | Base URL of the application | Yes | `http://localhost:3000` |
-| `NEXT_PUBLIC_API_URL` | Backend API URL | Yes | `http://localhost:3001` |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (frontend) | Yes | `pk_test_...` |
-| `CLERK_SECRET_KEY` | Clerk secret key (server) | Yes | `sk_test_...` |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Sign-in path for Clerk | Yes | `/sign-in` |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Sign-up path for Clerk | Yes | `/sign-up` |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` | Fallback redirect after sign-in | Yes | `/library` |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL` | Fallback redirect after sign-up | Yes | `/library` |
-| `NEXT_PUBLIC_IMAGE_DOMAINS` | Allowed image domains (comma-separated) | No | `images.example.com,cdn.example.com` |---
+| Variable                                          | Description                             | Required | Example                              |
+| ------------------------------------------------- | --------------------------------------- | -------- | ------------------------------------ | --- |
+| `APP_BASE_URL`                                    | Base URL of the application             | Yes      | `http://localhost:3000`              |
+| `NEXT_PUBLIC_API_URL`                             | Backend API URL                         | Yes      | `http://localhost:3001`              |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`               | Clerk publishable key (frontend)        | Yes      | `pk_test_...`                        |
+| `CLERK_SECRET_KEY`                                | Clerk secret key (server)               | Yes      | `sk_test_...`                        |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL`                   | Sign-in path for Clerk                  | Yes      | `/sign-in`                           |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL`                   | Sign-up path for Clerk                  | Yes      | `/sign-up`                           |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` | Fallback redirect after sign-in         | Yes      | `/library`                           |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL` | Fallback redirect after sign-up         | Yes      | `/library`                           |
+| `NEXT_PUBLIC_IMAGE_DOMAINS`                       | Allowed image domains (comma-separated) | No       | `images.example.com,cdn.example.com` | --- |
 
 ## Contributing
 
@@ -971,4 +1042,5 @@ Contributions are welcome! Please follow these guidelines:
 ## Support
 
 For issues, questions, or feature requests:
+
 - Open an issue on [GitHub](https://github.com/1arunjyoti/BooksReader/issues)

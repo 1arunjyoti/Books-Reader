@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withPWAInit from "@ducanh2912/next-pwa";
 
 // Allow configuring image domains via env var NEXT_PUBLIC_IMAGE_DOMAINS (comma-separated)
 const allowedImageDomains = process.env.NEXT_PUBLIC_IMAGE_DOMAINS
@@ -50,11 +51,23 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    remotePatterns: allowedImageDomains.map(domain => ({
-      protocol: 'https',
-      hostname: domain,
-      pathname: '/**',
-    })),
+    remotePatterns: [
+      ...allowedImageDomains.map(domain => ({
+        protocol: 'https' as const,
+        hostname: domain,
+        pathname: '/**',
+      })),
+      {
+        protocol: 'https' as const,
+        hostname: 'www.gutenberg.org',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https' as const,
+        hostname: 'covers.openlibrary.org',
+        pathname: '/**',
+      }
+    ],
     // When no domains are provided, disable Next.js image optimization so external URLs still render.
     // This keeps development simple; for production, configure domains and remove this fallback.
     unoptimized: process.env.NODE_ENV !== 'production' && allowedImageDomains.length === 0,
@@ -77,4 +90,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withPWA = withPWAInit({
+  dest: "public",
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === "development",
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+});
+
+export default withPWA(nextConfig);

@@ -165,6 +165,39 @@ exports.deleteBook = async (req, res) => {
 };
 
 /**
+ * Bulk delete books
+ */
+exports.bulkDeleteBooks = async (req, res) => {
+  try {
+    const userId = req.auth?.userId;
+    const { bookIds } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    if (!Array.isArray(bookIds) || bookIds.length === 0) {
+      return res.status(400).json({ error: 'No books specified for deletion' });
+    }
+
+    const results = await booksService.deleteBooks(bookIds, userId);
+    
+    res.json({ 
+      success: true, 
+      message: `Processed ${bookIds.length} deletions`,
+      results
+    });
+    
+  } catch (error) {
+    logger.error('Error in bulk delete:', { error: error.message, stack: error.stack });
+    res.status(500).json({ 
+      error: 'Failed to process bulk deletion',
+      message: error.message 
+    });
+  }
+};
+
+/**
  * Upload a custom cover image for a book
  */
 exports.uploadCover = async (req, res) => {

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useClerk, useUser } from "@clerk/nextjs"
+import { useAuthToken } from "@/contexts/AuthTokenContext"
 import {
   Dialog,
   DialogTrigger,
@@ -26,6 +27,7 @@ export default function DeleteAccountSection({ userEmail }: Props) {
   const router = useRouter()
   const { signOut } = useClerk()
   const { user } = useUser()
+  const { clearToken } = useAuthToken()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmText, setConfirmText] = useState("")
@@ -85,7 +87,10 @@ export default function DeleteAccountSection({ userEmail }: Props) {
         return
       }
 
-      // On success, sign out with Clerk and redirect to home page
+      // On success, clear the cached token first
+      clearToken()
+      
+      // Then sign out with Clerk and redirect to home page
       await signOut({ redirectUrl: '/' })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -95,7 +100,7 @@ export default function DeleteAccountSection({ userEmail }: Props) {
   }
 
   return (
-    <div className="mt-6 border border-gray-400 dark:border-gray-500 rounded-lg px-4 py-4">
+    <div className=" border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-medium mb-1">Delete account</h3>

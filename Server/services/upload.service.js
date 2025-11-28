@@ -145,6 +145,25 @@ class UploadService {
     
     // Validate file
     await this.validateFile(buffer, fileType, originalName);
+
+    // Check user storage limit
+    const STORAGE_LIMIT = BigInt(5 * 1024 * 1024 * 1024); // 5 GB
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { usedStorage: true }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const currentStorage = user.usedStorage || BigInt(0);
+    const newFileSize = BigInt(size);
+
+    if (currentStorage + newFileSize > STORAGE_LIMIT) {
+      throw new Error('Storage limit exceeded. You have reached the 5GB limit.');
+    }
     
     // Generate unique filename
     const extension = originalName.toLowerCase().split('.').pop();
@@ -216,8 +235,27 @@ class UploadService {
                    JSON.stringify(extractedMetadata),
     };
     
-    // Save to database
-    const book = await this.saveBookToDatabase(bookData);
+    // Save to database and update user storage in a transaction
+    const book = await prisma.$transaction(async (tx) => {
+      // Create book
+      const newBook = await tx.book.create({
+        data: bookData
+      });
+
+      // Update user used storage
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          usedStorage: {
+            increment: size
+          }
+        }
+      });
+
+      return newBook;
+    });
+    
+    logger.info('Book saved and storage updated', { bookId: book.id, title: book.title, userId });
     
     // If cover wasn't generated (large file), schedule background generation
     if (shouldGenerateCover && !coverUploadResult) {

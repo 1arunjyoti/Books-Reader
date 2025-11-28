@@ -7,29 +7,9 @@ Complete reference guide for all API endpoints used by the BooksReader Client ap
 **Base URL**: `http://localhost:3001/api` (or configured `NEXT_PUBLIC_API_URL`)
 
 **Authentication**: All endpoints require Bearer token in Authorization header
-```
+
+````
 Authorization: Bearer <access_token>
-```
-
----
-
-## Table of Contents
-
-1. [Books API](#books-api)
-2. [Bookmarks API](#bookmarks-api)
-3. [Highlights API](#highlights-api)
-4. [Analytics API](#analytics-api)
-5. [Collections API](#collections-api)
-6. [Upload API](#upload-api)
-7. [Authentication](#authentication)
-8. [Data Types](#data-types)
-9. [Error Handling](#error-handling)
-10. [Rate Limiting & Retry Strategy](#rate-limiting--retry-strategy)
-
----
-
-## Books API
-
 Endpoints for managing user's book library, metadata, and file access.
 
 ### Get All Books
@@ -55,9 +35,10 @@ Endpoints for managing user's book library, metadata, and file access.
 ```bash
 GET /api/books?search=harry&status=reading&format=pdf,epub&sortBy=updatedAt&sortOrder=desc
 Authorization: Bearer <access_token>
-```
+````
 
 **Example Response** (200 OK):
+
 ```json
 {
   "books": [
@@ -92,6 +73,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid filter parameters
 - `401 Unauthorized`: Missing or invalid token
 - `500 Internal Server Error`: Server error
@@ -110,12 +92,14 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Book ID |
 
 **Example Request**:
+
 ```bash
 GET /api/books/book-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "book": {
@@ -134,6 +118,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized to access this book
 - `500 Internal Server Error`: Server error
@@ -152,6 +137,7 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Book ID |
 
 **Request Body**:
+
 ```typescript
 {
   title?: string;                      // Book title
@@ -170,6 +156,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Request**:
+
 ```bash
 PATCH /api/books/book-123
 Content-Type: application/json
@@ -187,6 +174,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "book": {
@@ -205,6 +193,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid data format
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
@@ -224,17 +213,20 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Book ID |
 
 **Example Request**:
+
 ```bash
 DELETE /api/books/book-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (204 No Content):
+
 ```
 (empty body)
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -258,12 +250,14 @@ Authorization: Bearer <access_token>
 | `expiresIn` | number | No | Expiration time in seconds (default: 3600, max: 604800 = 7 days) |
 
 **Example Request**:
+
 ```bash
 GET /api/books/book-123/presigned-url?expiresIn=604800
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "presignedUrl": "https://s3.us-west-004.backblazeb2.com/bucket/file.pdf?auth=xyz&expires=1234567890"
@@ -271,15 +265,143 @@ Authorization: Bearer <access_token>
 ```
 
 **Usage Notes**:
+
 - URLs are cached on the client for 7 days to avoid regeneration
 - Maximum expiration: 604800 seconds (7 days)
 - Each call generates a new URL; avoid calling repeatedly
 
 **Error Responses**:
+
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
 - `400 Bad Request`: Invalid expiresIn value
 - `500 Internal Server Error`: Storage service error
+
+---
+
+### Bulk Delete Books
+
+**Endpoint**: `POST /api/books/bulk-delete`
+
+**Description**: Delete multiple books at once.
+
+**Request Body**:
+
+```typescript
+{
+  bookIds: string[];    // Array of book IDs to delete
+}
+```
+
+**Example Request**:
+
+```bash
+POST /api/books/bulk-delete
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+  "bookIds": ["book-123", "book-124"]
+}
+```
+
+**Example Response** (200 OK):
+
+```json
+{
+  "message": "Books deleted successfully",
+  "count": 2
+}
+```
+
+**Error Responses**:
+
+- `400 Bad Request`: Invalid book IDs
+- `401 Unauthorized`: Not authorized
+- `500 Internal Server Error`: Server error
+
+---
+
+### Upload Custom Cover
+
+**Endpoint**: `POST /api/books/:id/cover`
+
+**Description**: Upload a custom cover image for a book.
+
+**Path Parameters**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Yes | Book ID |
+
+**Request Format**: `multipart/form-data`
+
+**Form Fields**:
+
+- `cover`: Image file (JPEG, PNG, WebP)
+
+**Example Request**:
+
+```bash
+POST /api/books/book-123/cover
+Authorization: Bearer <access_token>
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="cover"; filename="cover.jpg"
+Content-Type: image/jpeg
+
+(binary data)
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+```
+
+**Example Response** (200 OK):
+
+```json
+{
+  "message": "Cover updated successfully",
+  "coverUrl": "https://b2-cdn.example.com/new-cover.jpg"
+}
+```
+
+**Error Responses**:
+
+- `400 Bad Request`: Invalid file or missing cover
+- `401 Unauthorized`: Not authorized
+- `500 Internal Server Error`: Server error
+
+---
+
+### Generate Cover
+
+**Endpoint**: `POST /api/books/:id/generate-cover`
+
+**Description**: Trigger generation of a cover image for a book (if missing or failed).
+
+**Path Parameters**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Yes | Book ID |
+
+**Example Request**:
+
+```bash
+POST /api/books/book-123/generate-cover
+Authorization: Bearer <access_token>
+```
+
+**Example Response** (200 OK):
+
+```json
+{
+  "message": "Cover generation started"
+}
+```
+
+**Error Responses**:
+
+- `404 Not Found`: Book not found
+- `401 Unauthorized`: Not authorized
+- `500 Internal Server Error`: Server error
 
 ---
 
@@ -294,6 +416,7 @@ Endpoints for managing page bookmarks within books.
 **Description**: Create a new bookmark at a specific page in a book.
 
 **Request Body**:
+
 ```typescript
 {
   bookId: string;          // Book ID
@@ -303,6 +426,7 @@ Endpoints for managing page bookmarks within books.
 ```
 
 **Example Request**:
+
 ```bash
 POST /api/bookmarks
 Content-Type: application/json
@@ -316,6 +440,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (201 Created):
+
 ```json
 {
   "bookmark": {
@@ -331,6 +456,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Missing required fields or invalid page number
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
@@ -350,12 +476,14 @@ Authorization: Bearer <access_token>
 | `bookId` | string | Yes | Book ID |
 
 **Example Request**:
+
 ```bash
 GET /api/bookmarks/book-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "bookmarks": [
@@ -382,6 +510,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -400,6 +529,7 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Bookmark ID |
 
 **Request Body**:
+
 ```typescript
 {
   note?: string;           // Update the note
@@ -407,6 +537,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Request**:
+
 ```bash
 PATCH /api/bookmarks/bm-123
 Content-Type: application/json
@@ -418,6 +549,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "bookmark": {
@@ -431,6 +563,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Bookmark not found
 - `401 Unauthorized`: Not authorized
 - `400 Bad Request`: Invalid data
@@ -450,17 +583,20 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Bookmark ID |
 
 **Example Request**:
+
 ```bash
 DELETE /api/bookmarks/bm-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (204 No Content):
+
 ```
 (empty body)
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Bookmark not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -478,6 +614,7 @@ Endpoints for managing text highlights and annotations within books.
 **Description**: Create a new highlight on text in a book.
 
 **Request Body**:
+
 ```typescript
 {
   bookId: string;                          // Book ID
@@ -494,6 +631,7 @@ Endpoints for managing text highlights and annotations within books.
 ```
 
 **Example Request (PDF)**:
+
 ```bash
 POST /api/highlights
 Content-Type: application/json
@@ -525,6 +663,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Request (EPUB)**:
+
 ```bash
 POST /api/highlights
 Content-Type: application/json
@@ -542,6 +681,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (201 Created):
+
 ```json
 {
   "id": "hl-123",
@@ -559,6 +699,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Missing required fields
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
@@ -578,12 +719,14 @@ Authorization: Bearer <access_token>
 | `bookId` | string | Yes | Book ID |
 
 **Example Request**:
+
 ```bash
 GET /api/highlights/book-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 [
   {
@@ -614,6 +757,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -632,12 +776,14 @@ Authorization: Bearer <access_token>
 | `highlightId` | string | Yes | Highlight ID |
 
 **Example Request**:
+
 ```bash
 GET /api/highlights/hl-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "id": "hl-123",
@@ -655,6 +801,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Highlight not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -673,6 +820,7 @@ Authorization: Bearer <access_token>
 | `highlightId` | string | Yes | Highlight ID |
 
 **Request Body**:
+
 ```typescript
 {
   color?: string;       // Update color
@@ -682,6 +830,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Request**:
+
 ```bash
 PUT /api/highlights/hl-123
 Content-Type: application/json
@@ -695,6 +844,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "id": "hl-123",
@@ -707,6 +857,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid data
 - `404 Not Found`: Highlight not found
 - `401 Unauthorized`: Not authorized
@@ -726,17 +877,20 @@ Authorization: Bearer <access_token>
 | `highlightId` | string | Yes | Highlight ID |
 
 **Example Request**:
+
 ```bash
 DELETE /api/highlights/hl-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (204 No Content):
+
 ```
 (empty body)
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Highlight not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -755,12 +909,14 @@ Authorization: Bearer <access_token>
 | `bookId` | string | Yes | Book ID |
 
 **Example Request**:
+
 ```bash
 GET /api/highlights/book-123/stats
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "totalHighlights": 25,
@@ -776,6 +932,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -799,12 +956,14 @@ Authorization: Bearer <access_token>
 | `q` | string | Yes | Search query |
 
 **Example Request**:
+
 ```bash
 GET /api/highlights/book-123/search?q=brown+fox
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 [
   {
@@ -819,6 +978,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Missing search query
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
@@ -843,12 +1003,14 @@ Authorization: Bearer <access_token>
 | `colors` | string | Yes | Comma-separated color list |
 
 **Example Request**:
+
 ```bash
 GET /api/highlights/book-123/filter?colors=yellow,blue
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 [
   {
@@ -867,6 +1029,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid color format
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
@@ -886,12 +1049,14 @@ Authorization: Bearer <access_token>
 | `bookId` | string | Yes | Book ID |
 
 **Example Request**:
+
 ```bash
 DELETE /api/highlights/book/book-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "message": "All highlights deleted",
@@ -900,6 +1065,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -917,6 +1083,7 @@ Endpoints for reading statistics, sessions, and goals.
 **Description**: Log a reading session with duration and pages read.
 
 **Request Body**:
+
 ```typescript
 {
   bookId: string;          // Book ID
@@ -929,6 +1096,7 @@ Endpoints for reading statistics, sessions, and goals.
 ```
 
 **Example Request**:
+
 ```bash
 POST /api/analytics/session
 Content-Type: application/json
@@ -945,6 +1113,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (201 Created):
+
 ```json
 {
   "id": "session-123",
@@ -960,6 +1129,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Missing required fields
 - `404 Not Found`: Book not found
 - `401 Unauthorized`: Not authorized
@@ -979,12 +1149,14 @@ Authorization: Bearer <access_token>
 | `period` | string | No | Time period: `all`, `week`, `month`, `year` (default: `all`) |
 
 **Example Request**:
+
 ```bash
 GET /api/analytics/stats?period=month
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "totalReadingTime": 36000,
@@ -1011,6 +1183,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Response Fields**:
+
 - `totalReadingTime`: Total reading time in seconds
 - `totalPagesRead`: Total pages read in period
 - `booksFinished`: Number of completed books
@@ -1021,6 +1194,7 @@ Authorization: Bearer <access_token>
 - `chartData`: Daily breakdown for visualization
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid period
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -1034,12 +1208,14 @@ Authorization: Bearer <access_token>
 **Description**: Fetch all reading goals for the user.
 
 **Example Request**:
+
 ```bash
 GET /api/analytics/goals
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 [
   {
@@ -1072,6 +1248,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
 
@@ -1084,15 +1261,17 @@ Authorization: Bearer <access_token>
 **Description**: Create a new reading goal.
 
 **Request Body**:
+
 ```typescript
 {
-  type: "books" | "pages" | "time";      // Goal type
-  period: "daily" | "weekly" | "monthly" | "yearly";  // Time period
-  target: number;                         // Target value
+  type: "books" | "pages" | "time"; // Goal type
+  period: "daily" | "weekly" | "monthly" | "yearly"; // Time period
+  target: number; // Target value
 }
 ```
 
 **Example Request**:
+
 ```bash
 POST /api/analytics/goals
 Content-Type: application/json
@@ -1106,6 +1285,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (201 Created):
+
 ```json
 {
   "id": "goal-125",
@@ -1121,6 +1301,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid goal type or period
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -1139,13 +1320,15 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Goal ID |
 
 **Request Body**:
+
 ```typescript
 {
-  current: number;      // New current value
+  current: number; // New current value
 }
 ```
 
 **Example Request**:
+
 ```bash
 PUT /api/analytics/goals/goal-123
 Content-Type: application/json
@@ -1157,6 +1340,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "id": "goal-123",
@@ -1168,6 +1352,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid data
 - `404 Not Found`: Goal not found
 - `401 Unauthorized`: Not authorized
@@ -1187,17 +1372,20 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Goal ID |
 
 **Example Request**:
+
 ```bash
 DELETE /api/analytics/goals/goal-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (204 No Content):
+
 ```
 (empty body)
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Goal not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -1215,12 +1403,14 @@ Endpoints for managing book collections and organization.
 **Description**: Fetch all collections for the authenticated user.
 
 **Example Request**:
+
 ```bash
 GET /api/collections
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 [
   {
@@ -1239,6 +1429,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
 
@@ -1251,6 +1442,7 @@ Authorization: Bearer <access_token>
 **Description**: Create a new collection.
 
 **Request Body**:
+
 ```typescript
 {
   name: string;                // Collection name
@@ -1261,6 +1453,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Request**:
+
 ```bash
 POST /api/collections
 Content-Type: application/json
@@ -1275,6 +1468,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (201 Created):
+
 ```json
 {
   "id": "col-126",
@@ -1291,6 +1485,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Missing name or invalid data
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -1309,6 +1504,7 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Collection ID |
 
 **Request Body**:
+
 ```typescript
 {
   name?: string;           // Update name
@@ -1319,6 +1515,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Request**:
+
 ```bash
 PATCH /api/collections/col-123
 Content-Type: application/json
@@ -1331,6 +1528,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "id": "col-123",
@@ -1342,6 +1540,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid data
 - `404 Not Found`: Collection not found
 - `401 Unauthorized`: Not authorized
@@ -1361,17 +1560,20 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Collection ID |
 
 **Example Request**:
+
 ```bash
 DELETE /api/collections/col-123
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (204 No Content):
+
 ```
 (empty body)
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Collection not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -1390,6 +1592,7 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Collection ID |
 
 **Request Body**:
+
 ```typescript
 {
   bookIds: string[];    // Array of book IDs to add
@@ -1397,6 +1600,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Request**:
+
 ```bash
 POST /api/collections/col-123/books
 Content-Type: application/json
@@ -1408,6 +1612,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "id": "col-123",
@@ -1418,6 +1623,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Empty bookIds or invalid format
 - `404 Not Found`: Collection or book not found
 - `401 Unauthorized`: Not authorized
@@ -1437,6 +1643,7 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Collection ID |
 
 **Request Body**:
+
 ```typescript
 {
   bookIds: string[];    // Array of book IDs to remove
@@ -1444,6 +1651,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Request**:
+
 ```bash
 DELETE /api/collections/col-123/books
 Content-Type: application/json
@@ -1455,6 +1663,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "id": "col-123",
@@ -1465,6 +1674,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Empty bookIds
 - `404 Not Found`: Collection or book not found
 - `401 Unauthorized`: Not authorized
@@ -1484,12 +1694,14 @@ Authorization: Bearer <access_token>
 | `id` | string | Yes | Collection ID |
 
 **Example Request**:
+
 ```bash
 GET /api/collections/col-123/books
 Authorization: Bearer <access_token>
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "collection": {
@@ -1518,6 +1730,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Collection not found
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Server error
@@ -1530,20 +1743,22 @@ Endpoints for uploading books and files.
 
 ### Upload from URL
 
-**Endpoint**: `POST /api/upload-from-url`
+**Endpoint**: `POST /api/upload/from-url`
 
 **Description**: Upload a book file from a remote URL.
 
 **Request Body**:
+
 ```typescript
 {
-  url: string;    // URL to book file
+  url: string; // URL to book file
 }
 ```
 
 **Example Request**:
+
 ```bash
-POST /api/upload-from-url
+POST /api/upload/from-url
 Content-Type: application/json
 Authorization: Bearer <access_token>
 
@@ -1553,6 +1768,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Example Response** (201 Created):
+
 ```json
 {
   "book": {
@@ -1569,6 +1785,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid or unreachable URL
 - `413 Payload Too Large`: File exceeds size limit (100MB)
 - `415 Unsupported Media Type`: File type not supported
@@ -1579,13 +1796,14 @@ Authorization: Bearer <access_token>
 
 ### Upload Files (Multipart)
 
-**Endpoint**: `POST /api/books/upload`
+**Endpoint**: `POST /api/upload`
 
 **Description**: Upload one or more book files directly.
 
 **Request Format**: `multipart/form-data`
 
 **Form Fields**:
+
 - `files`: File array (PDF, EPUB, or TXT files, up to 100MB each)
 - `title`: Book title
 - `author`: Author name
@@ -1593,8 +1811,9 @@ Authorization: Bearer <access_token>
 - `language`: Language code (optional)
 
 **Example Request** (cURL):
+
 ```bash
-curl -X POST http://localhost:3001/api/books/upload \
+curl -X POST http://localhost:3001/api/upload \
   -H "Authorization: Bearer <access_token>" \
   -F "files=@mybook.pdf" \
   -F "title=My Book" \
@@ -1604,6 +1823,7 @@ curl -X POST http://localhost:3001/api/books/upload \
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "books": [
@@ -1624,11 +1844,203 @@ curl -X POST http://localhost:3001/api/books/upload \
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Missing files or invalid metadata
 - `413 Payload Too Large`: File exceeds size limit
 - `415 Unsupported Media Type`: Unsupported file type
 - `401 Unauthorized`: Not authorized
 - `500 Internal Server Error`: Upload failed
+
+---
+
+## User API
+
+Endpoints for managing user profile and account.
+
+### Get User Profile
+
+**Endpoint**: `GET /api/user/profile`
+
+**Description**: Get current user's profile information.
+
+**Example Request**:
+
+```bash
+GET /api/user/profile
+Authorization: Bearer <access_token>
+```
+
+**Example Response** (200 OK):
+
+```json
+{
+  "id": "user-123",
+  "email": "user@example.com",
+  "name": "John Doe",
+  "picture": "https://example.com/avatar.jpg",
+  "createdAt": "2024-01-01T00:00:00Z"
+}
+```
+
+---
+
+### Update User Name
+
+**Endpoint**: `POST /api/user/update-name`
+
+**Description**: Update the user's display name.
+
+**Request Body**:
+
+```typescript
+{
+  name: string; // New name (max 25 chars)
+}
+```
+
+**Example Request**:
+
+```bash
+POST /api/user/update-name
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+  "name": "Jane Doe"
+}
+```
+
+**Example Response** (200 OK):
+
+```json
+{
+  "message": "Name updated successfully",
+  "user": {
+    "name": "Jane Doe"
+  }
+}
+```
+
+---
+
+### Change Email
+
+**Endpoint**: `POST /api/user/change-email`
+
+**Description**: Change the user's email address.
+
+**Request Body**:
+
+```typescript
+{
+  newEmail: string; // New email address
+  password: string; // Current password for verification
+}
+```
+
+---
+
+### Change Password
+
+**Endpoint**: `POST /api/user/change-password`
+
+**Description**: Change the user's password.
+
+**Request Body**:
+
+```typescript
+{
+  currentPassword: string; // Current password
+  newPassword: string; // New password (min 8 chars)
+}
+```
+
+---
+
+### Sync User Profile
+
+**Endpoint**: `POST /api/user/sync`
+
+**Description**: Sync user profile data from Auth provider (Clerk/Auth0).
+
+---
+
+### Delete Account
+
+**Endpoint**: `POST /api/user/delete`
+
+**Description**: Permanently delete user account and all associated data.
+
+**Request Body**:
+
+```typescript
+{
+  email: string; // Email for verification
+  password: string; // Password for verification
+}
+```
+
+---
+
+### Get Welcome Status
+
+**Endpoint**: `GET /api/user/welcome-status`
+
+**Description**: Check if the welcome screen has been shown.
+
+---
+
+### Mark Welcome Shown
+
+**Endpoint**: `POST /api/user/welcome-shown`
+
+**Description**: Mark the welcome screen as shown.
+
+---
+
+## Gutenberg API
+
+Endpoints for interacting with Project Gutenberg.
+
+### Import Book
+
+**Endpoint**: `POST /api/gutenberg/import`
+
+**Description**: Import a book from Project Gutenberg.
+
+**Request Body**:
+
+```typescript
+{
+  gutenbergId: string; // Gutenberg Book ID
+}
+```
+
+**Example Request**:
+
+```bash
+POST /api/gutenberg/import
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+  "gutenbergId": "12345"
+}
+```
+
+---
+
+## Webhook API
+
+Endpoints for external webhooks.
+
+### Clerk Webhook
+
+**Endpoint**: `POST /api/webhooks/clerk`
+
+**Description**: Handle user events from Clerk (create, update, delete).
+
+**Security**: Verifies Clerk signature.
 
 ---
 
@@ -1641,11 +2053,13 @@ curl -X POST http://localhost:3001/api/books/upload \
 **Description**: Get current authenticated user's session information.
 
 **Example Request**:
+
 ```bash
 GET /api/auth/me
 ```
 
 **Example Response** (200 OK):
+
 ```json
 {
   "user": {
@@ -1674,31 +2088,31 @@ Tokens are automatically refreshed by the Auth0 SDK in the middleware. The clien
 
 ```typescript
 interface Book {
-  id: string;                    // Unique identifier
-  title: string;                 // Book title
-  author: string | null;         // Author name
-  fileName: string;              // Storage file name
-  originalName: string;          // Original upload name
-  fileUrl: string;               // Current file URL
-  fileId: string | null;         // Storage file ID
-  fileSize: number;              // File size in bytes
-  fileType?: "pdf" | "epub" | "txt";  // Document type
-  userId: string;                // Owner user ID
-  coverUrl: string | null;       // Cover image URL
-  status: "to-read" | "reading" | "completed";  // Reading status
-  progress: number;              // 0-100 completion percentage
-  currentPage: number;           // Last read page
-  totalPages: number;            // Total pages
-  uploadedAt: string;            // Upload timestamp (ISO 8601)
-  updatedAt: string;             // Last update timestamp
-  lastReadAt: string | null;     // Last read timestamp
-  description?: string | null;   // Book description
-  genre?: string[];              // Genre array
-  publicationYear?: number | null;  // Publication year
-  isbn?: string | null;          // ISBN number
-  publisher?: string | null;     // Publisher name
-  language?: string | null;      // Language code (ISO 639-1)
-  pdfMetadata?: string | null;   // Extracted PDF metadata
+  id: string; // Unique identifier
+  title: string; // Book title
+  author: string | null; // Author name
+  fileName: string; // Storage file name
+  originalName: string; // Original upload name
+  fileUrl: string; // Current file URL
+  fileId: string | null; // Storage file ID
+  fileSize: number; // File size in bytes
+  fileType?: "pdf" | "epub" | "txt"; // Document type
+  userId: string; // Owner user ID
+  coverUrl: string | null; // Cover image URL
+  status: "to-read" | "reading" | "completed"; // Reading status
+  progress: number; // 0-100 completion percentage
+  currentPage: number; // Last read page
+  totalPages: number; // Total pages
+  uploadedAt: string; // Upload timestamp (ISO 8601)
+  updatedAt: string; // Last update timestamp
+  lastReadAt: string | null; // Last read timestamp
+  description?: string | null; // Book description
+  genre?: string[]; // Genre array
+  publicationYear?: number | null; // Publication year
+  isbn?: string | null; // ISBN number
+  publisher?: string | null; // Publisher name
+  language?: string | null; // Language code (ISO 639-1)
+  pdfMetadata?: string | null; // Extracted PDF metadata
 }
 ```
 
@@ -1706,18 +2120,18 @@ interface Book {
 
 ```typescript
 interface Highlight {
-  id: string;                    // Unique identifier
-  bookId: string;                // Associated book
-  userId: string;                // Owner user ID
-  text: string;                  // Highlighted text
-  color: string;                 // Color name
-  hex: string;                   // Hex color code
-  note?: string | null;          // Optional annotation
-  pageNumber?: number;           // Page number (PDF/TXT)
-  cfiRange?: string;             // EPUB CFI range
-  source: "pdf" | "epub" | "txt";  // Source type
-  createdAt: string;             // Creation timestamp
-  updatedAt: string;             // Last update timestamp
+  id: string; // Unique identifier
+  bookId: string; // Associated book
+  userId: string; // Owner user ID
+  text: string; // Highlighted text
+  color: string; // Color name
+  hex: string; // Hex color code
+  note?: string | null; // Optional annotation
+  pageNumber?: number; // Page number (PDF/TXT)
+  cfiRange?: string; // EPUB CFI range
+  source: "pdf" | "epub" | "txt"; // Source type
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
 }
 ```
 
@@ -1725,13 +2139,13 @@ interface Highlight {
 
 ```typescript
 interface Bookmark {
-  id: string;                    // Unique identifier
-  bookId: string;                // Associated book
-  userId: string;                // Owner user ID
-  pageNumber: number;            // Bookmarked page
-  note?: string | null;          // Optional note
-  createdAt: string;             // Creation timestamp
-  updatedAt: string;             // Last update timestamp
+  id: string; // Unique identifier
+  bookId: string; // Associated book
+  userId: string; // Owner user ID
+  pageNumber: number; // Bookmarked page
+  note?: string | null; // Optional note
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
 }
 ```
 
@@ -1739,16 +2153,16 @@ interface Bookmark {
 
 ```typescript
 interface Collection {
-  id: string;                    // Unique identifier
-  userId: string;                // Owner user ID
-  name: string;                  // Collection name
-  description?: string | null;   // Optional description
-  color?: string | null;         // Optional color (hex or name)
-  icon?: string | null;          // Optional icon identifier
-  isDefault: boolean;            // Whether this is default collection
-  bookIds: string[];             // Array of book IDs
-  createdAt: string;             // Creation timestamp
-  updatedAt: string;             // Last update timestamp
+  id: string; // Unique identifier
+  userId: string; // Owner user ID
+  name: string; // Collection name
+  description?: string | null; // Optional description
+  color?: string | null; // Optional color (hex or name)
+  icon?: string | null; // Optional icon identifier
+  isDefault: boolean; // Whether this is default collection
+  bookIds: string[]; // Array of book IDs
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
 }
 ```
 
@@ -1756,15 +2170,15 @@ interface Collection {
 
 ```typescript
 interface ReadingSession {
-  id: string;                    // Unique identifier
-  bookId: string;                // Associated book
-  userId: string;                // Owner user ID
-  duration: number;              // Duration in seconds
-  pagesRead: number;             // Pages read in session
-  startPage: number;             // Starting page
-  endPage: number;               // Ending page
-  progressDelta: number;         // Progress percentage change
-  createdAt: string;             // Session timestamp
+  id: string; // Unique identifier
+  bookId: string; // Associated book
+  userId: string; // Owner user ID
+  duration: number; // Duration in seconds
+  pagesRead: number; // Pages read in session
+  startPage: number; // Starting page
+  endPage: number; // Ending page
+  progressDelta: number; // Progress percentage change
+  createdAt: string; // Session timestamp
 }
 ```
 
@@ -1772,17 +2186,17 @@ interface ReadingSession {
 
 ```typescript
 interface ReadingGoal {
-  id: string;                    // Unique identifier
-  userId: string;                // Owner user ID
-  type: "books" | "pages" | "time";  // Goal type
-  period: "daily" | "weekly" | "monthly" | "yearly";  // Time period
-  target: number;                // Target value
-  current: number;               // Current progress
-  year: number | null;           // Year (for yearly goals)
-  month: number | null;          // Month (for monthly goals)
-  week: number | null;           // Week (for weekly goals)
-  startDate: string;             // Period start (ISO 8601)
-  endDate: string;               // Period end (ISO 8601)
+  id: string; // Unique identifier
+  userId: string; // Owner user ID
+  type: "books" | "pages" | "time"; // Goal type
+  period: "daily" | "weekly" | "monthly" | "yearly"; // Time period
+  target: number; // Target value
+  current: number; // Current progress
+  year: number | null; // Year (for yearly goals)
+  month: number | null; // Month (for monthly goals)
+  week: number | null; // Week (for weekly goals)
+  startDate: string; // Period start (ISO 8601)
+  endDate: string; // Period end (ISO 8601)
 }
 ```
 
@@ -1804,24 +2218,25 @@ All endpoints return consistent error responses with appropriate HTTP status cod
 
 ### Common HTTP Status Codes
 
-| Code | Meaning | Common Causes |
-|------|---------|---------------|
-| `200` | OK | Successful GET, PATCH, PUT requests |
-| `201` | Created | Successful POST requests (resource created) |
-| `204` | No Content | Successful DELETE requests |
-| `400` | Bad Request | Invalid input, missing required fields |
-| `401` | Unauthorized | Missing or invalid authentication token |
-| `403` | Forbidden | Authenticated but not authorized |
-| `404` | Not Found | Resource not found |
-| `413` | Payload Too Large | File exceeds size limit |
-| `415` | Unsupported Media Type | Invalid file type |
-| `429` | Too Many Requests | Rate limit exceeded |
-| `500` | Internal Server Error | Server error |
-| `503` | Service Unavailable | Server temporarily unavailable |
+| Code  | Meaning                | Common Causes                               |
+| ----- | ---------------------- | ------------------------------------------- |
+| `200` | OK                     | Successful GET, PATCH, PUT requests         |
+| `201` | Created                | Successful POST requests (resource created) |
+| `204` | No Content             | Successful DELETE requests                  |
+| `400` | Bad Request            | Invalid input, missing required fields      |
+| `401` | Unauthorized           | Missing or invalid authentication token     |
+| `403` | Forbidden              | Authenticated but not authorized            |
+| `404` | Not Found              | Resource not found                          |
+| `413` | Payload Too Large      | File exceeds size limit                     |
+| `415` | Unsupported Media Type | Invalid file type                           |
+| `429` | Too Many Requests      | Rate limit exceeded                         |
+| `500` | Internal Server Error  | Server error                                |
+| `503` | Service Unavailable    | Server temporarily unavailable              |
 
 ### Error Handling in Client
 
 The client library includes automatic error handling with:
+
 - Retry logic with exponential backoff
 - Clear error messages
 - Proper error propagation
@@ -1831,7 +2246,7 @@ try {
   const books = await fetchBooks(accessToken);
 } catch (error) {
   if (error instanceof Error) {
-    console.error(error.message);  // User-friendly error message
+    console.error(error.message); // User-friendly error message
   }
 }
 ```
@@ -1843,11 +2258,13 @@ try {
 ### Rate Limiting
 
 The backend implements rate limiting to prevent abuse:
+
 - **Per User**: 1000 requests per 15 minutes
 - **Per IP**: 5000 requests per 15 minutes
 - **Upload**: 10 files per minute per user
 
 **Rate Limit Headers**:
+
 ```
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 999
@@ -1864,13 +2281,14 @@ const API_RETRY_OPTIONS = {
   initialDelayMs: 1000,
   maxDelayMs: 10000,
   backoffMultiplier: 2,
-  retryableStatusCodes: [408, 429, 500, 502, 503, 504]
+  retryableStatusCodes: [408, 429, 500, 502, 503, 504],
 };
 
 // Retry sequence: 1s → 2s → 4s
 ```
 
 **Retryable Operations**:
+
 - GET requests (idempotent)
 - Network timeouts
 - 5xx server errors
@@ -1878,6 +2296,7 @@ const API_RETRY_OPTIONS = {
 - 408 (Request Timeout)
 
 **Non-Retryable Operations**:
+
 - POST/PUT/PATCH requests (by default, to prevent duplicates)
 - 4xx client errors (except 408, 429)
 - 401 Unauthorized
@@ -1887,33 +2306,39 @@ const API_RETRY_OPTIONS = {
 ## Best Practices
 
 ### 1. **Token Management**
+
 - Always use the token context for centralized access
 - Tokens are cached and refreshed automatically
 - Never hardcode tokens
 
 ### 2. **Error Handling**
+
 - Always check response status
 - Provide user-friendly error messages
 - Log errors for debugging
 
 ### 3. **Performance**
+
 - Use React Query for automatic caching
 - Debounce search and filter requests
 - Cache presigned URLs for 7 days
 - Use parallel requests for independent operations
 
 ### 4. **Security**
+
 - Always include Authorization header
 - Use HTTPS in production
 - Sanitize user inputs before display
 - Never expose sensitive data in URLs
 
 ### 5. **Pagination**
+
 - Implement pagination for large lists
 - Use URL parameters for persistent state
 - Show loading states during requests
 
 ### 6. **File Uploads**
+
 - Validate file size before upload
 - Validate file type (MIME type)
 - Show progress indicators
@@ -1965,36 +2390,40 @@ if (results.success) {
 ### Complete Highlight Workflow
 
 ```typescript
-import { createHighlight, fetchHighlights, updateHighlight } from '@/lib/highlights-api';
-import { useTokenCache } from '@/hooks/useTokenCache';
+import {
+  createHighlight,
+  fetchHighlights,
+  updateHighlight,
+} from "@/lib/highlights-api";
+import { useTokenCache } from "@/hooks/useTokenCache";
 
 const getToken = useTokenCache();
 const accessToken = await getToken();
 
 // 1. Create highlight
 const highlight = await createHighlight(
-  'book-123',
+  "book-123",
   {
-    text: 'Important quote',
-    color: 'yellow',
-    hex: '#FFFF00',
-    note: 'Remember this',
+    text: "Important quote",
+    color: "yellow",
+    hex: "#FFFF00",
+    note: "Remember this",
     pageNumber: 5,
-    source: 'pdf'
+    source: "pdf",
   },
   accessToken
 );
 
 // 2. Fetch all highlights
-const allHighlights = await fetchHighlights('book-123', accessToken);
+const allHighlights = await fetchHighlights("book-123", accessToken);
 
 // 3. Update highlight
 const updated = await updateHighlight(
   highlight.id,
   {
-    color: 'blue',
-    hex: '#0000FF',
-    note: 'Updated note'
+    color: "blue",
+    hex: "#0000FF",
+    note: "Updated note",
   },
   accessToken
 );
@@ -2005,6 +2434,7 @@ const updated = await updateHighlight(
 ## Changelog
 
 ### Version 1.0 (Current)
+
 - All endpoints documented
 - Error handling specifications
 - Retry strategy documentation

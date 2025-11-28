@@ -1,8 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, X, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Loader2, Search } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 interface SearchResult {
@@ -44,6 +44,23 @@ export default function TxtSearchPanel({
 }: TxtSearchPanelProps) {
   // Virtual scrolling for large result lists
   const parentRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Memoize handleClose to prevent listener churn
+  const handleClose = useCallback(() => onClose(), [onClose]);
+
+  // Handle click outside to close panel
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        handleClose();
+      }
+    };
+
+    // Use passive listener for better performance
+    document.addEventListener('mousedown', handleClickOutside, { passive: true } as AddEventListenerOptions);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [handleClose]);
   
   const virtualizer = useVirtualizer({
     count: searchResults.length,
@@ -53,44 +70,58 @@ export default function TxtSearchPanel({
   });
 
   return (
-    <div className="absolute top-4 right-4 bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-lg z-30 w-96 text-gray-900 dark:text-gray-100">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold">Search</h3>
+    <div 
+      className="absolute top-16 right-0 bottom-0 w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-700/50 shadow-2xl z-20 flex flex-col"
+      ref={panelRef}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <Search className="h-5 w-5 text-gray-500" />
+          Search
+        </h2>
         <Button
           variant="ghost"
-          size="icon"
-          onClick={() => {
-            onClose();
-            onClear();
-          }}
-          className="h-6 w-6 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+          size="sm"
+          onClick={onClose}
+          className="h-8 w-8 bg-gray-100/50 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
         >
-          <X className="h-4 w-4 text-gray-900 dark:text-gray-100" />
+          <X className="w-4 h-4" />
         </Button>
       </div>
       
-      <div className="space-y-3">
+      <div className="p-4 space-y-4 flex-1 flex flex-col overflow-hidden">
         <div className="flex gap-2">
-          <Input
-            type="text"
-            placeholder="Search in text..."
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !isSearching) onSearch();
-            }}
-            className="flex-1 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-            disabled={isSearching}
-          />
+          <div className="relative flex-1">
+            <Input
+              type="text"
+              placeholder="Search in text..."
+              value={searchQuery}
+              onChange={(e) => onSearchQueryChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isSearching) onSearch();
+              }}
+              className="w-full bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 focus:ring-blue-500 pr-8"
+              disabled={isSearching}
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => onSearchQueryChange('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
           <Button 
             onClick={onSearch} 
             size="sm" 
-            disabled={isSearching || !searchQuery}>
+            disabled={isSearching || !searchQuery}
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+          >
             {isSearching ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Searching
-              </>
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               'Search'
             )}
@@ -99,18 +130,21 @@ export default function TxtSearchPanel({
 
         {/* Progress indicator during search */}
         {isSearching && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-              <span>Searching through text...</span>
+          <div className="space-y-2 bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
+            <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 font-medium">
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Searching...
+              </span>
               <span>{searchProgress}%</span>
             </div>
-            <Progress value={searchProgress} className="h-1" />
+            <Progress value={searchProgress} className="h-1.5 bg-blue-200 dark:bg-blue-900/50" />
             {onCancelSearch && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={onCancelSearch}
-                className="w-full text-xs"
+                className="w-full text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 mt-1"
               >
                 Cancel Search
               </Button>
@@ -119,31 +153,31 @@ export default function TxtSearchPanel({
         )}
 
         {/* Search results */}
-        {searchResults.length > 0 && (
-          <>
-            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-              <span>
+        {searchResults.length > 0 ? (
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2 px-1">
+              <span className="font-medium">
                 {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={onPrev}
                   disabled={searchResults.length === 0}
-                  className="h-6 w-6"
+                  className="h-6 w-6 rounded-md hover:bg-white dark:hover:bg-gray-700 shadow-sm"
                 >
                   <ChevronLeft className="h-3 w-3" />
                 </Button>
-                <span className="text-xs">
-                  {searchResults.length > 0 ? currentSearchIndex + 1 : 0} / {searchResults.length}
+                <span className="text-xs font-mono w-12 text-center">
+                  {searchResults.length > 0 ? currentSearchIndex + 1 : 0}/{searchResults.length}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={onNext}
                   disabled={searchResults.length === 0}
-                  className="h-6 w-6"
+                  className="h-6 w-6 rounded-md hover:bg-white dark:hover:bg-gray-700 shadow-sm"
                 >
                   <ChevronRight className="h-3 w-3" />
                 </Button>
@@ -153,7 +187,7 @@ export default function TxtSearchPanel({
             {/* Results list with virtual scrolling */}
             <div
               ref={parentRef}
-              className="max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded bg-white/50 dark:bg-transparent"
+              className="flex-1 overflow-y-auto border border-gray-200/50 dark:border-gray-700/50 rounded-xl bg-gray-50/30 dark:bg-gray-800/30 custom-scrollbar"
             >
               <div
                 style={{
@@ -164,17 +198,17 @@ export default function TxtSearchPanel({
               >
                 {virtualizer.getVirtualItems().map((virtualItem) => {
                   const result = searchResults[virtualItem.index];
+                  const isSelected = virtualItem.index === currentSearchIndex;
                   return (
                     <button
                       key={virtualItem.key}
                       onClick={() => onSelectResult(virtualItem.index)}
-                      className={`w-full text-left px-3 py-2 rounded text-xs ${
-                        virtualItem.index === currentSearchIndex
-                          ? 'bg-blue-100 dark:bg-blue-800/30'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                      className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-800/50 transition-colors ${
+                        isSelected
+                          ? 'bg-blue-50 dark:bg-blue-900/20'
+                          : 'hover:bg-white dark:hover:bg-gray-800'
                       }`}
                       ref={(el) => {
-                        // Measure the real element height so the virtualizer can adjust positions
                         if (el) virtualizer.measureElement(el as HTMLElement);
                       }}
                       style={{
@@ -186,10 +220,19 @@ export default function TxtSearchPanel({
                         willChange: 'transform',
                       }}
                     >
-                      <div className="text-gray-500 dark:text-gray-400 mb-1">
-                        Section {result.sectionIndex + 1}
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                          isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
+                        }`}>
+                          Section {result.sectionIndex + 1}
+                        </span>
+                        {isSelected && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                        )}
                       </div>
-                      <div className="text-gray-900 dark:text-gray-100">
+                      <div className={`text-sm line-clamp-2 leading-relaxed ${
+                        isSelected ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-600 dark:text-gray-300'
+                      }`}>
                         ...{result.excerpt}...
                       </div>
                     </button>
@@ -202,17 +245,29 @@ export default function TxtSearchPanel({
               variant="outline"
               size="sm"
               onClick={onClear}
-              className="w-full text-xs text-gray-700 dark:text-gray-200"
+              className="mt-3 w-full text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border-dashed"
             >
-              Clear Search
+              Clear Search Results
             </Button>
-          </>
+          </div>
+        ) : (
+          !isSearching && searchQuery && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-4 opacity-60">
+              <Search className="h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" />
+              <p className="text-sm font-medium text-gray-900 dark:text-white">No matches found</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Try adjusting your search term
+              </p>
+            </div>
+          )
         )}
-
-        {/* No results message */}
-        {!isSearching && searchResults.length === 0 && searchQuery && (
-          <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
-            No results found for &quot;{searchQuery}&quot;
+        
+        {!isSearching && !searchQuery && searchResults.length === 0 && (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-4 opacity-60">
+            <Search className="h-12 w-12 text-gray-200 dark:text-gray-700 mb-3" />
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Enter text to search through the document
+            </p>
           </div>
         )}
       </div>

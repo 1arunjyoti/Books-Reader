@@ -283,39 +283,52 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
         <Button 
           variant="outline" 
           size="default"
-          className="h-12 px-4 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-md font-medium shadow-sm rounded-lg"
+          className="h-12 px-4 border-gray-200/50 dark:border-gray-700/50 bg-white dark:bg-gray-800 backdrop-blur-sm text-gray-700 dark:text-gray-200 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:border-blue-300/50 dark:hover:border-blue-700/50 transition-all duration-200 text-md font-medium shadow-sm rounded-xl gap-2 group"
         >
-          Upload Books
-          <Upload className="h-4 w-4" />
+          <span className="hidden sm:inline">Upload Books</span>
+          <span className="sm:hidden">Upload</span>
+          <Upload className="h-4 w-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
         </Button>
       </DialogTrigger>
 
       {/* Dialog Content */}
-      <DialogContent className="rounded-lg max-w-[40vh] sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <DialogContent className="rounded-2xl max-w-[90vw] sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border-gray-200/50 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl shadow-2xl p-0">
 
         {/* Dialog Header */}
-        <DialogHeader>
-          <DialogTitle>Upload Books to Your Library</DialogTitle>
-          <DialogDescription>
-            Upload files from your device or provide a URL to add books to your library
+        <DialogHeader className="px-6 py-6 border-b border-gray-100 dark:border-gray-800">
+          <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">Upload Books</DialogTitle>
+          <DialogDescription className="text-gray-500 dark:text-gray-400">
+            Add books to your library from your device or via URL
           </DialogDescription>
         </DialogHeader>
 
         {/* Tabs for Upload Methods */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'files' | 'url')} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="files" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Upload Files
-            </TabsTrigger>
-            <TabsTrigger value="url" className="flex items-center gap-2">
-              <LinkIcon className="h-4 w-4" />
-              Upload from URL
-            </TabsTrigger>
-          </TabsList>
+          <div className="px-6 pt-0">
+            <TabsList className="grid w-full grid-cols-2 bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-xl">
+              <TabsTrigger 
+                value="files" 
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-sm transition-all duration-200"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span>Upload Files</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="url" 
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-sm transition-all duration-200"
+              >
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4" />
+                  <span>From URL</span>
+                </div>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Upload Files Tab */}
-          <TabsContent value="files" className="flex-1 flex flex-col overflow-hidden mt-4">
+          <TabsContent value="files" className="flex-1 flex flex-col overflow-hidden px-6 pb-6 mt-6 data-[state=inactive]:hidden">
             <input
               ref={fileInputRef}
               type="file"
@@ -333,36 +346,42 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               className={`
-                relative border-2 border-dashed rounded-lg p-8 text-center transition-colors
+                relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300
                 ${isDragging 
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' 
-                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                  ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 scale-[0.99]' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-blue-400/50 dark:hover:border-blue-500/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/50'
                 }
                 ${isUploading ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}
               `}
               onClick={handleBrowseClick}
             >
-              <div className="flex flex-col items-center gap-3">
-                <div className={`p-3 rounded-full ${isDragging ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-800'}`}>
-                  <Upload className={`h-8 w-8 ${isDragging ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}`} />
+              <div className="flex flex-col items-center gap-4">
+                <div className={`p-4 rounded-full transition-colors duration-300 ${isDragging ? 'bg-blue-100 dark:bg-blue-900/50' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                  <Upload className={`h-8 w-8 transition-colors duration-300 ${isDragging ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} />
                 </div>
                 <div>
-                  <p className="text-base font-medium text-gray-900 dark:text-white">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
                     {isDragging ? 'Drop files here' : 'Drag & drop files here'}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    or click to browse
+                    or click to browse from your computer
                   </p>
                 </div>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  Supports PDF, EPUB, and TXT files up to 100MB each
-                </p>
+                <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-100 dark:border-gray-800">
+                  <span>PDF</span>
+                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                  <span>EPUB</span>
+                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                  <span>TXT</span>
+                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                  <span>Max 100MB</span>
+                </div>
               </div>
             </div>
 
             {/* Validation Error */}
             {validationError && (
-              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md flex items-start gap-2">
+              <div className="mt-4 p-4 bg-red-50/50 dark:bg-red-900/10 border border-red-200/50 dark:border-red-800/50 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
                 <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-red-800 dark:text-red-200">
@@ -374,7 +393,7 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
                     e.stopPropagation();
                     setValidationError(null);
                   }}
-                  className="p-1 hover:bg-red-100 dark:hover:bg-red-800 rounded transition-colors"
+                  className="p-1 hover:bg-red-100 dark:hover:bg-red-800/50 rounded-lg transition-colors"
                 >
                   <X className="h-4 w-4 text-red-600 dark:text-red-400" />
                 </button>
@@ -383,69 +402,83 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
 
             {/* Upload Progress */}
             {uploadStates.length > 0 && (
-              <div className="mt-4 flex-1 overflow-y-auto">
+              <div className="mt-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 px-1">
+                  Uploading {uploadStates.length} file{uploadStates.length !== 1 ? 's' : ''}
+                </h4>
                 <div className="space-y-3">
                   {uploadStates.map((state, index) => (
                     <div 
                       key={`${state.file.name}-${index}`}
-                      className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900"
+                      className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 shadow-sm transition-all duration-200 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-700"
                     >
-                      <div className="flex items-start gap-3">
-                        <FileText className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-4">
+                        <div className={`p-2.5 rounded-lg flex-shrink-0 ${
+                          state.status === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-600' :
+                          state.status === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-600' :
+                          'bg-blue-50 dark:bg-blue-900/20 text-blue-600'
+                        }`}>
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                 {state.file.name}
                               </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                 {(state.file.size / 1024 / 1024).toFixed(2)} MB
                               </p>
                             </div>
+                            
                             {state.status === 'pending' && !isUploading && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleRemoveFile(index);
                                 }}
-                                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                               >
-                                <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                <X className="h-4 w-4" />
                               </button>
                             )}
+                            
                             {state.status === 'success' && (
-                              <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                                <CheckCircle className="h-4 w-4" />
-                                <span className="text-xs font-medium">Uploaded</span>
+                              <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2.5 py-1 rounded-full">
+                                <CheckCircle className="h-3.5 w-3.5" />
+                                <span className="text-xs font-semibold">Uploaded</span>
                               </div>
                             )}
+                            
                             {state.status === 'cover-generating' && (
-                              <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                              <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1 rounded-full">
                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
-                                <span className="text-xs font-medium">Cover generating...</span>
+                                <span className="text-xs font-semibold">Processing</span>
                               </div>
                             )}
+                            
                             {state.status === 'error' && (
-                              <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
-                                <AlertCircle className="h-4 w-4" />
-                                <span className="text-xs font-medium">Failed</span>
+                              <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1 rounded-full">
+                                <AlertCircle className="h-3.5 w-3.5" />
+                                <span className="text-xs font-semibold">Failed</span>
                               </div>
                             )}
                           </div>
                           
                           {state.status === 'uploading' && (
-                            <div className="space-y-1">
+                            <div className="space-y-1.5">
                               <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-600 dark:text-gray-400">
+                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                                   Uploading...
                                 </span>
-                                <span className="text-xs font-medium text-gray-900 dark:text-white">
+                                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
                                   {state.progress}%
                                 </span>
                               </div>
-                              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                 <div 
-                                  className="h-full bg-blue-500 transition-all duration-300"
+                                  className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300 ease-out"
                                   style={{ width: `${state.progress}%` }}
                                 />
                               </div>
@@ -453,7 +486,7 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
                           )}
                           
                           {state.status === 'error' && state.error && (
-                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1.5 font-medium">
                               {state.error}
                             </p>
                           )}
@@ -467,43 +500,48 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
           </TabsContent>
 
           {/* Upload from URL Tab */}
-          <TabsContent value="url" className="mt-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="url-input" className="text-sm font-medium text-gray-900 dark:text-white">
+          <TabsContent value="url" className="mt-6 px-6 pb-6 data-[state=inactive]:hidden">
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label htmlFor="url-input" className="text-sm font-semibold text-gray-900 dark:text-white">
                   Book URL
                 </label>
-                <Input
-                  id="url-input"
-                  type="url"
-                  placeholder="https://example.com/document.pdf"
-                  value={url}
-                  onChange={(e) => {
-                    setUrl(e.target.value);
-                    setUrlError(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !isUrlUploading) {
-                      handleUrlUpload();
-                    }
-                  }}
-                  disabled={isUrlUploading}
-                  className="h-10"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <LinkIcon className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <Input
+                    id="url-input"
+                    type="url"
+                    placeholder="https://example.com/document.pdf"
+                    value={url}
+                    onChange={(e) => {
+                      setUrl(e.target.value);
+                      setUrlError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isUrlUploading) {
+                        handleUrlUpload();
+                      }
+                    }}
+                    disabled={isUrlUploading}
+                    className="h-11 pl-10 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:ring-blue-500/20 rounded-xl"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 ml-1">
                   Enter a direct link to a PDF, EPUB, or TXT file (max 100MB)
                 </p>
               </div>
 
               {urlError && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md flex items-start gap-2">
+                <div className="p-4 bg-red-50/50 dark:bg-red-900/10 border border-red-200/50 dark:border-red-800/50 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
                   <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-800 dark:text-red-200 flex-1">
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200 flex-1">
                     {urlError}
                   </p>
                   <button
                     onClick={() => setUrlError(null)}
-                    className="p-1 hover:bg-red-100 dark:hover:bg-red-800 rounded transition-colors"
+                    className="p-1 hover:bg-red-100 dark:hover:bg-red-800/50 rounded-lg transition-colors"
                   >
                     <X className="h-4 w-4 text-red-600 dark:text-red-400" />
                   </button>
@@ -513,7 +551,7 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
               <Button 
                 onClick={handleUrlUpload} 
                 disabled={isUrlUploading || !url.trim()}
-                className="w-full"
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 rounded-xl font-medium transition-all duration-200"
               >
                 {isUrlUploading ? (
                   <>
@@ -522,7 +560,7 @@ export function UploadDialog({ onUploadComplete, onUploadError }: UploadDialogPr
                   </>
                 ) : (
                   <>
-                    <Upload className="h-4 w-4" />
+                    <Upload className="h-4 w-4 mr-2" />
                     Upload from URL
                   </>
                 )}

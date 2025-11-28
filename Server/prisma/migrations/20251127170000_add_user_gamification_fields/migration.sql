@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "level" INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "xp" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "achievements" JSONB NOT NULL DEFAULT '[]';
+
+-- Also ensure usedStorage exists (it was added outside of migrations)
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "usedStorage" BIGINT NOT NULL DEFAULT 0;

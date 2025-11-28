@@ -43,23 +43,23 @@ function BookmarkForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-md border border-gray-200/50 dark:border-gray-700/50 overflow-hidden scale-100 animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             {isEditing ? 'Edit Bookmark' : 'Add Bookmark'}
           </h3>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 rounded-full transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
             <Label htmlFor="page" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Page Number
@@ -69,7 +69,7 @@ function BookmarkForm({
               type="number"
               value={pageNumber}
               disabled
-              className="mt-1 bg-gray-50 dark:bg-gray-900"
+              className="mt-1.5 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200/50 dark:border-gray-700/50 text-gray-500"
             />
           </div>
 
@@ -83,36 +83,38 @@ function BookmarkForm({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Add a note to remember why you bookmarked this page..."
               rows={4}
-              className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm 
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                       bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100
+              className="mt-1.5 w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 
+                       bg-white/50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-100
                        placeholder:text-gray-400 dark:placeholder:text-gray-500
-                       resize-none"
+                       resize-none transition-all"
               maxLength={500}
+              autoFocus
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500 text-right">
               {note.length}/500 characters
             </p>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 justify-end pt-2">
+          <div className="flex gap-3 justify-end pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
               disabled={isSubmitting}
+              className="hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 border-0"
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   {isEditing ? 'Saving...' : 'Adding...'}
                 </div>
               ) : (

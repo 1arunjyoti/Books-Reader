@@ -33,7 +33,7 @@ exports.getUserProfile = async (req, res) => {
       : ['id', 'email', 'name', 'picture', 'nickname', 'updatedAt'];
 
     // Whitelist allowed fields to prevent injection
-    const allowedFields = ['id', 'email', 'name', 'picture', 'nickname', 'updatedAt'];
+    const allowedFields = ['id', 'email', 'name', 'picture', 'nickname', 'updatedAt', 'createdAt', 'usedStorage', 'level', 'xp', 'achievements'];
     const selectedFields = requestedFields.filter(field => 
       allowedFields.includes(field)
     );
@@ -106,7 +106,13 @@ exports.getUserProfile = async (req, res) => {
       fields: selectedFields.join(',')
     });
 
-    res.json({ user: user || {} });
+    // Handle BigInt serialization for usedStorage
+    const userData = { ...user };
+    if (userData.usedStorage !== undefined) {
+      userData.usedStorage = Number(userData.usedStorage);
+    }
+
+    res.json({ user: userData || {} });
   } catch (error) {
     logger.error('Error fetching user profile:', { error: error.message, stack: error.stack });
     res.status(500).json({ error: 'Failed to fetch user profile' });

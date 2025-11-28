@@ -3,6 +3,7 @@ const { uploadToB2, generatePresignedUrl, deleteFromB2 } = require('../config/st
 const prisma = require('../config/database');
 const { randomFileName } = require('../utils/helpers');
 const logger = require('../utils/logger');
+const gamificationService = require('./gamification.service');
 const { sanitizeBookMetadata, sanitizeSearchFilters } = require('../utils/sanitize');
 const CoverGenerationService = require('./cover-generation.service');
 const uploadService = require('./upload.service');
@@ -153,7 +154,7 @@ class BooksService {
    * @returns {Object} Prisma orderBy clause
    */
   buildBooksOrderBy(sortBy = 'uploadedAt', sortOrder = 'desc') {
-    const validSortFields = ['uploadedAt', 'title', 'author', 'progress', 'lastReadAt'];
+    const validSortFields = ['uploadedAt', 'title', 'author', 'progress', 'lastReadAt', 'fileSize'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'uploadedAt';
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
     
@@ -433,12 +434,69 @@ class BooksService {
       throw new Error('Failed to delete book related data');
     }
 
-    // Delete book from database
-    await prisma.book.delete({
-      where: { id: bookId }
-    });
+    // Delete book and update storage in a transaction
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Delete book from database
+        await tx.book.delete({
+          where: { id: bookId }
+        });
+
+        // Decrement user used storage
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            usedStorage: {
+              decrement: book.fileSize
+            }
+          }
+        });
+      });
+    } catch (err) {
+      logger.error('Transaction failed during book deletion', { bookId, userId, error: err.message });
+      throw new Error('Failed to delete book and update storage');
+    }
 
     logger.info('Book and all related data deleted successfully', { bookId, userId });
+  }
+
+  /**
+   * Bulk delete books
+   * @param {string[]} bookIds - Array of Book IDs
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} Result summary
+   */
+  async deleteBooks(bookIds, userId) {
+    if (!Array.isArray(bookIds) || bookIds.length === 0) {
+      throw new Error('No books specified for deletion');
+    }
+
+    logger.info('Starting bulk deletion', { userId, count: bookIds.length });
+
+    const results = {
+      success: [],
+      failed: []
+    };
+
+    // Process deletions sequentially to avoid overwhelming the database or storage
+    // Could be parallelized with Promise.allLimit if needed for larger batches
+    for (const bookId of bookIds) {
+      try {
+        await this.deleteBook(bookId, userId);
+        results.success.push(bookId);
+      } catch (error) {
+        logger.error('Failed to delete book in bulk operation', { bookId, error: error.message });
+        results.failed.push({ id: bookId, error: error.message });
+      }
+    }
+
+    logger.info('Bulk deletion completed', { 
+      userId, 
+      successCount: results.success.length, 
+      failedCount: results.failed.length 
+    });
+
+    return results;
   }
 
   /**

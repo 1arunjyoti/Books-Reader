@@ -10,6 +10,9 @@ const { z } = require("zod");
 // UUID v4 format validator (used for PostgreSQL database IDs)
 const uuidSchema = z.string().uuid("Invalid UUID format");
 
+// Legacy Book ID validator (allows 32-char hex strings from old Gutenberg imports)
+const bookIdSchema = z.union([uuidSchema, z.string().regex(/^[0-9a-f]{32}$/i)]);
+
 // Kept for backward compatibility if needed
 const mongoIdSchema = z
   .string()
@@ -22,7 +25,7 @@ const paginationSchema = z.object({
 
 const sortSchema = z.object({
   sortBy: z
-    .enum(["createdAt", "updatedAt", "title", "author", "uploadedAt"])
+    .enum(["createdAt", "updatedAt", "title", "author", "uploadedAt", "fileSize"])
     .optional(),
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });
@@ -38,7 +41,7 @@ const bookQuerySchema = paginationSchema.merge(sortSchema).extend({
 });
 
 const bookIdParamSchema = z.object({
-  id: uuidSchema,
+  id: bookIdSchema,
 });
 
 const updateBookSchema = z.object({
@@ -66,7 +69,7 @@ const presignedUrlQuerySchema = z.object({
 // ============== Bookmark Schemas ===============
 
 const createBookmarkSchema = z.object({
-  bookId: uuidSchema,
+  bookId: bookIdSchema,
   pageNumber: z.number().int().min(0),
   cfi: z.string().max(1000).optional(),
   progress: z.number().min(0).max(100).optional(),
@@ -89,7 +92,7 @@ const bookmarkIdParamSchema = z.object({
 // =============== Highlight Schemas ===================
 
 const createHighlightSchema = z.object({
-  bookId: uuidSchema,
+  bookId: bookIdSchema,
   text: z.string().min(1).max(10000),
   cfiRange: z.string().max(1000).optional().nullable(),
   pageNumber: z.number().int().min(0).optional().nullable(),
@@ -135,7 +138,7 @@ const highlightIdParamSchema = z.object({
 });
 
 const highlightBookIdParamSchema = z.object({
-  bookId: uuidSchema,
+  bookId: bookIdSchema,
 });
 
 const highlightSearchQuerySchema = z.object({
@@ -170,7 +173,7 @@ const collectionIdParamSchema = z.object({
 });
 
 const addBookToCollectionSchema = z.object({
-  bookId: uuidSchema,
+  bookId: bookIdSchema,
 });
 
 // =============== Analytics Schemas ==================
@@ -182,7 +185,7 @@ const analyticsQuerySchema = z.object({
 });
 
 const readingSessionSchema = z.object({
-  bookId: uuidSchema,
+  bookId: bookIdSchema,
   startTime: z.string().datetime(),
   endTime: z.string().datetime(),
   pagesRead: z.number().int().min(0).optional(),

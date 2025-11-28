@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, Square, X, Volume2 } from 'lucide-react';
+import { Play, Pause, Square, X, Volume2, AlertCircle, Loader2 } from 'lucide-react';
 import { sanitizeErrorMessage } from '@/lib/sanitize-text';
 
 interface TxtTTSPanelProps {
@@ -44,174 +44,244 @@ export default function TxtTTSPanel({
   currentSection,
   totalSections,
 }: TxtTTSPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Memoize handleClose to prevent listener churn
+  const handleClose = useCallback(() => onClose(), [onClose]);
+
+  // Handle click outside to close panel
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        handleClose();
+      }
+    };
+
+    // Use passive listener for better performance
+    document.addEventListener('mousedown', handleClickOutside, { passive: true } as AddEventListenerOptions);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [handleClose]);
+
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   if (!isSupported) {
     return (
-      <div className="absolute top-0 right-0 bottom-0 w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-lg z-20 flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+      <div 
+        className="absolute top-16 right-0 bottom-0 w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-700/50 shadow-2xl z-20 flex flex-col"
+        ref={panelRef}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Text-to-Speech</h2>
           <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
             <X className="w-4 h-4" />
           </Button>
         </div>
         <div className="flex-1 flex items-center justify-center p-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-            Text-to-speech is not supported in your browser
-          </p>
+          <div className="text-center">
+            <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Text-to-speech is not supported in your browser
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="absolute top-0 right-0 bottom-0 w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-lg z-20 flex flex-col overflow-y-auto">
+    <div 
+      className="absolute top-16 right-0 bottom-0 w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-700/50 shadow-2xl z-20 flex flex-col overflow-y-auto custom-scrollbar"
+      ref={panelRef}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Volume2 className="h-5 w-5" />
+          <Volume2 className="h-5 w-5 text-gray-500" />
           Text-to-Speech
         </h2>
-        <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 rounded-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onClose} 
+          className="h-8 w-8 bg-gray-100/50 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+        >
           <X className="w-4 h-4" />
         </Button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* Error Display */}
         {ttsError && (
-          <div className="p-3 rounded text-sm text-red-700 bg-red-100 dark:bg-red-900/50 dark:text-red-300">
-            Error: {sanitizeErrorMessage(ttsError)}
+          <div className="p-3 rounded-lg text-xs font-medium text-red-700 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <span>{sanitizeErrorMessage(ttsError)}</span>
           </div>
         )}
 
         {/* Section Info */}
-        <div className="p-3 rounded bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Current Section</div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-white">
-            {currentSection + 1} / {totalSections}
+        <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30">
+          <div className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">Current Progress</div>
+          <div className="flex items-end justify-between">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {currentSection + 1} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">/ {totalSections}</span>
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+              Section
+            </div>
+          </div>
+          <div className="w-full bg-blue-200 dark:bg-blue-900/50 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div 
+              className="bg-blue-600 h-full rounded-full transition-all duration-300" 
+              style={{ width: `${((currentSection + 1) / totalSections) * 100}%` }}
+            />
           </div>
         </div>
 
         {/* Voice Selection */}
-        <div>
-          <label className="text-xs text-gray-600 dark:text-gray-400 mb-2 block font-medium">
-            Voice
+        <div className="space-y-3">
+          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Voice Selection
           </label>
           {voicesLoading ? (
-            <select
-              disabled
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600"
-            >
-              <option>Loading voices...</option>
-            </select>
+            <div className="flex items-center gap-2 p-3 text-sm text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading voices...
+            </div>
           ) : (
-            <select
-              value={selectedVoice?.name || ''}
-              onChange={(e) => {
-                const voice = availableVoices.find((v) => v.name === e.target.value);
-                setSelectedVoice(voice || null);
-              }}
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              {availableVoices.map((voice, index) => (
-                <option key={index} value={voice.name}>
-                  {voice.name} ({voice.lang})
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedVoice?.name || ''}
+                onChange={(e) => {
+                  const voice = availableVoices.find((v) => v.name === e.target.value);
+                  setSelectedVoice(voice || null);
+                }}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none"
+              >
+                {availableVoices.map((voice, index) => (
+                  <option key={index} value={voice.name}>
+                    {voice.name} ({voice.lang})
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                <ChevronDownIcon className="h-4 w-4" />
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Speech Rate */}
-        <div>
-          <label className="text-xs text-gray-600 dark:text-gray-400 mb-2 block font-medium">
-            Speed: {speechRate.toFixed(1)}x
-          </label>
-          <input
-            type="range"
-            min="0.5"
-            max="2.0"
-            step="0.1"
-            value={speechRate}
-            onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
-          />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>0.5x</span>
-            <span>1.0x</span>
-            <span>2.0x</span>
+        <div className="space-y-6 pt-2">
+          {/* Speech Rate */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Speed
+              </label>
+              <span className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-gray-700 dark:text-gray-300">
+                {speechRate.toFixed(1)}x
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0.5"
+              max="2.0"
+              step="0.1"
+              value={speechRate}
+              onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+              className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
+            <div className="flex justify-between text-[10px] text-gray-400 font-medium uppercase">
+              <span>Slow</span>
+              <span>Normal</span>
+              <span>Fast</span>
+            </div>
           </div>
-        </div>
 
-        {/* Speech Pitch */}
-        <div>
-          <label className="text-xs text-gray-600 dark:text-gray-400 mb-2 block font-medium">
-            Pitch: {speechPitch.toFixed(1)}
-          </label>
-          <input
-            type="range"
-            min="0.5"
-            max="2.0"
-            step="0.1"
-            value={speechPitch}
-            onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
-          />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>Low</span>
-            <span>Normal</span>
-            <span>High</span>
+          {/* Speech Pitch */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Pitch
+              </label>
+              <span className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-gray-700 dark:text-gray-300">
+                {speechPitch.toFixed(1)}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0.5"
+              max="2.0"
+              step="0.1"
+              value={speechPitch}
+              onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
+              className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
+            <div className="flex justify-between text-[10px] text-gray-400 font-medium uppercase">
+              <span>Low</span>
+              <span>Normal</span>
+              <span>High</span>
+            </div>
           </div>
-        </div>
 
-        {/* Speech Volume */}
-        <div>
-          <label className="text-xs text-gray-600 dark:text-gray-400 mb-2 block font-medium">
-            Volume: {Math.round(speechVolume * 100)}%
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.1"
-            value={speechVolume}
-            onChange={(e) => setSpeechVolume(parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
-          />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>0%</span>
-            <span>50%</span>
-            <span>100%</span>
+          {/* Speech Volume */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Volume
+              </label>
+              <span className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-gray-700 dark:text-gray-300">
+                {Math.round(speechVolume * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={speechVolume}
+              onChange={(e) => setSpeechVolume(parseFloat(e.target.value))}
+              className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
           </div>
         </div>
 
         {/* Playback Controls */}
-        <div className="pt-4 space-y-2">
-          <div className="flex gap-2">
+        <div className="pt-4 space-y-3">
+          <div className="flex gap-3">
             {!isSpeaking ? (
-              <Button onClick={toggleTextToSpeech} className="flex-1">
-                <Play className="h-4 w-4 mr-2" />
+              <Button 
+                onClick={toggleTextToSpeech} 
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all hover:scale-[1.02]"
+              >
+                <Play className="h-4 w-4 mr-2 fill-current" />
                 Start Reading
               </Button>
             ) : (
               <>
-                <Button onClick={toggleTextToSpeech} variant="outline" className="flex-1">
+                <Button 
+                  onClick={toggleTextToSpeech} 
+                  variant="outline" 
+                  className="flex-1 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                >
                   {isPaused ? (
                     <>
-                      <Play className="h-4 w-4 mr-2" />
+                      <Play className="h-4 w-4 mr-2 fill-current" />
                       Resume
                     </>
                   ) : (
                     <>
-                      <Pause className="h-4 w-4 mr-2" />
+                      <Pause className="h-4 w-4 mr-2 fill-current" />
                       Pause
                     </>
                   )}
                 </Button>
-                <Button onClick={stopTextToSpeech} variant="destructive" className="flex-1">
-                  <Square className="h-4 w-4 mr-2" />
+                <Button 
+                  onClick={stopTextToSpeech} 
+                  variant="destructive" 
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white shadow-sm"
+                >
+                  <Square className="h-4 w-4 mr-2 fill-current" />
                   Stop
                 </Button>
               </>
@@ -220,19 +290,53 @@ export default function TxtTTSPanel({
 
           {/* Status */}
           {isSpeaking && (
-            <div className="text-xs text-center text-gray-600 dark:text-gray-400 py-2">
-              {isPaused ? '⏸️ Paused' : '▶️ Reading...'}
+            <div className="flex items-center justify-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400 py-2 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg">
+              {isPaused ? (
+                <>
+                  <span className="relative flex h-2 w-2">
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400"></span>
+                  </span>
+                  Paused
+                </>
+              ) : (
+                <>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                  </span>
+                  Reading in progress...
+                </>
+              )}
             </div>
           )}
         </div>
 
         {/* Info Note */}
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            💡 TIP: The reader will automatically continue to the next section when finished.
+        <div className="pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center">
+            The reader will automatically continue to the next section when finished.
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+function ChevronDownIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   );
 }

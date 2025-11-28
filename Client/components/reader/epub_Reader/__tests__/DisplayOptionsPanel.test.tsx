@@ -46,7 +46,7 @@ describe('DisplayOptionsPanel', () => {
     it('should render all section headings', () => {
       render(<DisplayOptionsPanel {...defaultProps} />);
       
-      expect(screen.getByText('Color Filters')).toBeInTheDocument();
+      expect(screen.getByText('Theme')).toBeInTheDocument();
       expect(screen.getByText('Layout Options')).toBeInTheDocument();
       expect(screen.getByText('Rotation')).toBeInTheDocument();
       expect(screen.getByText('Font Size')).toBeInTheDocument();
@@ -59,8 +59,8 @@ describe('DisplayOptionsPanel', () => {
       const { container } = render(<DisplayOptionsPanel {...defaultProps} />);
       
       const panel = container.firstChild as HTMLElement;
-      expect(panel).toHaveClass('absolute', 'top-0', 'right-0', 'bottom-0', 'w-80');
-      expect(panel).toHaveClass('bg-white', 'dark:bg-gray-800');
+      expect(panel).toHaveClass('absolute', 'top-16', 'right-0', 'bottom-0', 'w-80');
+      expect(panel).toHaveClass('bg-white/90', 'dark:bg-gray-900/90');
       expect(panel).toHaveClass('border-l', 'border-gray-200', 'dark:border-gray-700');
     });
   });
@@ -121,7 +121,7 @@ describe('DisplayOptionsPanel', () => {
       render(<DisplayOptionsPanel {...defaultProps} colorFilter="sepia" />);
       
       const sepiaButton = screen.getByText('Sepia (Warm)');
-      expect(sepiaButton).toHaveClass('bg-blue-100', 'dark:bg-blue-900/30');
+      expect(sepiaButton).toHaveClass('bg-blue-100/50', 'dark:bg-blue-900/30');
     });
   });
 
@@ -161,7 +161,7 @@ describe('DisplayOptionsPanel', () => {
       render(<DisplayOptionsPanel {...defaultProps} pageLayout="double" />);
       
       const doubleButton = screen.getByText('Double');
-      expect(doubleButton).toHaveClass('bg-blue-100', 'dark:bg-blue-900/30');
+      expect(doubleButton).toHaveClass('bg-blue-100/50', 'dark:bg-blue-900/30');
     });
   });
 
@@ -295,7 +295,7 @@ describe('DisplayOptionsPanel', () => {
       render(<DisplayOptionsPanel {...defaultProps} fontFamily="sans-serif" />);
       
       const sansSerifButton = screen.getByText('Sans-serif');
-      expect(sansSerifButton).toHaveClass('bg-blue-100', 'dark:bg-blue-900/30');
+      expect(sansSerifButton).toHaveClass('bg-blue-100/50', 'dark:bg-blue-900/30');
     });
   });
 
@@ -325,7 +325,7 @@ describe('DisplayOptionsPanel', () => {
       const { container } = render(<DisplayOptionsPanel {...defaultProps} />);
       
       const panel = container.firstChild as HTMLElement;
-      expect(panel).toHaveClass('shadow-lg', 'z-20');
+      expect(panel).toHaveClass('shadow-2xl', 'z-20');
     });
 
     it('should have flex layout classes', () => {

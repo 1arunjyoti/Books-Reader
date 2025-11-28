@@ -66,6 +66,8 @@ interface PDFScrollViewerProps {
   onError?: (error: Error) => void;
   onCreateHighlight?: (args: CreatePdfHighlightArgs) => void | Promise<void>;
   onHighlightClick?: (highlight: PdfHighlight) => void;
+  onTranslate?: (text: string, position: ScaledPosition) => void;
+  onDefine?: (text: string, position: ScaledPosition) => void;
 }
 
 interface SelectionToolbarProps {
@@ -75,25 +77,49 @@ interface SelectionToolbarProps {
 
 const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ onSelect, onCancel }) => {
   return (
-    <div className="flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 shadow-lg border border-gray-200">
-      <span className="text-xs font-medium text-gray-600">Highlight</span>
-      {PDF_HIGHLIGHT_COLORS.map((option) => (
+
+    /* Highlight Color Selection toolbar */
+    <div className="flex flex-col gap-2 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-gray-600 dark:text-gray-200">Highlight</span>
+        {PDF_HIGHLIGHT_COLORS.map((option) => (
+          <button
+            key={option.color}
+            type="button"
+            onClick={() => onSelect(option.color, option.hex)}
+            className="h-6 w-6 rounded-full border border-white shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ backgroundColor: option.hex, opacity: 0.85 }}
+            aria-label={`Highlight with ${option.name}`}
+          />
+        ))}
         <button
-          key={option.color}
           type="button"
-          onClick={() => onSelect(option.color, option.hex)}
-          className="h-6 w-6 rounded-full border border-white shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ backgroundColor: option.hex, opacity: 0.85 }}
-          aria-label={`Highlight with ${option.name}`}
-        />
-      ))}
-      <button
-        type="button"
-        onClick={onCancel}
-        className="ml-1 text-xs text-gray-500 hover:text-gray-700"
-      >
-        Cancel
-      </button>
+          onClick={onCancel}
+          className="p-1 rounded-full text-xs text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900"
+        >
+          Cancel
+        </button>
+      </div>
+
+      {/* Translation Button - Separator */}
+      <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex justify-center">
+        <button
+          type="button"
+          onClick={() => onSelect('translate', 'translate')}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+          Translate
+        </button>
+        <button
+          type="button"
+          onClick={() => onSelect('define', 'define')}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-book"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+          Define
+        </button>
+      </div>
     </div>
   );
 };
@@ -204,6 +230,8 @@ const PdfViewerInner = React.forwardRef<PDFScrollViewerHandle, PdfViewerInnerPro
   onLoadSuccess,
   onCreateHighlight,
   onHighlightClick,
+  onTranslate,
+  onDefine,
 }, ref) => {
   const highlighterRef = useRef<PdfHighlighterClass<ViewerHighlight> | null>(null);
   const scrollToHighlightRef = useRef<((highlight: ViewerHighlight) => void) | null>(null);
@@ -294,11 +322,32 @@ const PdfViewerInner = React.forwardRef<PDFScrollViewerHandle, PdfViewerInnerPro
 
   useEffect(() => {
     const viewerInstance = highlighterRef.current?.viewer;
-    if (!viewerInstance) return;
-    const boundedPage = Math.min(Math.max(initialPage, 1), pdfDocument.numPages);
-    if (viewerInstance.currentPageNumber !== boundedPage) {
-      viewerInstance.currentPageNumber = boundedPage;
+    if (!viewerInstance) {
+      return;
     }
+    
+    // Wait for the viewer to be fully initialized
+    const scrollToInitialPage = () => {
+      const boundedPage = Math.min(Math.max(initialPage, 1), pdfDocument.numPages);
+      
+      if (boundedPage !== 1 && viewerInstance.pdfDocument) {
+        // Set the page number
+        viewerInstance.currentPageNumber = boundedPage;
+        
+        // Verify the page is set correctly after a brief delay
+        // This ensures the scroll position is properly applied
+        setTimeout(() => {
+          if (viewerInstance.currentPageNumber !== boundedPage) {
+            viewerInstance.currentPageNumber = boundedPage;
+          }
+        }, 100);
+      }
+    };
+    
+    // Wait for the viewer to be fully ready
+    const timer = setTimeout(scrollToInitialPage, 200);
+    
+    return () => clearTimeout(timer);
   }, [initialPage, pdfDocument.numPages]);
 
   useEffect(() => {
@@ -396,6 +445,45 @@ const PdfViewerInner = React.forwardRef<PDFScrollViewerHandle, PdfViewerInnerPro
       viewerInstance.eventBus.off('pagechanging', handlePageChanging);
     };
   }, [onPageChange, pdfDocument.numPages, isMobile]);
+
+  // Add scroll listener to handle mouse wheel scrolling
+  // PDF.js's pagechanging event may not fire consistently during rapid mouse scrolling
+  useEffect(() => {
+    const viewerInstance = highlighterRef.current?.viewer;
+    const viewerNode = viewerInstance?.viewer as HTMLElement | undefined;
+    if (!viewerNode || !viewerInstance) return;
+
+    let lastReportedPage = viewerInstance.currentPageNumber || initialPage;
+    let rafId: number | null = null;
+
+    const handleScroll = () => {
+      // Cancel any pending animation frame
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+
+      // Use requestAnimationFrame to throttle scroll events
+      rafId = requestAnimationFrame(() => {
+        const currentPage = viewerInstance.currentPageNumber;
+        
+        // Only call onPageChange if the page actually changed
+        if (currentPage && currentPage !== lastReportedPage) {
+          lastReportedPage = currentPage;
+          onPageChange?.(currentPage, pdfDocument.numPages);
+        }
+      });
+    };
+
+    // Listen to scroll events on the viewer container
+    viewerNode.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      viewerNode.removeEventListener('scroll', handleScroll);
+    };
+  }, [onPageChange, pdfDocument.numPages, initialPage]);
 
   // Track existing bookmark ribbons to avoid unnecessary re-renders
   const existingRibbonsRef = useRef<Set<number>>(new Set());
@@ -574,9 +662,17 @@ const PdfViewerInner = React.forwardRef<PDFScrollViewerHandle, PdfViewerInnerPro
       }
 
       const handleSelectColor = (color: string, hex: string) => {
-        transformSelection();
-        onCreateHighlight({ position, text: selectionText, color, hex });
-        hideTipAndSelection();
+        if (color === 'translate') {
+          onTranslate?.(selectionText, position);
+          hideTipAndSelection();
+        } else if (color === 'define') {
+          onDefine?.(selectionText, position);
+          hideTipAndSelection();
+        } else {
+          transformSelection();
+          onCreateHighlight({ position, text: selectionText, color, hex });
+          hideTipAndSelection();
+        }
       };
 
       const handleCancel = () => {
@@ -585,7 +681,7 @@ const PdfViewerInner = React.forwardRef<PDFScrollViewerHandle, PdfViewerInnerPro
 
       return <SelectionToolbar onSelect={handleSelectColor} onCancel={handleCancel} />;
     },
-    [enableTextSelection, onCreateHighlight],
+    [enableTextSelection, onCreateHighlight, onTranslate, onDefine],
   );
 
   // Always pass highlights to the component, regardless of viewer ready state

@@ -1,6 +1,7 @@
 const prisma = require('../config/database');
 const logger = require('../utils/logger');
 const { randomUUID } = require('crypto');
+const gamificationService = require('./gamification.service');
 
 /**
  * Analytics Service
@@ -39,6 +40,13 @@ class AnalyticsService {
 
     // Auto-update reading goals based on this session
     await this.autoUpdateGoals(userId, session);
+
+    // Award XP for reading (1 XP per minute)
+    const xpEarned = Math.floor(duration / 60);
+    if (xpEarned > 0) {
+      await gamificationService.addXp(userId, xpEarned);
+    }
+    await gamificationService.checkAchievements(userId);
 
     return session;
   }
