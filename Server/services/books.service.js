@@ -19,8 +19,8 @@ const DEFAULT_PRESIGNED_TTL_SECONDS = 3600;
 const CACHE_SAFETY_WINDOW_MS = 60 * 1000; // refresh 1 min before expiry
 const MAX_CACHE_SIZE = 500;
 
-// Track oldest entry for efficient pruning (O(1) instead of O(n log n))
-let oldestCacheEntry = null;
+// Concurrency control for bulk operations
+const BULK_DELETE_CONCURRENCY_LIMIT = 3;
 
 function pruneCoverCache() {
   if (coverUrlCache.size <= MAX_CACHE_SIZE) {
@@ -506,7 +506,6 @@ class BooksService {
 
     // Process deletions with controlled concurrency to avoid overwhelming database/storage
     // but still benefit from parallelization for better performance
-    const CONCURRENCY_LIMIT = 3;
     
     // Helper function to process a batch with concurrency limit
     const processBatch = async (batch) => {
@@ -532,8 +531,8 @@ class BooksService {
     };
 
     // Process books in batches with concurrency limit
-    for (let i = 0; i < bookIds.length; i += CONCURRENCY_LIMIT) {
-      const batch = bookIds.slice(i, i + CONCURRENCY_LIMIT);
+    for (let i = 0; i < bookIds.length; i += BULK_DELETE_CONCURRENCY_LIMIT) {
+      const batch = bookIds.slice(i, i + BULK_DELETE_CONCURRENCY_LIMIT);
       await processBatch(batch);
     }
 
