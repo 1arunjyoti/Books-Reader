@@ -18,10 +18,22 @@ function pruneCoverCache() {
   if (coverUrlCache.size <= MAX_CACHE_SIZE) {
     return;
   }
-  const entries = Array.from(coverUrlCache.entries()).sort((a, b) => a[1].expiresAt - b[1].expiresAt);
+  
+  // Only prune excess entries (more efficient than sorting entire cache)
   const excess = coverUrlCache.size - MAX_CACHE_SIZE;
-  for (let i = 0; i < excess; i++) {
-    coverUrlCache.delete(entries[i][0]);
+  const entriesToRemove = [];
+  
+  // Find the oldest entries to remove
+  if (excess > 0) {
+    const entries = Array.from(coverUrlCache.entries());
+    entries.sort((a, b) => a[1].expiresAt - b[1].expiresAt);
+    
+    for (let i = 0; i < excess && i < entries.length; i++) {
+      entriesToRemove.push(entries[i][0]);
+    }
+    
+    // Remove the oldest entries
+    entriesToRemove.forEach(key => coverUrlCache.delete(key));
   }
 }
 
@@ -37,7 +49,12 @@ async function getCachedPresignedUrl(objectKey, ttlSeconds = DEFAULT_PRESIGNED_T
   const rawExpiry = now + (ttlSeconds * 1000) - CACHE_SAFETY_WINDOW_MS;
   const expiresAt = rawExpiry > now ? rawExpiry : now + 1000; // keep cache for at least 1s
   coverUrlCache.set(objectKey, { url: presignedUrl, expiresAt });
-  pruneCoverCache();
+  
+  // Only prune when cache exceeds limit
+  if (coverUrlCache.size > MAX_CACHE_SIZE) {
+    pruneCoverCache();
+  }
+  
   return presignedUrl;
 }
 

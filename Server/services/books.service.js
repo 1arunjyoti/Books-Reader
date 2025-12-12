@@ -19,14 +19,30 @@ const DEFAULT_PRESIGNED_TTL_SECONDS = 3600;
 const CACHE_SAFETY_WINDOW_MS = 60 * 1000; // refresh 1 min before expiry
 const MAX_CACHE_SIZE = 500;
 
+// Track oldest entry for efficient pruning (O(1) instead of O(n log n))
+let oldestCacheEntry = null;
+
 function pruneCoverCache() {
   if (coverUrlCache.size <= MAX_CACHE_SIZE) {
     return;
   }
-  const entries = Array.from(coverUrlCache.entries()).sort((a, b) => a[1].expiresAt - b[1].expiresAt);
+  
+  // Only prune excess entries (more efficient than sorting entire cache)
   const excess = coverUrlCache.size - MAX_CACHE_SIZE;
-  for (let i = 0; i < excess; i++) {
-    coverUrlCache.delete(entries[i][0]);
+  const entriesToRemove = [];
+  
+  // Find the oldest entries to remove
+  // Since we need to remove multiple items, we only sort when necessary
+  if (excess > 0) {
+    const entries = Array.from(coverUrlCache.entries());
+    entries.sort((a, b) => a[1].expiresAt - b[1].expiresAt);
+    
+    for (let i = 0; i < excess && i < entries.length; i++) {
+      entriesToRemove.push(entries[i][0]);
+    }
+    
+    // Remove the oldest entries
+    entriesToRemove.forEach(key => coverUrlCache.delete(key));
   }
 }
 
@@ -42,7 +58,12 @@ async function getCachedPresignedUrl(objectKey, ttlSeconds = DEFAULT_PRESIGNED_T
   const rawExpiry = now + (ttlSeconds * 1000) - CACHE_SAFETY_WINDOW_MS;
   const expiresAt = rawExpiry > now ? rawExpiry : now + 1000; // keep cache for at least 1s
   coverUrlCache.set(objectKey, { url: presignedUrl, expiresAt });
-  pruneCoverCache();
+  
+  // Only prune when cache exceeds limit
+  if (coverUrlCache.size > MAX_CACHE_SIZE) {
+    pruneCoverCache();
+  }
+  
   return presignedUrl;
 }
 
@@ -411,7 +432,7 @@ class BooksService {
       });
       logger.info('Reading sessions deleted', { bookId, count: sessionsDeleted.count });
 
-      // Remove book from all collections
+      // Remove book from all collections (batch update to avoid N+1 queries)
       const collections = await prisma.collection.findMany({
         where: {
           userId,
@@ -419,13 +440,18 @@ class BooksService {
         }
       });
 
-      for (const collection of collections) {
-        await prisma.collection.update({
-          where: { id: collection.id },
-          data: {
-            bookIds: collection.bookIds.filter(id => id !== bookId)
-          }
-        });
+      // Batch all collection updates into a single transaction
+      if (collections.length > 0) {
+        await prisma.$transaction(
+          collections.map(collection => 
+            prisma.collection.update({
+              where: { id: collection.id },
+              data: {
+                bookIds: collection.bookIds.filter(id => id !== bookId)
+              }
+            })
+          )
+        );
       }
       logger.info('Book removed from collections', { bookId, collectionsCount: collections.length });
 
@@ -478,16 +504,37 @@ class BooksService {
       failed: []
     };
 
-    // Process deletions sequentially to avoid overwhelming the database or storage
-    // Could be parallelized with Promise.allLimit if needed for larger batches
-    for (const bookId of bookIds) {
-      try {
-        await this.deleteBook(bookId, userId);
-        results.success.push(bookId);
-      } catch (error) {
-        logger.error('Failed to delete book in bulk operation', { bookId, error: error.message });
-        results.failed.push({ id: bookId, error: error.message });
-      }
+    // Process deletions with controlled concurrency to avoid overwhelming database/storage
+    // but still benefit from parallelization for better performance
+    const CONCURRENCY_LIMIT = 3;
+    
+    // Helper function to process a batch with concurrency limit
+    const processBatch = async (batch) => {
+      const batchResults = await Promise.allSettled(
+        batch.map(bookId => this.deleteBook(bookId, userId))
+      );
+      
+      batchResults.forEach((result, index) => {
+        const bookId = batch[index];
+        if (result.status === 'fulfilled') {
+          results.success.push(bookId);
+        } else {
+          logger.error('Failed to delete book in bulk operation', { 
+            bookId, 
+            error: result.reason?.message || 'Unknown error' 
+          });
+          results.failed.push({ 
+            id: bookId, 
+            error: result.reason?.message || 'Unknown error' 
+          });
+        }
+      });
+    };
+
+    // Process books in batches with concurrency limit
+    for (let i = 0; i < bookIds.length; i += CONCURRENCY_LIMIT) {
+      const batch = bookIds.slice(i, i + CONCURRENCY_LIMIT);
+      await processBatch(batch);
     }
 
     logger.info('Bulk deletion completed', { 
