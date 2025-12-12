@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useRef, useState, useEffect, CSSProperties, useCallback } from 'react';
+import React, { useRef, useState, useEffect, CSSProperties, useCallback, memo } from 'react';
 import * as ReactWindow from 'react-window';
 import { logger } from '@/lib/logger';
 // react-window typings in this workspace can be inconsistent; access via any to avoid type export mismatches
@@ -97,7 +97,8 @@ export default function VirtualizedBooks({ books, viewMode, selectedBookIds, onT
 
     const rowCount = Math.ceil(books.length / columns);
 
-    const Cell = ({ columnIndex, rowIndex, style }: { columnIndex: number; rowIndex: number; style: CSSProperties }) => {
+    // Memoize Cell component to prevent unnecessary re-renders
+    const Cell = memo(({ columnIndex, rowIndex, style }: { columnIndex: number; rowIndex: number; style: CSSProperties }) => {
       const index = rowIndex * columns + columnIndex;
       if (index >= books.length) return null;
       const book = books[index];
@@ -161,7 +162,9 @@ export default function VirtualizedBooks({ books, viewMode, selectedBookIds, onT
           </div>
         </div>
       );
-    };
+    });
+    
+    Cell.displayName = 'GridCell';
 
     return (
       <div ref={containerRef} className="w-full">
@@ -180,8 +183,8 @@ export default function VirtualizedBooks({ books, viewMode, selectedBookIds, onT
     );
   }
 
-  // List view
-  const Row = ({ index, style }: { index: number; style: CSSProperties }) => {
+  // List view - Memoize Row component to prevent unnecessary re-renders
+  const Row = memo(({ index, style }: { index: number; style: CSSProperties }) => {
     const book = books[index];
     
     // Prioritize first 5 items (for faster FCP above-the-fold)
@@ -240,7 +243,9 @@ export default function VirtualizedBooks({ books, viewMode, selectedBookIds, onT
         </div>
       </div>
     );
-  };
+  });
+  
+  Row.displayName = 'ListRow';
 
   const estimatedHeight = 160;
   return (

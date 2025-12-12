@@ -108,7 +108,6 @@ class CoverGenerationService {
       // Cleanup temp files immediately after reading
       await fs.promises.unlink(tmpFilePath).catch(() => {});
       await fs.promises.unlink(tmpPngPath).catch(() => {});
-      await fs.promises.unlink(tmpPngPath).catch(() => {});
 
       return producedBuffer;
     } catch (error) {
