@@ -132,8 +132,6 @@ PORT=3001
 CLIENT_URL=http://localhost:3000
 ````
 
-````
-
 ### Step 3: Set Up Database
 
 ```powershell
