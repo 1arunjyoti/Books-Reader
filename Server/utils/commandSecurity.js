@@ -131,8 +131,8 @@ function sanitizeCommandArgs(args) {
     let sanitized = String(arg);
     
     // Remove potentially dangerous characters
-    // Allow alphanumeric, path separators (both / and \), dots, dashes, underscores, colons (for Windows drive letters)
-    sanitized = sanitized.replace(/[^a-zA-Z0-9\/_\-\.:\\]/g, '_');
+    // Allow alphanumeric, path separators (both / and \), dots, dashes, underscores, colons (for Windows drive letters), and spaces
+    sanitized = sanitized.replace(/[^a-zA-Z0-9\/_\-\.:\\ ]/g, '_');
     
     // Prevent command chaining
     const dangerousPatterns = [

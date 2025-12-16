@@ -4,7 +4,7 @@ const logger = require('../utils/logger');
 // General API rate limiter
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 250, // Limit each IP to 250 requests per windowMs
+  max: 1000, // Limit each IP to 250 requests per windowMs
   message: 'Too many requests from this IP, please try again after 15 minutes',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -35,7 +35,7 @@ const authLimiter = rateLimit({
 // Rate limiter for upload endpoints
 const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // Limit each IP to 20 uploads per hour
+  max: 100, // Limit each IP to 100 uploads per hour
   message: 'Too many upload requests, please try again after an hour',
   standardHeaders: true,
   legacyHeaders: false,
@@ -50,7 +50,7 @@ const uploadLimiter = rateLimit({
 // Rate limiter for book operations (reading, bookmarks, highlights)
 const bookOperationsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Allow more requests for book operations
+  max: 1000, // Allow more requests for book operations
   message: 'Too many book operation requests, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
@@ -65,7 +65,7 @@ const bookOperationsLimiter = rateLimit({
 // Rate limiter for cover generation (more restrictive)
 const coverGenerationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // Limit to 20 cover generations per hour (resource intensive)
+  max: 100, // Limit to 100 cover generations per hour (resource intensive)
   message: 'Too many cover generation requests, please try again after an hour',
   standardHeaders: true,
   legacyHeaders: false,
@@ -80,7 +80,7 @@ const coverGenerationLimiter = rateLimit({
 // Rate limiter for welcome screen endpoints
 const welcomeScreenLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Limit each user to 20 requests per 15 minutes
+  max: 100, // Limit each user to 100 requests per 15 minutes
   message: 'Too many welcome screen requests, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
