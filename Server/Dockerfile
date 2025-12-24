@@ -19,7 +19,8 @@ RUN apk add --no-cache \
   pkgconfig \
   poppler-utils \
   py3-pillow \
-  py3-setuptools
+  py3-setuptools \
+  libstdc++
 
 # Set Python executable path for cover generation
 ENV COVER_PYTHON_PATH=python3

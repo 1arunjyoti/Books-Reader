@@ -1,4 +1,5 @@
-const EPub = require('epub');
+const { EPub } = require('epub2');
+const JSZip = require('jszip');
 const logger = require('./logger');
 
 /**
